@@ -28,8 +28,8 @@
    "B": "Y"
   },
   "together": {
-   "X": 4.0,
-   "Y": 4.0
+   "X": 6,
+   "Y": 6
   },
   "apart": {
    "X": 195.0,
@@ -37,7 +37,7 @@
   },
   "charge_feed": 24000.0,
   "jog_feed": 600.0,
-  "_doc": "GRBL gantry. 0,0 = arms fully together (clash), 200,200 = apart. Feeds in mm/min (controller max 24000). At X=0,Y=0 the bases are 19.5 in (0.495 m) apart bumper to bumper (measured 2026-09-12). Apart = 195 (not 200) so the 201 mm reference search always reaches the switch. Together = 4 mm (not 0): at 24000 mm/min the stop overshoots into the switch at 0.",
+  "_doc": "GRBL gantry. 0,0 = arms fully together (clash), 200,200 = apart. Feeds in mm/min (controller max 24000). At X=0,Y=0 the bases are 19.5 in (0.495 m) apart bumper to bumper (measured 2026-09-12). Apart = 195 (not 200) so the 201 mm reference search always reaches the switch. Together = 6 mm (not 0): at 24000 mm/min the stop overshoots into the switch at 0, and after the Y switch was re-seated 4 mm tripped it too (hard-limit alarm on arrival, 2026-09-12).",
   "bumper_gap_together_m": 0.495
  }
 }
