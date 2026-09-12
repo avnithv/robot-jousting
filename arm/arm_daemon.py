@@ -38,7 +38,7 @@ def do_play(move, scale, repeat):
         if i: ease_to(Q[0]); time.sleep(0.1)
         play(t, Q, scale); time.sleep(HOLD_END)
     ease_to(rest, max_speed=RETURN_SPEED); state["last"] = f"{move} x{scale} done, end err {np.abs(np.array(pose())[:5] - rest[:5]).max():.1f} deg"
-ease_to(rest); print("holding REST", flush=True)
+send(np.array(pose())); print("holding current pose (runs ease to REST first)", flush=True)   # never move the arm on startup
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
