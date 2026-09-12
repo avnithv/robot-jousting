@@ -48,10 +48,13 @@ class Arm:
             if c.get("roll_offset") is None: raise RuntimeError(f"arm {self.name}: roll_offset not set in arms.json (find the sword-on-top roll first)")
             Q[:, 4] = np.clip(Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"], -175, 175)   # never touch the +/-180 wrap
         return Q
-    def play(self, move, scale, repeat):
+    def prepare(self, move):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
-        self.abort = False
-        self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
+        self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
+        return t, Q, rest
+    def play(self, move, scale, repeat, barrier=None):
+        t, Q, rest = self.prepare(move)
+        if barrier is not None: barrier.wait(timeout=30)   # start together with the other arm
         for i in range(repeat):
             if self.abort: break
             if i: self.ease_to(Q[0]); time.sleep(0.1)
@@ -81,10 +84,25 @@ class H(BaseHTTPRequestHandler):
         self._json({"arms": out})
     def do_POST(self):
         n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}"); name = body.get("arm", "A")
-        a = arms.get(name)
+        a = arms.get(name) if name != "both" else next(iter(arms.values()), None)
         if a is None: return self._json({"error": f"arm {name} not connected"}, 404)
-        if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm
-            a.abort = True; return self._json({"ok": True})
+        if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm (or both)
+            for x in (arms.values() if name == "both" else [a]): x.abort = True
+            return self._json({"ok": True})
+        if self.path == "/play_both":   # two arms, two moves, synchronized start
+            A, B = arms.get("A"), arms.get("B")
+            if not (A and B): return self._json({"error": "both arms must be connected"}, 404)
+            if not (A.busy.acquire(blocking=False)): return self._json({"error": "A busy"}, 409)
+            if not (B.busy.acquire(blocking=False)): A.busy.release(); return self._json({"error": "B busy"}, 409)
+            try:
+                bar = threading.Barrier(2); scale = float(body.get("scale", 0.5)); errs = {}
+                def run(arm, move):
+                    try: arm.play(move, scale, 1, barrier=bar)
+                    except Exception as e: arm.last = f"error: {e}"; errs[arm.name] = str(e)
+                ta = threading.Thread(target=run, args=(A, body["moveA"])); tb = threading.Thread(target=run, args=(B, body["moveB"])); ta.start(); tb.start(); ta.join(); tb.join()
+                self._json({"ok": not errs, "A": A.last, "B": B.last, "errors": errs})
+            finally: A.busy.release(); B.busy.release()
+            return
         if not a.busy.acquire(blocking=False): return self._json({"error": "busy"}, 409)
         try:
             if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)))

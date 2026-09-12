@@ -12,6 +12,7 @@
  h2{margin:0 0 4px} small{color:#666} table{border-collapse:collapse;width:100%;max-width:760px} td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top} td.k{font-family:ui-monospace,monospace;white-space:nowrap;width:1%} td.h{color:#666;font-size:12px}
  input[type=number]{width:70px} .arm{font-size:13px;color:#444;margin-left:12px}
  button.abort{background:#c00;color:#fff;border-color:#900;font-weight:700}
+ #bothbar{background:#f6f0ff;border:1px solid #d9c8ff;border-radius:8px;padding:8px 10px}
  #armbar{display:flex;align-items:center;gap:8px;margin-bottom:10px} #armbar button{font-size:18px;font-weight:700;padding:12px 22px;border:2px solid #bbb;background:#f3f3f3;color:#888}
  #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
  body.A #main{box-shadow:inset 6px 0 0 #d4a800} body.B #main{box-shadow:inset 6px 0 0 #2b5bd7}
@@ -27,6 +28,9 @@
   <button class="primary" id="runbtn" onclick="runArm()">Run on arm A</button> <button class="abort" onclick="abortArm()">ABORT</button></div>
  <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Power off arm (move by hand)</button> <span class="arm" id="live"></span>
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
+ <div class="bar" id="bothbar"><b>Both arms</b> <label>A <select id="moveA"></select></label> <label>B <select id="moveB"></select></label>
+  <label>speed <input id="scaleBoth" type="number" value="0.5" step="0.1" min="0.1" max="1.5"></label>
+  <button class="primary" onclick="runBoth()">Run both</button> <button class="abort" onclick="abortBoth()">ABORT BOTH</button> <small>collisions are possible: start slow, stay clear</small></div>
  <table id="ptable"></table>
  <div class="bar" style="flex-direction:column;align-items:stretch;margin-top:14px"><b>Chain builder</b>
   <div class="bar"><label>ours <input id="ours" size="46" placeholder="FEINT_HIGH ATTACK_HIGH BLOCK_MIDDLE"></label>
@@ -44,8 +48,10 @@ async function api(p,b){const r=await fetch(p,b?{method:'POST',body:JSON.stringi
 function flatten(o,pre=''){let out=[];for(const k in o){if(k.startsWith('_'))continue;const v=o[k];if(v&&typeof v==='object'&&!Array.isArray(v))out=out.concat(flatten(v,pre+k+'.'));else out.push([pre+k,v])}return out}
 function setPath(o,path,val){const ks=path.split('.');let t=o;for(const k of ks.slice(0,-1))t=t[k];t[ks[ks.length-1]]=val}
 async function load(){MOVES=await api('/api/moves');const m=document.getElementById('moves');m.innerHTML='';const o=document.getElementById('opp');const keep=o.value;o.innerHTML='<option value="">this move alone</option>';
+ const mA=document.getElementById('moveA'),mB=document.getElementById('moveB');const kA=mA.value,kB=mB.value;mA.innerHTML='';mB.innerHTML='';
  for(const n in MOVES){const d=document.createElement('div');d.textContent=n;d.onclick=()=>select(n);if(n===cur)d.className='sel';m.appendChild(d);
-  const op=document.createElement('option');op.value=n;op.textContent='vs '+n;o.appendChild(op)} o.value=keep;
+  const op=document.createElement('option');op.value=n;op.textContent='vs '+n;o.appendChild(op);
+  for(const sel of [mA,mB]){const o2=document.createElement('option');o2.value=n;o2.textContent=n;sel.appendChild(o2)}} o.value=keep;if(kA)mA.value=kA;if(kB)mB.value=kB;
  if(!cur)select(Object.keys(MOVES)[0]);else refreshMain(false)}
 function select(n){cur=n;document.getElementById('opp').value='';document.querySelectorAll('#moves div').forEach(d=>d.className=d.textContent===n?'sel':'');refreshMain(true)}
 function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title').textContent=cur;
@@ -65,6 +71,8 @@ function setArm(a){ARM=a;try{localStorage.setItem('arm',a)}catch(e){}document.bo
 async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
+async function runBoth(){await api('/api/run_both',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value)});poll()}
+async function abortBoth(){await api('/api/abort',{arm:'both'});poll()}
 async function abortArm(){await api('/api/abort',{arm:arm()});poll()}
 async function runArm(){await api('/api/run',{move:cur,arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;

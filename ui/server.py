@@ -135,6 +135,17 @@ def api(handler, path, body):
         if p: j["stopped"] = True; p.terminate(); return {"ok": True}
         return {"error": "not running"}
     if path == "/api/abort": return daemon("/abort", {"arm": body.get("arm", "A")}, timeout=5)
+    if path == "/api/run_both":
+        ensure_daemon()
+        def go():
+            j = start_job("arm", f"BOTH  A:{body['moveA']}  B:{body['moveB']}  x{body.get('scale', 0.5)}", ["true"], ARM)
+            try:
+                r = daemon("/play_both", {"moveA": body["moveA"], "moveB": body["moveB"], "scale": body.get("scale", 0.5)}, timeout=180)
+                open(j["log"], "a").write(json.dumps(r) + "\n"); j["status"] = "done" if r.get("ok") else "failed"
+            except Exception as e:
+                open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)
