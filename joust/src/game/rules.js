@@ -33,9 +33,13 @@ export function emptyStatus() {
   return { exposed: 0, staggered: 0, riposte: 0, windup: 0, parry: 0, flourish: 0, voltage: 0, counter: 0, fired: 0 };
 }
 
-function covers(block, line) {
+function covers(block, line, attack = null) {
   if (!block.blocks) return false;
-  return line === 'any' ? false : block.blocks.includes(line);
+  if (line === 'any' || !block.blocks.includes(line)) return false;
+  // a side guard (blocks.sides) meets only the sweep that comes from its own side; a slash from the other
+  // side goes past it exactly as a wrong-line guard would
+  if (block.sides && attack && attack.side && !block.sides.includes(attack.side)) return false;
+  return true;
 }
 
 // Damage an attacker's card deals right now, consuming its one-shot buffs.
@@ -173,7 +177,7 @@ export function resolveBeat(cardA, cardB, statusA, statusB) {
   } else if ((tA === 'attack' && tB === 'block') || (tB === 'attack' && tA === 'block')) {
     const atk = tA === 'attack' ? 'a' : 'b', def = other(atk);
     const ac = played[atk], bc = played[def];
-    if (!ac.unblockable && covers(bc, ac.line)) {
+    if (!ac.unblockable && covers(bc, ac.line, ac)) {
       kind = 'blocked';
       events.push({ type: 'blocked', attacker: atk, blocker: def, line: ac.line, parry: !!bc.parry });
       if (bc.parry) { st[def].parry = 1; events.push({ type: 'parry_set', side: def }); }

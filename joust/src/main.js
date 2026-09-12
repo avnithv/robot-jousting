@@ -55,6 +55,8 @@ async function main() {
   // The strip keeps its buttons as shortcuts; the drawer holds everything, including these four. Both call
   // the same applyPref, so a toggle in one place lights up in the other.
   const params = new URLSearchParams(location.search); let hwMode = params.get('hw') === 'live' ? 'live' : 'sim';
+  if (params.get('mode') === 'simple') settings.set('simple', true);       // ?mode=simple: the simple duel (persists like any host setting)
+  else if (params.get('mode') === 'full') settings.set('simple', false);
   const prefBtn = name => document.querySelector(`#settings [data-pref="${name}"]`);
   const applyPref = (name, on) => {
     initAudio(); setPref(name, on);
@@ -137,7 +139,7 @@ async function main() {
     let fight = 0; let showTutorial = tutorial;
     // Counters are a run resource, not a deck card: you start the run holding as many as the host set, a
     // counter that fires is gone, and losing a fight hands you one more for the next attempt.
-    let counters = settings.get('countersA');
+    let counters = settings.get('simple') ? 0 : settings.get('countersA');   // the simple duel has no counters
     let quit = false;
     // The opening / finishing pose picks: the host panel and the versus screen set the same two settings.
     while (fight < LADDER.length && !quit) {

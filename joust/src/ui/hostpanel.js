@@ -302,6 +302,15 @@ export class HostPanel {
     const box = this.box.settings; box.innerHTML = '';
     const S = settings.all();
 
+    const sd = this.row(box, 'Simple duel', 'one of every move in hand each turn; each beat is its own pass: apart, charge in, disentangle, apart. No counters, no rail.');
+    this.sw(sd, S.simple, v => settings.set('simple', v));
+    const as = this.row(box, 'Arm speed', 'simple duel on live arms: how fast each pass plays, percent of full speed');
+    const asl = el('input', 'hdslider', as); asl.type = 'range';
+    asl.min = String(settings.ARM_SCALE_RANGE[0]); asl.max = String(settings.ARM_SCALE_RANGE[1]); asl.step = '10'; asl.value = String(S.armScale);
+    const asv = el('div', 'hdval', as, S.armScale + ' %');
+    asl.oninput = () => { asv.textContent = asl.value + ' %'; };
+    asl.onchange = () => settings.set('armScale', +asl.value);
+
     const hpA = this.row(box, 'Red starting HP', `${settings.HP_RANGE[0]}–${settings.HP_RANGE[1]}`);
     this.stepper(hpA, S.hpA, settings.HP_RANGE, v => settings.set('hpA', v));
     const hpB = this.row(box, 'Blue starting HP', 'the campaign uses the opponent’s own number until you touch this');

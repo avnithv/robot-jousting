@@ -149,7 +149,7 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
         Qr = Q.copy(); Qr[:, 4] += tune.ROLL_OFFSET; keys_r = [np.array(k) + np.array([0, 0, 0, 0, tune.ROLL_OFFSET, 0]) for k in keys]
         tuned[name] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in r] for r in Qr], "roll_offset": tune.ROLL_OFFSET, "arm": arm, "joints": JOINTS,
                        "keys": [[round(float(x), 1) for x in k] for k in keys_r], "key_times": [round(float(x), 2) for x in times], "chain": moves, "beats": beats, "seed": seed}
-        json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN)
+        json.dump(tuned, open(OUT + ".tmp", "w")); os.replace(OUT + ".tmp", OUT); fcntl.flock(lock, fcntl.LOCK_UN)   # atomic: a reader never sees a half-written file
     return ts, Q, beats, stretches
 
 def pair_stops(ours, theirs):

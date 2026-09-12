@@ -34,5 +34,540 @@
   ],
   "speed": 0.12,
   "when": "2026-09-12 14:55"
+ },
+ "A:ATTACK_LOW_LR|B:BLOCK_LEFT": {
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "BLOCK_LEFT",
+  "stopped": true,
+  "stop_frac": 0.578,
+  "stop_pose_real": [
+   5.7,
+   51.0,
+   2.3,
+   -58.5,
+   161.9,
+   4.7
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:02"
+ },
+ "A:ATTACK_HIGH|B:BLOCK_MIDDLE": {
+  "attacker": "A",
+  "attack": "ATTACK_HIGH",
+  "defender": "B",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": false,
+  "stop_frac": 1.0,
+  "stop_pose_real": [
+   0.0,
+   -11.6,
+   -32.0,
+   61.0,
+   76.0,
+   9.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:02"
+ },
+ "A:ATTACK_HIGH|B:FEINT_HIGH": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_HIGH",
+  "defender": "B",
+  "defender_move": "FEINT_HIGH",
+  "stopped": true,
+  "stop_frac": 0.416,
+  "press_frac": 0.446,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.0,
+   -16.2,
+   -32.0,
+   52.0,
+   76.0,
+   16.4
+  ],
+  "stop_pose_real_B": [
+   0.0,
+   -19.4,
+   -32.0,
+   35.6,
+   -88.9,
+   42.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:50"
+ },
+ "A:ATTACK_LOW_LR|B:BLOCK_MIDDLE": {
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": true,
+  "stop_frac": 0.466,
+  "press_frac": 0.496,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.2,
+   49.2,
+   8.9,
+   -60.4,
+   161.8,
+   16.3
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:48"
+ },
+ "A:ATTACK_LOW_RL|B:FEINT_RIGHT": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "B",
+  "defender_move": "FEINT_RIGHT",
+  "stopped": true,
+  "stop_frac": 0.346,
+  "press_frac": 0.376,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   9.4,
+   45.9,
+   20.4,
+   -63.7,
+   -9.7,
+   36.6
+  ],
+  "stop_pose_real_B": [
+   6.2,
+   47.0,
+   16.5,
+   -62.7,
+   -174.7,
+   31.5
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:49"
+ },
+ "A:ATTACK_LOW_RL|B:BLOCK_RIGHT": {
+  "attacker": "A",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "B",
+  "defender_move": "BLOCK_RIGHT",
+  "stopped": true,
+  "stop_frac": 0.506,
+  "press_frac": 0.536,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -2.8,
+   50.0,
+   5.8,
+   -59.5,
+   -9.9,
+   10.9
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:50"
+ },
+ "A:ATTACK_LOW_RL|B:BLOCK_MIDDLE": {
+  "attacker": "A",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "B",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": true,
+  "stop_frac": 0.487,
+  "press_frac": 0.517,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -1.6,
+   49.7,
+   7.2,
+   -59.9,
+   -9.9,
+   13.3
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:50"
+ },
+ "A:FEINT_HIGH|B:ATTACK_HIGH": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "FEINT_HIGH",
+  "defender": "B",
+  "defender_move": "ATTACK_HIGH",
+  "stopped": true,
+  "stop_frac": 0.423,
+  "press_frac": 0.453,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.0,
+   -19.5,
+   -32.0,
+   35.2,
+   76.0,
+   37.0
+  ],
+  "stop_pose_real_B": [
+   0.0,
+   -15.4,
+   -32.0,
+   53.5,
+   -88.9,
+   25.9
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:50"
+ },
+ "A:ATTACK_HIGH|B:ATTACK_HIGH": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_HIGH",
+  "defender": "B",
+  "defender_move": "ATTACK_HIGH",
+  "stopped": true,
+  "stop_frac": 0.413,
+  "press_frac": 0.443,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.0,
+   -16.5,
+   -32.0,
+   51.4,
+   76.0,
+   16.8
+  ],
+  "stop_pose_real_B": [
+   0.0,
+   -16.5,
+   -32.0,
+   51.4,
+   -88.9,
+   27.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:50"
+ },
+ "A:ATTACK_LOW_LR|B:ATTACK_LOW_LR": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_LR",
+  "stopped": true,
+  "stop_frac": 0.527,
+  "press_frac": 0.557,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   3.9,
+   50.4,
+   4.5,
+   -59.1,
+   161.9,
+   8.5
+  ],
+  "stop_pose_real_B": [
+   3.9,
+   50.4,
+   4.5,
+   -59.1,
+   -3.0,
+   23.4
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:51"
+ },
+ "A:ATTACK_LOW_RL|B:ATTACK_LOW_LR": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_LR",
+  "stopped": true,
+  "stop_frac": 0.279,
+  "press_frac": 0.309,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   14.5,
+   44.2,
+   26.5,
+   -65.5,
+   -9.6,
+   47.3
+  ],
+  "stop_pose_real_B": [
+   -14.5,
+   44.2,
+   26.5,
+   -65.5,
+   -3.3,
+   49.7
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:51"
+ },
+ "A:FEINT_LEFT|B:ATTACK_LOW_LR": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "FEINT_LEFT",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_LR",
+  "stopped": true,
+  "stop_frac": 0.589,
+  "press_frac": 0.619,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -9.0,
+   46.0,
+   19.9,
+   -64.2,
+   161.7,
+   32.8
+  ],
+  "stop_pose_real_B": [
+   5.9,
+   51.1,
+   2.1,
+   -58.4,
+   -3.0,
+   20.5
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:52"
+ },
+ "A:ATTACK_LOW_LR|B:ATTACK_LOW_RL": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_RL",
+  "stopped": true,
+  "stop_frac": 0.189,
+  "press_frac": 0.219,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -19.0,
+   43.0,
+   31.8,
+   -67.2,
+   161.8,
+   56.7
+  ],
+  "stop_pose_real_B": [
+   19.0,
+   42.9,
+   31.8,
+   -67.2,
+   -174.7,
+   42.7
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 15:52"
+ },
+ "A:ATTACK_LOW_LR|B:FEINT_LEFT": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "FEINT_LEFT",
+  "stopped": true,
+  "stop_frac": 0.222,
+  "press_frac": 0.252,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -17.8,
+   43.1,
+   30.4,
+   -66.7,
+   161.6,
+   54.2
+  ],
+  "stop_pose_real_B": [
+   -7.5,
+   47.1,
+   18.0,
+   -63.3,
+   -2.8,
+   40.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:02"
+ },
+ "A:ATTACK_LOW_RL|B:ATTACK_LOW_RL": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_RL",
+  "stopped": true,
+  "stop_frac": 0.508,
+  "press_frac": 0.538,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -2.9,
+   50.1,
+   5.7,
+   -59.4,
+   -9.9,
+   10.7
+  ],
+  "stop_pose_real_B": [
+   -2.9,
+   50.1,
+   5.7,
+   -59.4,
+   -174.8,
+   23.4
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:02"
+ },
+ "A:FEINT_RIGHT|B:ATTACK_LOW_RL": {
+  "mode": "clash",
+  "attacker": "A",
+  "attack": "FEINT_RIGHT",
+  "defender": "B",
+  "defender_move": "ATTACK_LOW_RL",
+  "stopped": false,
+  "stop_frac": 1.0,
+  "press_frac": 1.0,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   14.6,
+   44.1,
+   26.6,
+   -65.6,
+   -9.6,
+   37.0
+  ],
+  "stop_pose_real_B": [
+   -0.9,
+   49.4,
+   8.2,
+   -60.1,
+   -174.7,
+   25.2
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:02"
+ },
+ "B:ATTACK_HIGH|A:BLOCK_HIGH": {
+  "attacker": "B",
+  "attack": "ATTACK_HIGH",
+  "defender": "A",
+  "defender_move": "BLOCK_HIGH",
+  "stopped": true,
+  "stop_frac": 0.448,
+  "press_frac": 0.478,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.0,
+   -13.0,
+   -32.0,
+   58.2,
+   -88.9,
+   23.5
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:04"
+ },
+ "B:ATTACK_LOW_LR|A:BLOCK_LEFT": {
+  "attacker": "B",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "A",
+  "defender_move": "BLOCK_LEFT",
+  "stopped": true,
+  "stop_frac": 0.563,
+  "press_frac": 0.593,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   5.3,
+   50.9,
+   2.8,
+   -58.6,
+   -3.0,
+   21.4
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:04"
+ },
+ "B:ATTACK_LOW_LR|A:BLOCK_MIDDLE": {
+  "attacker": "B",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "A",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": true,
+  "stop_frac": 0.515,
+  "press_frac": 0.545,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   3.4,
+   50.2,
+   5.2,
+   -59.3,
+   -3.0,
+   24.2
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:09"
+ },
+ "B:ATTACK_LOW_RL|A:BLOCK_RIGHT": {
+  "attacker": "B",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "A",
+  "defender_move": "BLOCK_RIGHT",
+  "stopped": true,
+  "stop_frac": 0.571,
+  "press_frac": 0.601,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -5.6,
+   51.0,
+   2.6,
+   -58.5,
+   -174.8,
+   21.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:14"
+ },
+ "B:ATTACK_HIGH|A:BLOCK_MIDDLE": {
+  "attacker": "B",
+  "attack": "ATTACK_HIGH",
+  "defender": "A",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": false,
+  "stop_frac": 1.0,
+  "press_frac": 1.0,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   0.0,
+   -11.6,
+   -32.0,
+   61.0,
+   -88.9,
+   22.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:15"
+ },
+ "B:ATTACK_LOW_RL|A:BLOCK_MIDDLE": {
+  "attacker": "B",
+  "attack": "ATTACK_LOW_RL",
+  "defender": "A",
+  "defender_move": "BLOCK_MIDDLE",
+  "stopped": true,
+  "stop_frac": 0.56,
+  "press_frac": 0.59,
+  "backoff": 0.03,
+  "stop_pose_real": [
+   -5.3,
+   50.9,
+   2.9,
+   -58.6,
+   -174.8,
+   21.3
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 16:15"
  }
 }

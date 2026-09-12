@@ -1,0 +1,16 @@
+{
+ "_doc": "A scripted duel that looks like real play: the charge-in and salute, then ten passes. Each pass is one beat of the simple duel (carriages apart -> charge in with both moves starting as the carriages leave -> the arms pull back and rest -> carriages apart). Every contact pass is a pair with a saved calibration in sim/contact_stops.json; the others are misses by design (docs/collision_intent.md). Run with arm/duel_sequence.py.",
+ "opener": {"a": "SALUTE", "b": "SALUTE", "note": "charge in together, then both salute: blade up, then levelled at each other"},
+ "passes": [
+  {"a": "ATTACK_HIGH",   "b": "BLOCK_HIGH",    "note": "A opens with the overhead chop; B takes it on the level bar (blocked, riposte for B)",   "contact": "A:ATTACK_HIGH|B:BLOCK_HIGH"},
+  {"a": "BLOCK_HIGH",    "b": "ATTACK_HIGH",   "note": "B answers in kind: chop on A's bar (blocked)",                                          "contact": "B:ATTACK_HIGH|A:BLOCK_HIGH"},
+  {"a": "FEINT_HIGH",    "b": "BLOCK_HIGH",    "note": "A fakes the chop; B's guard is exposed (no contact)",                                    "contact": null},
+  {"a": "ATTACK_LOW_LR", "b": "BLOCK_HIGH",    "note": "A goes low while B is still guarding high: the slash lands (wrong guard, no contact)",   "contact": null},
+  {"a": "BLOCK_RIGHT",   "b": "ATTACK_LOW_RL", "note": "B's backhand sweep, stopped by A's right-side hanging guard",                             "contact": "B:ATTACK_LOW_RL|A:BLOCK_RIGHT"},
+  {"a": "ATTACK_HIGH",   "b": "ATTACK_HIGH",   "note": "both chop at once: the high bind, blades crossed above the centre (clash)",              "contact": "A:ATTACK_HIGH|B:ATTACK_HIGH"},
+  {"a": "FEINT_LEFT",    "b": "ATTACK_LOW_LR", "note": "A's low feint is caught by B's real sweep (feint punished)",                             "contact": "A:FEINT_LEFT|B:ATTACK_LOW_LR"},
+  {"a": "ATTACK_LOW_LR", "b": "ATTACK_LOW_RL", "note": "two sweeps from opposite sides end crossed in an X ahead of the hilts (clash)",          "contact": "A:ATTACK_LOW_LR|B:ATTACK_LOW_RL"},
+  {"a": "BLOCK_MIDDLE",  "b": "ATTACK_HIGH",   "note": "B chops over A's low guard: the tip taps A's sword hand (wrong guard)",                  "contact": "B:ATTACK_HIGH|A:BLOCK_MIDDLE"},
+  {"a": "ATTACK_LOW_RL", "b": "FEINT_RIGHT",   "note": "the finisher: B feints, A's backhand sweep catches the cocked blade (feint punished)",   "contact": "A:ATTACK_LOW_RL|B:FEINT_RIGHT"}
+ ]
+}

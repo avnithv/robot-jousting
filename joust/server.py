@@ -26,6 +26,10 @@ caller watches GET /api/job?id=... for its `phase`, `steps` and `status`. Nothin
   POST /api/charge   {"feed": mm/min}             -> queued; carriages to the `together` stop (the charge)
   POST /api/retreat  {"feed": mm/min}             -> queued; carriages back to the `apart` stop (the return)
   POST /api/play     {"side": "a"|"b", "move": "ATTACK_HIGH", "scale": 1.0}  -> queued (non-blocking)
+  POST /api/beat_cycle {"ours": [move], "theirs": [move], "scale": 0.7}      -> queued; the simple duel's pass for one
+                                                     beat: compile the pair (calibrated stop applied), carriages
+                                                     apart -> charge in with both moves playing -> arms rest ->
+                                                     carriages apart. `beats` carries the compiled beat.
   POST /api/exchange {"ours": [..3 moves..], "theirs": [..3 moves..]}         -> queued; builds + plays both chains.
                                                      The job carries `beats` -- the compiler's REAL beat
                                                      boundaries, which are not three equal 1.4 s beats.
@@ -337,13 +341,12 @@ def chain_beats():
 
 CHAIN_CACHE = {"key": None}
 
-def exchange(ours, theirs, job=None):
-    """One turn on the metal. With JOUST_REPO set the two three-move chains are compiled TOGETHER (so the
-    beats line up and the pair is collision-checked) and played as one motion each; otherwise it is one beat
-    at a time. The compile is the slow part -- about 9 s for a pair on this machine -- so the job reports
-    `compiling` then `playing`, and an identical pair is not compiled twice."""
+def compile_pair(ours, theirs, job=None):
+    """Build CHAIN_A / CHAIN_B for these two move lists with sim/chain.py (connectors, the calibrated contact
+    stops from sim/contact_stops.json, the blade-distance check) and put the compiler's beat schedule on the
+    job. An identical pair is not compiled twice."""
     note = (lambda phase, text: step(job, phase, text)) if job is not None else (lambda phase, text: None)
-    if REPO and os.path.isdir(os.path.join(REPO, "sim")):
+    if True:
         key = (tuple(ours), tuple(theirs))
         if CHAIN_CACHE.get("key") != key:
             note("compiling", "sim/chain.py is building CHAIN_A and CHAIN_B (connectors, flourishes, pair check)")
@@ -353,6 +356,9 @@ def exchange(ours, theirs, job=None):
             # is the gap between a player locking in and the arms moving, so it is dead screen time.
             cmd = [py, "chain.py", "pair", *[m for m in ours if m], "--", *[m for m in theirs if m], "--no-render"]
             r = subprocess.run(cmd, cwd=os.path.join(REPO, "sim"), capture_output=True, text=True, timeout=300)
+            if r.returncode != 0 and "JSONDecodeError" in (r.stderr or ""):   # a torn read of the motion file while another tool was saving it: once more
+                note("compiling", "the motion file was being rewritten by another tool, compiling again")
+                r = subprocess.run(cmd, cwd=os.path.join(REPO, "sim"), capture_output=True, text=True, timeout=300)
             if r.returncode != 0:
                 CHAIN_CACHE["key"] = None
                 raise RuntimeError("chain build failed: " + r.stdout[-800:] + r.stderr[-800:])
@@ -381,6 +387,16 @@ def exchange(ours, theirs, job=None):
             job["lead"] = round(max(ta.get("lead", 0.35), tb.get("lead", 0.35)), 3)
             job["tail"] = round(max(ta.get("hold", 0) + ta.get("ret", 0), tb.get("hold", 0) + tb.get("ret", 0)), 3)
             job["source"] = "compiled"
+        return beats
+
+def exchange(ours, theirs, job=None):
+    """One turn on the metal. With JOUST_REPO set the two three-move chains are compiled TOGETHER (so the
+    beats line up and the pair is collision-checked) and played as one motion each; otherwise it is one beat
+    at a time. The compile is the slow part -- about 9 s for a pair on this machine -- so the job reports
+    `compiling` then `playing`, and an identical pair is not compiled twice."""
+    note = (lambda phase, text: step(job, phase, text)) if job is not None else (lambda phase, text: None)
+    if REPO and os.path.isdir(os.path.join(REPO, "sim")):
+        beats = compile_pair(ours, theirs, job)
         note("playing", "both arms play their compiled chain, started together"
              + (f" ({len(beats)} beats, {beats[-1]['end']:.2f} s)" if beats else ""))
         return play_both("CHAIN_A", "CHAIN_B")
@@ -404,6 +420,31 @@ def exchange(ours, theirs, job=None):
             job["done_beats"] = i + 1
             step(job, "playing", f"beat {i + 1} of {len(ours)} done on both arms")
     return out
+
+def beat_cycle(ours, theirs, scale, job):
+    """The simple duel's pass for ONE beat: compile this beat's pair (its calibrated contact stop applied),
+    make sure the carriages are apart and the arms at rest, then the daemon's turn routine with `overlap`:
+    the two moves start the instant the charge-in is sent, the arms hold, pull back and rest, and the
+    carriages back out to the apart stop. One blocking call on the daemon; the job reports `compiling`,
+    `apart` (only when the carriages had to be parked first), `charging`, `done`."""
+    if not (REPO and os.path.isdir(os.path.join(REPO, "sim"))):
+        raise RuntimeError("a simple-duel pass needs JOUST_REPO: the pair is compiled with sim/chain.py")
+    compile_pair(ours, theirs, job)
+    st = daemon("a", "/status", timeout=8)
+    if st.get("offline"): raise RuntimeError("the arm daemon is not answering")
+    g = gantry_state(st)
+    if not g.get("homed"): raise RuntimeError("gantry not referenced: Prepare arms first")
+    ap = gantry_stop("apart")
+    if g.get("x") is None or abs(g["x"] - ap["X"]) > 2 or abs(g["y"] - ap["Y"]) > 2:
+        carriages(job, "apart")                       # a pass starts from apart; the daemon's /turn also checks
+    step(job, "charging", f"charge in; {' '.join(ours)} vs {' '.join(theirs)} start as the carriages leave, then disentangle and back out")
+    r = daemon("a", "/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": float(scale), "overlap": True, "salute": False, "apart_after": True}, timeout=300)
+    bad = failed(r, "turn")
+    if bad: raise RuntimeError(bad)
+    ok, g = gantry_settled(where=ap)
+    if not ok: raise RuntimeError(f"carriages never settled apart after the pass (last: {json.dumps(g)})")
+    step(job, "done", f"pass over: arms at rest, carriages apart at X={g.get('x')} Y={g.get('y')}")
+    return {**r, "gantry": g}
 
 def emote_moves(scene, swap):
     """Which motion each arm plays for a two-arm scene, and why.
@@ -470,8 +511,13 @@ def gantry_settled(timeout=90, where=None, tol=2.0):
     return False, g
 
 def gantry_stop(op):
-    """Where `together` and `apart` actually are, read from the daemon's own reply if it tells us."""
-    return {"together": {"X": 0.0, "Y": 0.0}, "apart": {"X": 195.0, "Y": 195.0}}.get(op)
+    """Where `together` and `apart` actually are: arm/arms.json's gantry block, which is what the daemon
+    drives to (together is a few mm short of the switches on this rig, not 0). Defaults if it is unreadable."""
+    try:
+        cfg = json.load(open(os.path.join(os.path.dirname(tuned_path()), "arms.json")))["gantry"][op]
+        return {"X": float(cfg["X"]), "Y": float(cfg["Y"])}
+    except Exception:
+        return {"together": {"X": 0.0, "Y": 0.0}, "apart": {"X": 195.0, "Y": 195.0}}.get(op)
 
 def carriages(job, op, feed=None):
     """The charge and the retreat. `together` is the 19.5 in stop where the blades can actually meet;
@@ -526,6 +572,10 @@ def api(path, body, query=None):
         ours, theirs = body.get("ours", []), body.get("theirs", [])
         return log("exchange", " ".join(map(str, ours)) + " vs " + " ".join(map(str, theirs)),
                    lambda job: exchange(ours, theirs, job))
+    if path == "/api/beat_cycle":
+        ours, theirs = body.get("ours", []), body.get("theirs", []); scale = float(body.get("scale", 0.7))
+        return log("beat_cycle", f"pass: {' '.join(map(str, ours))} vs {' '.join(map(str, theirs))} x{scale}",
+                   lambda job: beat_cycle(ours, theirs, scale, job))
     if path == "/api/prepare":
         return log("prepare", "prepare the hardware for a live fight", prepare_hw)
     if path == "/api/charge":

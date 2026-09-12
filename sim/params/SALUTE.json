@@ -1,12 +1,12 @@
 {
- "_doc": "Flair state: hand high in front, sword vertical. Salute, twirls, taunts. Joints are in this arm's REAL degrees (roll = sim roll + this arm's sword-on-top value).",
+ "_doc": "Salute in two keys: blade straight up in front of the face (via), then levelled at the opponent, raised ~30 deg so two facing tips stay ~0.23 m from their own bases. Joints are in this arm's REAL degrees (roll = sim roll + this arm's sword-on-top value).",
  "joints": {
   "pan": 0,
-  "lift": -40,
-  "elbow": -25,
-  "wrist": -15,
-  "roll": 76.0,
-  "jaw": 0
+  "lift": -81.6,
+  "elbow": -5.9,
+  "wrist": 63.8,
+  "jaw": 0,
+  "roll": 76.0
  },
  "t_move": 0.6,
  "t_hold": 0.4,
@@ -18,6 +18,28 @@
   "joints.roll": "wrist roll in real degrees",
   "joints.jaw": "jaw 0..100",
   "t_move": "seconds: rest -> this state",
-  "t_hold": "seconds held"
+  "t_hold": "seconds held",
+  "via.*": "the first key: blade straight up (same joint meanings as joints.*)",
+  "t_via": "seconds: from the raised blade to the levelled one",
+  "captured.end": "pose captured from arm A (real degrees). Delete the entry to go back to the computed pose."
+ },
+ "via": {
+  "pan": 0,
+  "lift": -40,
+  "elbow": -25,
+  "wrist": -15,
+  "roll": 76.0,
+  "jaw": 0
+ },
+ "t_via": 0.5,
+ "captured": {
+  "end": [
+   0.8,
+   -91.3,
+   -6.8,
+   106.5,
+   76.4,
+   2.5
+  ]
  }
 }

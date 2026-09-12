@@ -12,12 +12,12 @@ export const CARDS = {
     text: 'Deal 4 on the HIGH line.', flavor: 'Raise it tall, bring it down.',
   },
   slash_l: {
-    id: 'slash_l', name: 'Low Slash', type: 'attack', line: 'low', cost: 1, dmg: 4,
+    id: 'slash_l', name: 'Low Slash', type: 'attack', line: 'low', side: 'l', cost: 1, dmg: 4,
     hw: 'ATTACK_LOW_LR', icon: 'slash',
     text: 'Deal 4 on the LOW line.', flavor: 'A flat sweep at the knees.',
   },
   slash_r: {
-    id: 'slash_r', name: 'Low Slash', type: 'attack', line: 'low', cost: 1, dmg: 4,
+    id: 'slash_r', name: 'Low Slash', type: 'attack', line: 'low', side: 'r', cost: 1, dmg: 4,
     hw: 'ATTACK_LOW_RL', icon: 'slash', mirror: true,
     text: 'Deal 4 on the LOW line.', flavor: 'Backhand. Same knees.',
   },
@@ -32,9 +32,14 @@ export const CARDS = {
     text: 'Meets a guard: the guard is EXPOSED. Meets an attack: you get punished.', flavor: 'Make them flinch.',
   },
   feint_low: {
-    id: 'feint_low', name: 'Low Feint', type: 'feint', line: 'low', cost: 0,
+    id: 'feint_low', name: 'Low Feint', type: 'feint', line: 'low', side: 'l', cost: 0,
     hw: 'FEINT_LEFT', icon: 'feint',
     text: 'Meets a guard: the guard is EXPOSED. Meets an attack: you get punished.', flavor: 'A sweep that stops dead.',
+  },
+  feint_right: {
+    id: 'feint_right', name: 'Low Feint', type: 'feint', line: 'low', side: 'r', cost: 0,
+    hw: 'FEINT_RIGHT', icon: 'feint', mirror: true,
+    text: 'Meets a guard: the guard is EXPOSED. Meets an attack: you get punished.', flavor: 'The backhand that never comes.',
   },
   guard_high: {
     id: 'guard_high', name: 'High Guard', type: 'block', blocks: ['high'], cost: 1,
@@ -44,7 +49,19 @@ export const CARDS = {
   guard_low: {
     id: 'guard_low', name: 'Hanging Guard', type: 'block', blocks: ['low'], cost: 1,
     hw: 'BLOCK_MIDDLE', icon: 'guard_low',
-    text: 'Blocks the LOW line. Stopping an attack gives RIPOSTE: +2 on your next attack.', flavor: 'Blade slanted down across the knees.',
+    text: 'Blocks the LOW line, from either side. Stopping an attack gives RIPOSTE: +2 on your next attack.', flavor: 'Blade slanted down across the knees.',
+  },
+  // The two side guards: a hanging guard set to one side of the body. Each stops only the sweep that comes
+  // from its own side (sim/collision_intent.json: BLOCK_LEFT meets ATTACK_LOW_LR, BLOCK_RIGHT meets ATTACK_LOW_RL).
+  guard_left: {
+    id: 'guard_left', name: 'Left Guard', type: 'block', blocks: ['low'], sides: ['l'], cost: 1,
+    hw: 'BLOCK_LEFT', icon: 'guard_low',
+    text: 'Blocks a LOW slash from the LEFT only. Stopping an attack gives RIPOSTE: +2 on your next attack.', flavor: 'Hanging guard, left side.',
+  },
+  guard_right: {
+    id: 'guard_right', name: 'Right Guard', type: 'block', blocks: ['low'], sides: ['r'], cost: 1,
+    hw: 'BLOCK_RIGHT', icon: 'guard_low', mirror: true,
+    text: 'Blocks a LOW slash from the RIGHT only. Stopping an attack gives RIPOSTE: +2 on your next attack.', flavor: 'Hanging guard, right side.',
   },
   parry_high: {
     id: 'parry_high', name: 'High Parry', type: 'block', blocks: ['high'], cost: 1, parry: true,
@@ -104,6 +121,10 @@ export const COUNTER_ID = 'counter';
 export const STARTER_DECK = ['chop', 'chop', 'slash_l', 'slash_r', 'thrust', 'feint_high', 'feint_low', 'guard_high', 'guard_low', 'rush', 'flourish'];
 
 export const REWARD_POOL = ['thrust', 'parry_high', 'parry_low', 'brace', 'windup', 'chop', 'slash_l', 'feint_high', 'rush', 'flourish', 'guard_high', 'guard_low'];
+
+// The simple duel: no draw pile, no discard, no counters. Every turn both players draft their three beats from
+// one of each physical move the arms know (the ten tuned moves), and each beat is its own pass down the rail.
+export const SIMPLE_DECK = ['chop', 'slash_l', 'slash_r', 'feint_high', 'feint_low', 'feint_right', 'guard_high', 'guard_left', 'guard_right', 'guard_low'];
 
 export const ENERGY_PER_TURN = 3;
 export const BEATS_PER_TURN = 3;

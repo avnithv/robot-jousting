@@ -32,10 +32,20 @@ class Arm:
         if self.robot: self.send(np.array(self.pose())); print(f"arm {name} connected, holding current pose", flush=True)
         else: print(f"arm {name} NOT connected: {self.last}", flush=True)
     def cfg(self): return json.load(open(CFG))[self.name]
+    # The Feetech bus drops the odd packet (a "no status packet" / "port is busy" TxRx error): one lost exchange
+    # in a 50 Hz stream is not a fault, so reads and writes retry a few times before the motion is failed.
+    BUS_TRIES = 4
+    def _bus(self, fn):
+        for i in range(self.BUS_TRIES):
+            try:
+                with self.io: return fn()
+            except Exception as e:
+                if i == self.BUS_TRIES - 1 or "TxRxResult" not in str(e): raise
+                time.sleep(0.02)
     def pose(self):
-        with self.io: return read_pose(self.robot)
+        return self._bus(lambda: read_pose(self.robot))
     def send(self, q):
-        with self.io: self.robot.send_action({f"{j}.pos": float(q[k]) for k, j in enumerate(JOINTS)})
+        self._bus(lambda: self.robot.send_action({f"{j}.pos": float(q[k]) for k, j in enumerate(JOINTS)}))
     def set_torque(self, on):
         with self.io: (self.robot.bus.enable_torque() if on else self.robot.bus.disable_torque())
         self.torque = on

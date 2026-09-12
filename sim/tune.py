@@ -158,7 +158,13 @@ def state_pose(name):
 
 def recipe(name):
     P = PARAMS[name]
-    if name in STATES: k = state_pose(name); return [(REST, 0), (k, P.get("t_move", 0.6)), (k, P.get("t_hold", 0.4))]
+    if name in STATES:
+        k = state_pose(name); rec = [(REST, 0)]
+        if "via" in P:   # an intermediate key on the way in (the salute: blade straight up, then levelled at the opponent)
+            v = P["via"]; via = np.array([v["pan"], v["lift"], v["elbow"], v["wrist"], v["roll"], v["jaw"]], float); via[4] -= ROLL_OFFSET
+            rec.append((via, P.get("t_move", 0.6))); rec.append((k, P.get("t_via", 0.5)))
+        else: rec.append((k, P.get("t_move", 0.6)))
+        return rec + [(k, P.get("t_hold", 0.4))]
     if name == "REST":
         r = cap(P, "end") if cap(P, "end") is not None else REST; return [(r, 0), (r, 0.5)]
     if "mirror_of" in P: return attack_low(PARAMS[P["mirror_of"]], mirror=True)
@@ -207,7 +213,7 @@ def generate(name, render=True, arm="A"):
     Qr = Q.copy(); Qr[:, 4] += ROLL_OFFSET; keys_r = [np.array(k) + np.array([0, 0, 0, 0, ROLL_OFFSET, 0]) for k in keys]
     tuned[label] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in row] for row in Qr], "roll_offset": ROLL_OFFSET, "arm": arm,
                    "joints": JOINTS, "keys": [[round(float(x), 1) for x in k] for k in keys_r], "key_times": [round(float(x), 2) for x in times], "params": PARAMS[name]}
-    json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN); print(f"  saved {label}: {ts[-1]:.2f}s")
+    json.dump(tuned, open(OUT + ".tmp", "w")); os.replace(OUT + ".tmp", OUT); fcntl.flock(lock, fcntl.LOCK_UN); print(f"  saved {label}: {ts[-1]:.2f}s")   # atomic replace
     if render: replay(label, ts, Q)
 
 if __name__ == "__main__":

@@ -56,6 +56,34 @@ Each beat resolves **after** its animation: both arms swing, the hardware (or th
 over, and only then do that beat's two cards turn over together, followed by the outcome word. The impact
 effects — damage numbers, shakes, stamps, the crowd — stay at the impact instant inside the swing.
 
+## The simple duel
+
+Host Controls → Settings → **Simple duel** (or open the screen with `?mode=simple`; `?mode=full` switches back).
+The rules and the rail are the same, the *shape* of a turn is not:
+
+- **One of every move, every turn.** No draw pile, no discard, no counters, no reward cards. Both sides
+  hold the ten moves the arms know — Overhead Chop, the two Low Slashes, High / Low / backhand Low Feint,
+  High Guard, Left Guard, Right Guard, Hanging Guard — and draft three into the beats (3 energy, as before).
+  Playing a move does not use it up for the next turn. Each card is one of a kind, so a chain cannot repeat
+  a move.
+- **Each beat is its own pass.** The carriages start apart; the charge-in begins and *both arms start their
+  moves as the carriages leave*; the blades meet at the calibrated contact point; the arms pull back the way
+  they came and rest; the carriages back out to the apart stop. Then the next beat. Three passes per turn.
+- **Left / Right Guard** are the hanging guard set to one side: each stops only the low slash that comes from
+  its own side (`sim/collision_intent.json`), the Hanging Guard in the middle stops both, and any of them is
+  passed by the chop.
+- **Arm speed** (Settings) is the playback scale of each pass on live arms, 30–100 %. Start at 50 % on a
+  pair you have not seen at full speed.
+
+On hardware a pass is one `POST /api/beat_cycle {ours:[move], theirs:[move], scale}` job: `server.py`
+compiles the one-beat pair with `sim/chain.py` (the pair's calibrated stop from `sim/contact_stops.json` is
+applied, and `closest_cm` / `collision_warning` land on the job), parks the carriages apart if they are
+not, then calls the daemon's `/turn` with `overlap` (the moves start the instant the charge-in is sent,
+no salute, `apart_after`). The job reports `compiling`, `apart`, `charging`, `done`; `ArmBridge.beatCycle`
+resolves `started` at `charging` with the compiled beat loaded, so the screen's beat is sized off the
+compiler's own boundary, and `done` when the job has finished and both arms and the gantry are idle again.
+`match.playTurnSimple` runs the screen's charge, beat and retreat alongside. In sim both are timers.
+
 ## Host controls
 
 The big screen is run by a person standing next to it. The **`⚙ host`** button in the settings strip (top

@@ -18,6 +18,7 @@ export const COUNTER_MARK = '<svg class="countermark" viewBox="0 0 24 24" fill="
 // Card art: the arm doing the move. 'arms2:' = steel-sword action sheet, 'arms:' = the first sheet.
 export const ART = {
   chop: 'arms2:smash', slash_l: 'arms2:twirl', slash_r: 'arms2:twirl', thrust: 'arms2:lunge', feint_high: 'arms2:windup', feint_low: 'arms2:crouch',
+  feint_right: 'arms2:crouch', guard_left: 'arms2:low', guard_right: 'arms2:low',
   guard_high: 'arms2:high', guard_low: 'arms2:low', parry_high: 'arms2:rising', parry_low: 'arms2:rising', brace: 'arms2:crouch', windup: 'arms2:raise', flourish: 'arms2:swing',
   rest: 'arms:rest', stagger: 'arms2:dizzy',
   rush: 'arms2:smash', counter: 'arms2:high',      // no sprites of their own: the chop and the high guard, re-tinted below

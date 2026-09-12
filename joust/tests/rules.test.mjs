@@ -2,8 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveBeat, emptyStatus, RIPOSTE_BONUS, WINDUP_BONUS, CLEAN_HIT_BONUS, FEINT_PUNISH_BONUS, WRONG_GUARD_BONUS, VOLTAGE_MAX } from '../src/game/rules.js';
-import { card, REST, HAND_SIZE, COUNTER_ID } from '../src/game/cards.js';
-import { Deck } from '../src/game/match.js';
+import { card, REST, HAND_SIZE, COUNTER_ID, SIMPLE_DECK } from '../src/game/cards.js';
+import { Deck, SimpleDeck } from '../src/game/match.js';
 
 const S = () => emptyStatus();
 const r = (a, b, sa = S(), sb = S()) => resolveBeat(a && card(a), b && card(b), sa, sb);
@@ -291,4 +291,43 @@ test('the table is symmetric', () => {
       assert.equal(o1.status.a.counter, o2.status.b.counter, `counter ${x} vs ${y}`);
     }
   }
+});
+
+// ---- the simple duel: side guards, the three extra cards, the deck that never runs out ----
+test('a side guard stops the low slash from its own side', () => {
+  const o = r('slash_l', 'guard_left');
+  assert.equal(o.kind, 'blocked'); assert.deepEqual(o.damage, { a: 0, b: 0 }); assert.equal(o.status.b.riposte, 1);
+  assert.equal(r('slash_r', 'guard_right').kind, 'blocked');
+});
+test('a side guard on the wrong side is passed like a wrong-line guard', () => {
+  const o = r('slash_l', 'guard_right');
+  assert.equal(o.kind, 'hit'); assert.equal(o.damage.b, 4 + WRONG_GUARD_BONUS);
+  assert.equal(r('slash_r', 'guard_left').kind, 'hit');
+});
+test('the hanging guard in the middle stops both low slashes', () => {
+  assert.equal(r('slash_l', 'guard_low').kind, 'blocked'); assert.equal(r('slash_r', 'guard_low').kind, 'blocked');
+});
+test('the chop goes over every low guard', () => {
+  for (const g of ['guard_left', 'guard_right', 'guard_low']) assert.equal(r('chop', g).kind, 'hit');
+  assert.equal(r('chop', 'guard_high').kind, 'blocked');
+});
+test('the two low slashes clash, the feints punish and expose as before', () => {
+  assert.equal(r('slash_l', 'slash_r').kind, 'clash');
+  assert.equal(r('slash_r', 'feint_right').kind, 'feint_punished');
+  assert.equal(r('feint_right', 'guard_left').kind, 'feint_exposed');
+});
+test('the simple deck is one card for each of the ten tuned moves', () => {
+  const hw = SIMPLE_DECK.map(id => card(id).hw);
+  assert.equal(new Set(hw).size, 10);
+  assert.deepEqual([...hw].sort(), ['ATTACK_HIGH', 'ATTACK_LOW_LR', 'ATTACK_LOW_RL', 'BLOCK_HIGH', 'BLOCK_LEFT', 'BLOCK_MIDDLE', 'BLOCK_RIGHT', 'FEINT_HIGH', 'FEINT_LEFT', 'FEINT_RIGHT']);
+  for (const id of SIMPLE_DECK) assert.equal(card(id).taught !== false, true, id + ' must be a taught move');
+});
+test('the simple deck never spends, trims or offers a counter', () => {
+  const d = new SimpleDeck();
+  assert.equal(d.drawTo(5).length, SIMPLE_DECK.length);
+  d.spend(['chop', 'chop', 'guard_high']); d.offerCounter(true);
+  assert.deepEqual(d.trimTo(HAND_SIZE), []);
+  assert.deepEqual(d.drawTo(5), SIMPLE_DECK);
+  assert.equal(d.hand.includes(COUNTER_ID), false);
+  assert.equal(Deck.from(d.snapshot()) instanceof SimpleDeck, true);
 });

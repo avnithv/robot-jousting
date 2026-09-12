@@ -225,6 +225,8 @@ class Prepare(unittest.TestCase):
         self.assertIn("hard limit", job["result"])
 
 
+TOG = server.gantry_stop("together"); TX, TY = TOG["X"], TOG["Y"]   # where this rig's together stop really is (arm/arms.json)
+
 def arrived(x, y):
     """A daemon that answers every POST 'ok' and every /status with the gantry Idle at (x, y)."""
     return lambda req: (two_arms({"connected": True, "homed": True, "state": "Idle", "pins": 0, "x": x, "y": y})
@@ -236,14 +238,14 @@ class ChargeAndRetreat(unittest.TestCase):
     back; the phase is not over until the machine is Idle AT the stop, so both are checked."""
 
     def test_charge_drives_the_carriages_together_and_confirms_arrival(self):
-        rec = Recorder(arrived(0.0, 0.0))
+        rec = Recorder(arrived(TX, TY))
         with mock.patch.object(urllib.request, "urlopen", rec):
             job = finish(server.api("/api/charge", {}))
         self.assertEqual(job["status"], "done", job["result"])
         self.assertEqual(rec.paths()[0], "/gantry/together")
         self.assertIn("/status", rec.paths(), "the phase confirms the machine actually settled")
         self.assertEqual(phases(job), ["together", "done"])
-        self.assertIn("Idle at X=0.0", job["steps"][-1]["note"])
+        self.assertIn(f"Idle at X={TX}", job["steps"][-1]["note"])
 
     def test_retreat_drives_them_apart(self):
         rec = Recorder(arrived(195.0, 195.0))
@@ -262,7 +264,7 @@ class ChargeAndRetreat(unittest.TestCase):
         self.assertIn("never settled", job["result"])
 
     def test_a_feed_is_passed_through(self):
-        rec = Recorder(arrived(0.0, 0.0))
+        rec = Recorder(arrived(TX, TY))
         with mock.patch.object(urllib.request, "urlopen", rec):
             finish(server.api("/api/charge", {"feed": 6000}))
         self.assertEqual(rec.sent[0]["body"]["feed"], 6000)
@@ -301,7 +303,7 @@ class DaemonReplies(unittest.TestCase):
         def reply(req, timeout=None):
             if req.get_method() == "GET":
                 return io.BytesIO(json.dumps(two_arms({"connected": True, "homed": True, "state": "Idle",
-                                                       "pins": 0, "x": 0.0, "y": 0.0})).encode())
+                                                       "pins": 0, "x": TX, "y": TY})).encode())
             calls.append(req.full_url)
             if len([c for c in calls if c.endswith("together")]) == 1:
                 raise urllib.error.HTTPError(req.full_url, 409, "Conflict", {},
@@ -412,7 +414,8 @@ class LiveBeatLength(unittest.TestCase):
 
     def test_an_attack_beat_is_far_longer_than_the_nominal_beat(self):
         t = server.move_timing("ATTACK_HIGH", "A")
-        self.assertAlmostEqual(t["motion"], 1.26, places=2, msg="the trajectory itself")
+        traj = float(server.tuned_json()["ATTACK_HIGH"]["t"][-1])   # the library's own trajectory length (1.26 s before the pause and retract were added)
+        self.assertAlmostEqual(t["motion"], traj, places=2, msg="the trajectory itself")
         self.assertGreater(t["total"], 4.0, "...but the arm is busy for more than three times that")
         self.assertEqual(t["hold"], 1.5)
         self.assertAlmostEqual(t["total"], t["lead"] + t["motion"] + t["hold"] + t["ret"], places=3)

@@ -28,11 +28,14 @@ export const DEFAULTS = {
   tells: true,                   // campaign: show the opponent's pre-lock twitch (and Marla's read of it)
   chatter: true,                 // campaign: Marla's dialogue at all
   autoForfeit: 0,                // phone duel: forfeit a side after N missed plan timers, 0 = off
+  simple: false,                 // the simple duel: every move in hand each turn, one charge pass per beat
+  armScale: 70,                  // simple duel on live arms: playback speed of each pass, percent of full
 };
+export const ARM_SCALE_RANGE = [30, 100];
 
-const NUM = { hpA: HP_RANGE, hpB: HP_RANGE, countersA: COUNTER_RANGE, countersB: COUNTER_RANGE, beatMs: [1000, 2500] };
+const NUM = { hpA: HP_RANGE, hpB: HP_RANGE, countersA: COUNTER_RANGE, countersB: COUNTER_RANGE, beatMs: [1000, 2500], armScale: ARM_SCALE_RANGE };
 const ONE_OF = { planTimer: PLAN_TIMERS, autoForfeit: FORFEIT_AFTER };
-const BOOL = ['tells', 'chatter', 'hpBSet'];
+const BOOL = ['tells', 'chatter', 'hpBSet', 'simple'];
 
 const clamp = (v, [lo, hi]) => Math.max(lo, Math.min(hi, v));
 

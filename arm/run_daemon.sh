@@ -15,7 +15,11 @@
 #     looks like a hardware fault. This refuses to start a second.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PY="${LEROBOT_PYTHON:-$HOME/anaconda3/envs/lerobot/bin/python}"
+PY="${LEROBOT_PYTHON:-}"
+if [ -z "$PY" ]; then   # whichever lerobot env this machine has
+  for cand in "$HOME/so-arm/.venv/bin/python" "$HOME/anaconda3/envs/lerobot/bin/python"; do [ -x "$cand" ] && PY="$cand" && break; done
+  PY="${PY:-$HOME/anaconda3/envs/lerobot/bin/python}"
+fi
 LOG="$HERE/daemon.log"
 PIDFILE="$HERE/.daemon.pid"
 PORT="${ARM_DAEMON_PORT:-8766}"

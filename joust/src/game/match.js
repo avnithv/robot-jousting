@@ -1,6 +1,6 @@
 // One fight: decks, hands, the turn loop (plan, charge, exchange beat by beat, return), and the
 // orchestration of stage / table / dialogue / bridge / audio around the pure rules.
-import { card, REST, STAGGER, STARTER_DECK, COUNTER_ID, HAND_SIZE, ENERGY_PER_TURN, BEATS_PER_TURN } from './cards.js';
+import { card, REST, STAGGER, STARTER_DECK, SIMPLE_DECK, COUNTER_ID, HAND_SIZE, ENERGY_PER_TURN, BEATS_PER_TURN } from './cards.js';
 import { resolveBeat, emptyStatus } from './rules.js';
 import { chooseChain, tellFor } from './ai.js';
 import { MARLA, pick } from './script.js';
@@ -66,7 +66,19 @@ export class Deck {
   /** The three piles, for the host snapshot (src/net/snapshot.js). */
   snapshot() { return { draw: [...this.draw], discard: [...this.discard], hand: [...this.hand] }; }
   /** Rebuild a deck exactly as it was: no reshuffle, so a resumed planning phase deals nobody a new card. */
-  static from(o) { const d = new Deck([]); d.draw = [...(o?.draw || [])]; d.discard = [...(o?.discard || [])]; d.hand = [...(o?.hand || [])]; return d; }
+  static from(o) { if (o?.simple) return new SimpleDeck(); const d = new Deck([]); d.draw = [...(o?.draw || [])]; d.discard = [...(o?.discard || [])]; d.hand = [...(o?.hand || [])]; return d; }
+}
+
+/** The simple duel's "deck": one of every physical move, in hand every turn. Nothing is drawn, spent, trimmed
+ *  or discarded, and there is no counter. Playing a move does not use it up for next turn. */
+export class SimpleDeck extends Deck {
+  constructor() { super([]); this.hand = [...SIMPLE_DECK]; }
+  count() { return this.hand.length; }
+  drawTo() { this.hand = [...SIMPLE_DECK]; return this.hand; }
+  spend() {}
+  trimTo() { return []; }
+  offerCounter() {}
+  snapshot() { return { simple: true, draw: [], discard: [], hand: [...this.hand] }; }
 }
 
 export class Match {
@@ -83,12 +95,15 @@ export class Match {
     this.poses = { opener: poses.opener || null, finale: poses.finale || null };   // the player's picks for this fight; null = none
     this.ext = ext; this.music = ext.music || music; this.crowd = ext.crowd || null;
     this.who = { squire: 'squire', knight: 'percival', champion: 'champion' }[opponent.id] || opponent.id;
-    this.deck = { a: new Deck(playerDeck), b: new Deck(opponent.deck) };
+    // The simple duel (Host Controls -> Settings -> Simple duel, or ?mode=simple): both sides hold one of every
+    // physical move every turn, no counters, and each beat is its own pass down the rail (playTurnSimple).
+    this.simple = !!settings.get('simple');
+    this.deck = this.simple ? { a: new SimpleDeck(), b: new SimpleDeck() } : { a: new Deck(playerDeck), b: new Deck(opponent.deck) };
     this.hp = { a: player.hp, b: opponent.hp }; this.max = { a: player.hp, b: opponent.hp };
     this.st = { a: emptyStatus(), b: emptyStatus() };
     // every fight starts with a dead rail and whatever counters each side brought to it
     this.st.a.voltage = 0; this.st.b.voltage = 0;
-    this.st.a.counter = counters; this.st.b.counter = opponent.counters || 0;
+    this.st.a.counter = this.simple ? 0 : counters; this.st.b.counter = this.simple ? 0 : (opponent.counters || 0);
     this.turn = 0; this.lastChain = { a: [], b: [] }; this.lowHpSaid = { a: false, b: false };
     this.beatMs = bridge.beatMs;
 
@@ -385,6 +400,7 @@ export class Match {
     if (!replay) { this.deck.a.spend(chainA); this.deck.b.spend(chainB); }
     this.lastChain = { a: chainA, b: chainB };
     await this.hold();
+    if (this.simple) { await this.playTurnSimple(chainA, chainB); return; }
 
     // charge
     battle.showDuel(chainA, chainB); this.music.setMood('duel'); this.sting('charge'); this.energy(0.75); this.react('murmur_up');
@@ -462,6 +478,63 @@ export class Match {
     }
     for (const s of ['a', 'b']) { if (this.st[s].exposed) this.st[s].exposed = 0; }   // exposed does not survive the return
     for (const s of ['a', 'b']) battle.setStatus(s, this.st[s]);
+  }
+
+  /** The simple duel's exchange: three PASSES instead of one charge and a compiled three-move chain. For each
+   *  beat the carriages start apart, charge in with both arms already playing their moves, the arms pull back
+   *  the way they came and rest (disentangle), and the carriages back out again (reset). On hardware every pass
+   *  is one server job (ArmBridge.beatCycle: compile this beat's pair with its calibrated stop, then the
+   *  daemon's overlapped turn routine); the screen runs its charge, beat and retreat alongside it. */
+  async playTurnSimple(chainA, chainB) {
+    const { stage, battle, bridge } = this;
+    battle.showDuel(chainA, chainB); this.music.setMood('duel'); this.energy(0.75);
+    this.phaseNow = 'exchange';
+    this.phase('exchange', { live: !!bridge.live, beats: null, turnMs: 0, simple: true });
+    let dead = false;
+    for (let i = 0; i < BEATS_PER_TURN && !dead; i++) {
+      await this.hold();
+      if (this.forced) throw new FightEnded(this.forced);
+      battle.setBeat(i); this.beatKey = `${this.turn}:${i}`; this.outcome = '';
+      const cA = chainA[i] ? card(chainA[i]) : null, cB = chainB[i] ? card(chainB[i]) : null;
+      const r = resolveBeat(cA, cB, this.st.a, this.st.b);
+      // the pass on the metal. `started` resolves once the pair is compiled and the carriages are leaving the
+      // apart stop; `done` once both arms are back at rest and the carriages are apart again.
+      const cyc = bridge.beatCycle ? bridge.beatCycle(i, r.played.a.hw, r.played.b.hw) : { started: Promise.resolve(), done: Promise.resolve() };
+      this.sting('charge'); sfx.drumroll(0.6); this.react('murmur_up'); if (i === 0) this.herald('charge');
+      await this.g(cyc.started);
+      await this.g(stage.charge(1100)); stage.cheer(600); this.energy(0.9);
+      // this pass has one beat, so it is beat 0 of the bridge's schedule (the compiled pair's own boundaries on
+      // live arms, the host's beat length in sim)
+      const beatMs = bridge.beatMsFor ? bridge.beatMsFor(0) : this.beatMs;
+      const impactAt = bridge.impactAtFor ? bridge.impactAtFor(0) : null;
+      this.beatNow = beatMs; this.animMs = beatMs * ((impactAt != null ? impactAt : IMPACT) / IMPACT);
+      const kinds = { a: undefined, b: undefined };
+      for (const e of r.events) { if (e.type === 'hit') kinds[e.from] = 'hit'; else if (e.type === 'blocked') { kinds[e.attacker] = 'block'; kinds[e.blocker] = 'block'; } else if (e.type === 'clash') { kinds.a = 'clash'; kinds.b = 'clash'; } }
+      for (const s of ['a', 'b']) this.servo(r.played[s].hw, { beatMs: this.animMs, arm: s, impactAt: IMPACT, guardAt: 0.4, impact: kinds[s] });
+      let impactDone = false;
+      const doImpact = () => { if (impactDone) return; impactDone = true; this.impact(i, r); };
+      stage.playBeat({ a: r.played.a.hw, b: r.played.b.hw }, beatMs, { impact: doImpact, impactAt });
+      for (const s of ['a', 'b']) { const ty = r.played[s].type; if (ty === 'attack') this.vocal(s, 'grunt', this.animMs * IMPACT - 150, 0.4); else if (ty === 'feint') this.vocal(s, 'hmm', this.animMs * IMPACT, 0.25); }
+      const offSkip = this.control.onSkip(() => { stage.clearTimers('a'); stage.clearTimers('b'); doImpact(); });
+      await this.g(this.wait(beatMs));
+      offSkip(); doImpact();
+      battle.revealBeat(i, r.played.a, r.played.b, cA, cB);
+      await this.wait(REVEAL_GAP);
+      battle.setOutcome(i, this.outcome || '');
+      this.phase('beat', { i, plannedA: cA ? cA.id : null, plannedB: cB ? cB.id : null,
+                           playedA: r.played.a.id, playedB: r.played.b.id, outcome: this.outcome || '', ms: beatMs });
+      this.st = r.status; for (const s of ['a', 'b']) battle.setStatus(s, this.st[s]);
+      // disentangle and reset: the knights back off on screen while the arms pull back, rest, and the carriages
+      // go apart. The next pass does not start until the metal says this one is over.
+      const out = stage.retreat(900);
+      await this.g(cyc.done); await this.g(out);
+      if (this.hp.a <= 0 || this.hp.b <= 0) { dead = true; await this.wait(600); }
+      else await this.wait(OUTCOME_GAP);
+      if (this.forced) throw new FightEnded(this.forced);
+    }
+    battle.setBeat(null);
+    await this.wait(300); battle.hideDuel(); this.energy(0.4);
+    for (const s of ['a', 'b']) { if (this.st[s].exposed) this.st[s].exposed = 0; battle.setStatus(s, this.st[s]); }
   }
 
   /** The impact instant of a beat: reactions, damage numbers, hp, stamps, quips. */

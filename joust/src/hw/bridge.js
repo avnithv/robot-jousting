@@ -115,6 +115,11 @@ export class SimBridge {
   /** Where in beat `i` the blow lands, as a fraction. null = use the screen's own default (stage.IMPACT). */
   impactAtFor(/* i */) { return null; }
   async returnHome() {}
+  /** The simple duel's pass for one beat: carriages apart -> charge in with both moves playing -> arms
+   *  disentangle and rest -> carriages apart. Returns { started, done }: `started` resolves when the pass is
+   *  about to leave the apart stop (on hardware: the pair is compiled), `done` when the arms and carriages
+   *  are back where they began. Sim: nothing to drive, so both are timers. */
+  beatCycle(/* index, moveA, moveB */) { return { started: Promise.resolve(null), done: this.nap(this.beatMs + 600) }; }
   /** The winner's flourish after the knockout. Sim: a short pause so the beat lands. */
   async flourish(/* side, name */) { await this.nap(600); }
   /** Two-arm emote scene (openers, hits, gloats, finales, idle -- see robot-jousting/sim/emotes/).
@@ -377,6 +382,35 @@ export class ArmBridge extends SimBridge {
     this.api('/api/play', { side: 'b', move: moveB }).catch(() => {});
     await wait(Math.max(0, this.beatMs - (performance.now() - t)));
     await this.waitIdle(6000);
+  }
+  /** One pass of the simple duel on the metal: POST /api/beat_cycle (server.py compiles this beat's pair with
+   *  its calibrated stop, parks the carriages apart if they are not, then runs the daemon's turn routine with
+   *  the arms starting as the charge begins and the carriages backing out after). `started` resolves at the
+   *  job's `charging` step, with the compiled pair's beat schedule loaded so beatMsFor(0) / impactAtFor(0)
+   *  size the screen's beat; `done` when the job has finished and both arms and the gantry are idle. */
+  beatCycle(index, moveA, moveB) {
+    this.pending = null; this.beats = null; this.lead = 0; this.tail = 0; this.beatSource = ''; this.chainLen = 1;
+    if (!this.live) return { started: Promise.resolve(null), done: this.nap(this.beatMs + 600) };
+    let resolveStart; const started = new Promise(res => { resolveStart = res; });
+    const scale = Math.max(0.1, Math.min(1, (Number(settings.get('armScale')) || 70) / 100));
+    const done = (async () => {
+      let r = null;
+      try { r = await this.api('/api/beat_cycle', { ours: [moveA], theirs: [moveB], scale }); }
+      catch (e) { console.warn('beat cycle failed', e); resolveStart(null); return null; }
+      if (!r || !r.job) { console.warn('beat cycle was not queued', r); resolveStart(null); return r; }
+      const job = await this.waitJob(r.job, { timeout: this.compileMs, until: j => j.phase === 'charging' });
+      this.beats = Array.isArray(job.beats) && job.beats.length ? job.beats : null;
+      this.beatSource = job.source || (this.beats ? 'plan' : 'nominal');
+      if (job.collision_warning) console.warn('beat', index + 1, job.collision_warning);
+      resolveStart(job);
+      if (job.status && job.status !== 'running') { if (job.status === 'failed') console.warn('beat cycle failed:', job.result); return job; }
+      const end = await this.waitJob(r.job, { timeout: 240000 });
+      if (end.status === 'failed') console.warn('beat cycle failed:', end.result);
+      await this.waitIdle(15000, { grace: 300 });
+      await this.waitGantryIdle(30000);
+      return end;
+    })();
+    return { started, done };
   }
   /** Let whatever is running finish before asking for rest: the daemon refuses /rest on a busy arm. */
   async returnHome() {
