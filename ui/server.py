@@ -134,6 +134,7 @@ def api(handler, path, body):
         return {"error": "not running"}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {}, timeout=30)
+    if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)
     if path == "/api/capture":
         ensure_daemon(); st = daemon_status(); pose = st.get("pose")
         if not pose: return {"error": "no pose"}

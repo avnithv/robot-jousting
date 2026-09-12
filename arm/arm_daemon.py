@@ -55,6 +55,13 @@ class H(BaseHTTPRequestHandler):
             elif self.path == "/rest":
                 if not state["torque"]: torque(True); state["torque"] = True
                 ease_to(rest)
+            elif self.path == "/nudge":   # wiggle one joint by +/-deg and return, holding everything else
+                j = JOINTS.index(body["joint"]); deg = float(body.get("deg", 15)); q0 = np.array(pose())
+                if not state["torque"]: torque(True); state["torque"] = True
+                send(q0); time.sleep(0.3)
+                for target in ((deg, 0.0) if body.get('oneway') else (deg, -deg, 0.0)):
+                    q1 = q0.copy(); q1[j] += target; ease_to(q1, max_speed=40.0); time.sleep(0.4)
+                state["last"] = f"nudged {body['joint']} by +/-{deg} deg"
             elif self.path == "/hold":
                 if not state["torque"]: torque(True); state["torque"] = True
                 send(np.array(pose())); state["last"] = "holding current pose"
