@@ -1,37 +1,5 @@
 {
- "_doc": "Low horizontal slash, starts on the arm's RIGHT, ends on its LEFT (the mirror of ATTACK_LOW_LR). Was 'mirror_of' ATTACK_LOW_LR; made standalone on 2026-09-12 so the end pose can be captured (the mirror IK cannot pitch the blade flat here: the wrist sits at its -94 limit, so the tip pointed up relative to what the user wanted). captured.start = the old mirrored windup, unchanged; captured.end = same hand position, blade tilted 7 deg lower. end/start/roll below are the mirrored numbers and are only used if a captured entry is deleted.",
- "end": {
-  "x": 0.27,
-  "z": 0.08,
-  "pan": -20
- },
- "start": {
-  "dx": -0.05,
-  "dz": 0.01,
-  "pan": 20
- },
- "roll": -90,
- "jaw_open": 55,
- "t_windup": 0.85,
- "t_slash": 0.4,
- "captured": {
-  "start": [
-   20.0,
-   -4.0,
-   88.3,
-   -91.5,
-   -14.0,
-   55.0
-  ],
-  "end": [
-   -22.3,
-   1.7,
-   77.8,
-   -61.8,
-   -17.6,
-   7.9
-  ]
- },
+ "_doc": "Exact mirror of ATTACK_LOW_LR (left arm shape mirrored, then nudged so the blade sits at the same height/pitch). Edit ATTACK_LOW_LR to change both.",
  "_help": {
   "end.x": "hand distance forward at the end of the slash (m, keep <= 0.27)",
   "end.z": "height of the low line (m above the base plane)",
@@ -45,5 +13,41 @@
   "t_slash": "seconds: the sweep (base pan speed)",
   "captured.start": "windup pose (real degrees): the old mirrored windup, kept so only the end changes. Delete to recompute from start.*",
   "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
- }
+ },
+ "retired_2026-09-12": {
+  "note": "standalone version with captured poses, replaced by mirroring ATTACK_LOW_LR's arm shape",
+  "captured": {
+   "start": [
+    20.0,
+    -4.0,
+    88.3,
+    -91.5,
+    -14.0,
+    55.0
+   ],
+   "end": [
+    -22.3,
+    1.7,
+    77.8,
+    -61.8,
+    -17.6,
+    7.9
+   ]
+  },
+  "end": {
+   "x": 0.27,
+   "z": 0.08,
+   "pan": -20
+  },
+  "start": {
+   "dx": -0.05,
+   "dz": 0.01,
+   "pan": 20
+  },
+  "roll": -90,
+  "jaw_open": 55,
+  "t_windup": 0.85,
+  "t_slash": 0.4
+ },
+ "mirror_of": "ATTACK_LOW_LR"
 }

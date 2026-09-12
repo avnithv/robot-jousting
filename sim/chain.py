@@ -9,6 +9,7 @@ import sys, os, json, numpy as np, mujoco, imageio
 import arena, ik, tune
 from tune import PARAMS, REST, ROLL_OFFSET, JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
+TIP_MIN = -0.06             # blade tip floor (m). The real board sits below the sim's base plane; the captured guards reach -0.05 without touching.
 BLEND_RATE = 200.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}
@@ -22,7 +23,7 @@ def path_ok(a, b, n=12):
     """Straight joint-space path from a to b: hand reach <= 0.30, blade and hand above the table, roll inside the wrap."""
     for s in np.linspace(0, 1, n):
         q = a + s * (b - a); h, t, p = ik.fk(q)
-        if np.hypot(h[0], h[1]) > 0.30 or h[2] < 0.04 or t[2] < 0.04 or not (-180 <= q[4] <= 100): return False
+        if np.hypot(h[0], h[1]) > 0.30 or h[2] < 0.04 or t[2] < TIP_MIN or not (-185 <= q[4] <= 100) or q[1] < -89: return False
     return True
 
 def route(prev_move, prev_pose, move, first):

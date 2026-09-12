@@ -92,11 +92,19 @@ def attack_low(P, mirror=False):
     e, s = P["end"], P["start"]; sgn = -1 if mirror else 1
     k1 = ik_pose(e["x"] + s["dx"], e["z"] + s["dz"], 0, pan=s["pan"], roll=P["roll"], jaw=P["jaw_open"])
     k2 = ik_pose(e["x"], e["z"], 0, pan=e["pan"], roll=P["roll"], jaw=0)
-    if mirror:   # the sword hangs off one side of the jaw, so mirroring joints does not mirror the blade: re-solve on the mirrored side
-        for k, (x, z, pan, jaw) in ((k1, (e["x"] + s["dx"], e["z"] + s["dz"], s["pan"], P["jaw_open"])), (k2, (e["x"], e["z"], e["pan"], 0))):
-            seed = k.copy(); seed[0] *= -1; seed[4] *= -1
-            q, err, h, tt = ik.solve(x, z, 0, pan=-pan, roll=-P["roll"], init=seed); q[5] = jaw; k[:] = q
-            if err[0] + err[1] > 0.01 or err[2] > 5: print(f"    WARNING mirror ik ({x},{z}) off by {np.round(err,3).tolist()}")
+    if mirror:   # mirror the LEFT solution's arm shape (pan, roll negated), then nudge lift/elbow/wrist locally so the blade
+                 # (which hangs off one side of the jaw) sits at the same hand height/pitch as on the left side
+        for k, (x, z) in ((k1, (e["x"] + s["dx"], e["z"] + s["dz"])), (k2, (e["x"], e["z"]))):
+            seed = k.copy(); seed[0] *= -1; seed[4] *= -1; best = None
+            for dl in np.arange(-24, 25, 3):
+                for de in np.arange(-24, 25, 3):
+                    for dw in np.arange(-45, 25, 3):
+                        q = seed.copy(); q[1:4] += (dl, de, dw)
+                        if np.any(q[1:4] < ik.LO[1:4] + 1) or np.any(q[1:4] > ik.HI[1:4] - 1): continue
+                        h, tt, p = ik.fk(q); r = np.hypot(h[0], h[1])
+                        cost = 600 * (abs(r - x) + abs(h[2] - z)) + 2.0 * abs(p) + 0.1 * (abs(dl) + abs(de) + abs(dw))
+                        if best is None or cost < best[0]: best = (cost, q)
+            k[:] = best[1]
     if cap(P, "start") is not None: k1 = cap(P, "start", jaw=P["jaw_open"])
     if cap(P, "end") is not None: k2 = cap(P, "end", jaw=0)
     return [(REST, 0), (k1, P["t_windup"] + (0.15 if mirror else 0)), (k2, P["t_slash"])]
