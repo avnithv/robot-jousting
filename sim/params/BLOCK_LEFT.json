@@ -1,0 +1,19 @@
+{
+ "_doc": "Hanging guard on the arm's LEFT: hand at (x, z), sword pitched `pitch` deg (down), pan -20. tol = pitch tolerance for the pose search.",
+ "x": 0.26,
+ "z": 0.2,
+ "pan": -20,
+ "pitch": -45,
+ "tol": 10,
+ "t_move": 0.8,
+ "t_hold": 0.4,
+ "_help": {
+  "x": "hand distance forward (m, keep <= 0.27)",
+  "z": "hand height (m)",
+  "pan": "side (deg; + = own right, 0 = centre)",
+  "pitch": "sword angle (deg; negative = pointing down): -45 = hanging guard",
+  "tol": "allowed deviation from pitch in the pose search (deg)",
+  "t_move": "seconds: rest -> guard",
+  "t_hold": "seconds: hold"
+ }
+}

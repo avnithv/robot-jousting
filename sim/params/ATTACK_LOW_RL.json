@@ -1,0 +1,7 @@
+{
+ "_doc": "Exact mirror of ATTACK_LOW_LR (pan and roll negated). Edit ATTACK_LOW_LR to change both.",
+ "mirror_of": "ATTACK_LOW_LR",
+ "_help": {
+  "mirror_of": "generated as the mirror of this move; edit that move's file"
+ }
+}

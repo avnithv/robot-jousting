@@ -1,0 +1,17 @@
+{
+ "_doc": "ATTACK_HIGH's raise + cock, then a snap back: pull_back = joint offsets from the raised pose; jaw_after = jaw after the snap; t_back seconds.",
+ "like": "ATTACK_HIGH",
+ "pull_back": {
+  "lift": -20,
+  "wrist": -10
+ },
+ "jaw_after": 20,
+ "t_back": 0.3,
+ "_help": {
+  "like": "uses this attack's raise and cock, then snaps back",
+  "pull_back.lift": "shoulder offset from the raised pose for the snap back (deg; negative = pulls back/up)",
+  "pull_back.wrist": "wrist offset for the snap back (deg)",
+  "jaw_after": "jaw after the snap (0..100)",
+  "t_back": "seconds: the snap back"
+ }
+}

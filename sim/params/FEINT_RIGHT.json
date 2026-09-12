@@ -1,0 +1,17 @@
+{
+ "_doc": "Mirror of FEINT_LEFT (uses ATTACK_LOW_RL's windup).",
+ "like": "ATTACK_LOW_RL",
+ "pull_back": {
+  "lift": -25,
+  "wrist": 0
+ },
+ "jaw_after": 0,
+ "t_back": 0.3,
+ "_help": {
+  "like": "uses this slash's windup (sword cocked low on the RIGHT), then pulls back",
+  "pull_back.lift": "shoulder offset from the windup for the pull back (deg; negative = up/back)",
+  "pull_back.wrist": "wrist offset for the pull back (deg)",
+  "jaw_after": "jaw after the pull back (0..100)",
+  "t_back": "seconds: the pull back"
+ }
+}

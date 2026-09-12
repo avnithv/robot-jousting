@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+sim/out/
+sim/pose_cache.json
+ui/jobs/
+arm/teach_log.txt
+arm/live.json
+arm/cmd.txt
+arm/motions_tuned.json.lock
+.claude/

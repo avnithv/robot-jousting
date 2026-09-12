@@ -1,0 +1,23 @@
+{
+ "_doc": "Level bar across the high line: arm forward, finger up (joints), wrist rolled 90 so the jaw swings sideways, jaw fully open so the sword sticks out horizontally. pan centres the bar on the opponent's chop (37 puts the chop mid-bar). t_move, t_hold.",
+ "joints": {
+  "lift": 70,
+  "elbow": -70,
+  "wrist": -94
+ },
+ "pan": 37,
+ "roll": 90,
+ "jaw": 100,
+ "t_move": 0.8,
+ "t_hold": 0.4,
+ "_help": {
+  "joints.lift": "shoulder angle (deg): arm forward",
+  "joints.elbow": "elbow angle (deg)",
+  "joints.wrist": "wrist pitch (deg): -94 = finger pointing straight up",
+  "pan": "base rotation centring the bar on the opponent's chop (deg): 37 = chop hits mid-bar; less = bar more sideways but off-centre",
+  "roll": "wrist roll: 90 = jaw swings sideways so the open sword is a level bar",
+  "jaw": "jaw opening: 100 = sword fully out sideways",
+  "t_move": "seconds: rest -> bar",
+  "t_hold": "seconds: hold the bar"
+ }
+}

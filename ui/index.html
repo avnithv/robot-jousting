@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Joust Move Studio</title>
+<style>
+ body{font:14px system-ui,sans-serif;margin:0;display:grid;grid-template-columns:170px minmax(420px,1fr) minmax(240px,340px);height:100vh;color:#222}
+ @media (max-width:1000px){body{grid-template-columns:150px 1fr;grid-template-rows:1fr 220px;height:auto;min-height:100vh}#jobs{grid-column:1/3;border-left:0;border-top:1px solid #ddd}}
+ #moves{border-right:1px solid #ddd;overflow:auto;padding:8px} #moves div{padding:6px 8px;cursor:pointer;border-radius:6px} #moves div.sel{background:#e8eefc}
+ #main{padding:12px 16px;overflow:auto} #jobs{border-left:1px solid #ddd;overflow:auto;padding:8px;background:#fafafa}
+ video{width:100%;max-width:760px;background:#000;border-radius:6px} textarea{width:100%;box-sizing:border-box;font:13px system-ui}
+ button{padding:7px 14px;cursor:pointer;border-radius:6px;border:1px solid #bbb;background:#fff} button.primary{background:#2b5bd7;color:#fff;border-color:#2b5bd7}
+ .bar{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap} .job{border:1px solid #ddd;border-radius:6px;padding:6px;margin:6px 0;background:#fff;font-size:13px}
+ .job pre{max-height:160px;overflow:auto;font-size:11px;background:#f4f4f4;padding:4px;margin:4px 0;white-space:pre-wrap} .st-running,.st-queued{color:#b26a00} .st-done{color:#1a7f37} .st-failed{color:#c00}
+ h2{margin:0 0 4px} small{color:#666} table{border-collapse:collapse;width:100%;max-width:760px} td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top} td.k{font-family:ui-monospace,monospace;white-space:nowrap;width:1%} td.h{color:#666;font-size:12px}
+ input[type=number]{width:70px} .arm{font-size:12px;color:#666}
+</style></head><body>
+<div id="moves"></div>
+<div id="main"><h2 id="title"></h2><small id="doc"></small>
+ <div class="bar" style="margin-top:8px"><video id="vid" controls loop muted></video></div>
+ <div class="bar"><label>show: <select id="opp" onchange="oppChanged()"><option value="">this move alone</option></select></label>
+  <span style="flex:1"></span>
+  <label>arm speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
+  <button class="primary" onclick="runArm()">Run on arm</button> <span class="arm" id="armst"></span></div>
+ <table id="ptable"></table>
+ <div class="bar"><button class="primary" onclick="apply()">Apply changes</button><small>saves and regenerates this move; the clip refreshes when done</small></div>
+ <div class="bar" style="flex-direction:column;align-items:stretch"><textarea id="fb" rows="2" placeholder="Feedback for a tuning agent, e.g. the slash should start further left and end higher. Each message runs its own agent."></textarea>
+  <div><button onclick="feedback()">Send to agent</button></div></div>
+</div>
+<div id="jobs"><b>Activity</b><div id="joblist"></div></div>
+<script>
+let MOVES={}, cur=null;
+async function api(p,b){const r=await fetch(p,b?{method:'POST',body:JSON.stringify(b)}:{});return r.json()}
+function flatten(o,pre=''){let out=[];for(const k in o){if(k.startsWith('_'))continue;const v=o[k];if(v&&typeof v==='object'&&!Array.isArray(v))out=out.concat(flatten(v,pre+k+'.'));else out.push([pre+k,v])}return out}
+function setPath(o,path,val){const ks=path.split('.');let t=o;for(const k of ks.slice(0,-1))t=t[k];t[ks[ks.length-1]]=val}
+async function load(){MOVES=await api('/api/moves');const m=document.getElementById('moves');m.innerHTML='';const o=document.getElementById('opp');const keep=o.value;o.innerHTML='<option value="">this move alone</option>';
+ for(const n in MOVES){const d=document.createElement('div');d.textContent=n;d.onclick=()=>select(n);if(n===cur)d.className='sel';m.appendChild(d);
+  const op=document.createElement('option');op.value=n;op.textContent='vs '+n;o.appendChild(op)} o.value=keep;
+ if(!cur)select(Object.keys(MOVES)[0]);else refreshMain(false)}
+function select(n){cur=n;document.getElementById('opp').value='';document.querySelectorAll('#moves div').forEach(d=>d.className=d.textContent===n?'sel':'');refreshMain(true)}
+function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title').textContent=cur;
+ document.getElementById('doc').textContent=(M.params._doc||'')+(M.duration?'  ('+M.duration+' s)':'  (not generated)');
+ const opp=document.getElementById('opp').value;const v=document.getElementById('vid');
+ const src=opp?'/video/pair_'+cur+'_vs_'+opp+'.mp4?v='+Date.now():M.video; if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}
+ if(rebuild){const t=document.getElementById('ptable');t.innerHTML='';const help=M.params._help||{};
+  for(const [k,val] of flatten(M.params)){const tr=document.createElement('tr');const ro=typeof val!=='number';
+   tr.innerHTML=`<td class="k">${k}</td><td>${ro?`<span>${val}</span>`:`<input type="number" step="any" data-k="${k}" value="${val}">`}</td><td class="h">${help[k]||''}</td>`;t.appendChild(tr)}}}
+async function oppChanged(){const opp=document.getElementById('opp').value;if(opp){await api('/api/pair',{a:cur,b:opp})}refreshMain(false);poll()}
+async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p});poll()}
+async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t});document.getElementById('fb').value='';poll()}
+async function runArm(){await api('/api/run',{move:cur,scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
+let lastDone=0;
+async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;
+ for(const j of js.slice(0,30)){if(j.status==='running'||j.status==='queued')anyRun=true;const d=document.createElement('div');d.className='job';
+  const dur=j.ended?((j.ended-j.started)|0)+'s':'';d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${j.label} <small>${dur}</small>`+
+   (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
+ const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
+ const a=await api('/api/arm');document.getElementById('armst').textContent=a.offline?'arm: idle (connects on first run)':(a.busy?'arm: moving':'arm: holding rest'+(a.torque?'':' (torque off)'));
+ setTimeout(poll,anyRun?1500:4000)}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+load();poll();
+</script></body></html>
