@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Render audio</title>
+<style>
+  body { margin: 0; padding: 14px 18px 30px; background: #15161a; color: #d8d6cc; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  h1 { font-size: 15px; margin: 0 0 4px; } small { color: #8d8a7d; font-weight: normal; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 10px 0; }
+  button { background: #26282f; color: #e6e3d6; border: 1px solid #3a3d47; border-radius: 4px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  button:hover { background: #31343d; } button:disabled { opacity: .5; cursor: default; }
+  button.go { background: #3c5a34; border-color: #5f8a5f; }
+  #status { font-size: 14px; color: #f0e6c8; }
+  table { border-collapse: collapse; margin-top: 8px; width: 100%; max-width: 900px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #8d8a7d; font-weight: normal; padding: 4px 8px 4px 0; border-bottom: 1px solid #2c2e36; }
+  td { padding: 3px 8px 3px 0; border-bottom: 1px solid #1e2026; }
+  td.n { color: #e6e3d6; } td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.wait td { color: #6a6a62; } tr.go td { color: #d9a441; } tr.ok td.s { color: #7fb069; } tr.err td { color: #e6544a; }
+  #log { white-space: pre-wrap; color: #b9b6a8; background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; padding: 8px; min-height: 3em; margin-top: 14px; max-height: 260px; overflow: auto; }
+  #meter { display: inline-block; height: 8px; width: 200px; background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; overflow: hidden; vertical-align: middle; }
+  #meter i { display: block; height: 100%; width: 0; background: #d9a441; } #meter i.hot { background: #e6544a; }
+</style>
+</head>
+<body>
+<h1>Render audio <small>drives src/audio/{music,voice}.js live, records the bus with MediaRecorder, POSTs each cue to /api/upload &rarr; video/audio/</small></h1>
+<div class="row">
+  <button id="go" class="go">Render all cues</button>
+  <button id="one">Render selected</button>
+  <select id="pick"></select>
+  <span id="meter"><i></i></span><span id="peak">-inf</span>
+</div>
+<div class="row"><span id="status">idle &mdash; click "Render all cues"</span></div>
+<table>
+  <thead><tr><th>file</th><th>what</th><th class="num">secs</th><th class="num">peak dBFS</th><th class="num">KB</th><th>state</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<div id="log"></div>
+<script type="module" src="render_audio.js"></script>
+</body>
+</html>

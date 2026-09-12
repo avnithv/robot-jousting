@@ -827,8 +827,36 @@ class H(SimpleHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError): return   # a phone walked away mid long-poll
         if u.path.startswith("/api/"): return self._json(api(u.path, {}, parse_qs(u.query)))
         return super().do_GET()
+    # Dev helper for tools/render_audio: POST /api/upload?name=<file> writes the raw request body under
+    # video/audio/ (repo-relative, outside the served folder). Name is sanitised to [A-Za-z0-9._-] with at
+    # most one subfolder ("stings/ko.webm"), the resolved path must stay inside video/audio/, 200 MB cap.
+    UPLOAD_DIR = os.path.abspath(os.path.join(HERE, "..", "..", "video", "audio"))
+    UPLOAD_MAX = 200 * 1024 * 1024
+
+    def _upload(self, u):
+        name = (parse_qs(u.query).get("name") or [""])[0].replace("\\", "/").strip("/")
+        parts = [re.sub(r"[^A-Za-z0-9._-]", "_", x) for x in name.split("/") if x not in ("", ".", "..")]
+        if not parts or len(parts) > 2 or not parts[-1]:
+            return self._json({"error": "bad name"}, 400)
+        n = int(self.headers.get("Content-Length", 0))
+        if n <= 0: return self._json({"error": "empty body"}, 400)
+        if n > self.UPLOAD_MAX: return self._json({"error": "too large"}, 413)
+        dest = os.path.abspath(os.path.join(self.UPLOAD_DIR, *parts))
+        if os.path.commonpath([dest, self.UPLOAD_DIR]) != self.UPLOAD_DIR:
+            return self._json({"error": "outside upload dir"}, 400)
+        data = b""
+        while len(data) < n:
+            chunk = self.rfile.read(min(1 << 20, n - len(data)))
+            if not chunk: break
+            data += chunk
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "wb") as f: f.write(data)
+        return self._json({"ok": True, "path": dest, "bytes": len(data)})
+
     def do_POST(self):
-        u = urlparse(self.path); n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}")
+        u = urlparse(self.path)
+        if u.path == "/api/upload": return self._upload(u)
+        n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}")
         if u.path.startswith("/api/mp/"):
             try:
                 if self._mp("POST", u, body): return
