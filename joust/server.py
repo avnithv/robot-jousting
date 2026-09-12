@@ -227,7 +227,16 @@ def tuned_names():
 # trajectory at `scale`, HOLDS the last pose for HOLD_END, and only then eases back to rest at RETURN_SPEED.
 # On an attack that is 1.26 s of trajectory inside about 3.6 s of busy, which is why sizing a live beat at
 # the screen's 1.4 s puts the picture a whole move ahead of the metal.
-RATE, EASE_SPEED, HOLD_END, RETURN_SPEED, MIN_EASE, SETTLE = 50.0, 150.0, 1.5, 60.0, 0.15, 0.1
+RATE, EASE_SPEED, HOLD_END, RETURN_SPEED, MIN_EASE, SETTLE = 50.0, 150.0, 1.5, 60.0, 0.15, 0.1   # fallbacks: turn_profile() overrides
+def turn_profile():
+    """arm/turn_profile.json: every timing knob of a live pass (scale, beats per pass, overlap, hold, return speed, feeds...).
+    The daemon, sim/chain.py, the studio and this server all read the same file, live."""
+    P = {"scale": 1.0, "beats_per_pass": 3, "overlap": True, "salute": False, "apart_after": True, "hold_end": HOLD_END, "return_speed": RETURN_SPEED, "settle": SETTLE, "ease_speed": EASE_SPEED}
+    p = tuned_path()
+    if p:
+        try: P.update({k: v for k, v in json.load(open(os.path.join(os.path.dirname(p), "turn_profile.json"))).items() if not k.startswith("_")})
+        except Exception: pass
+    return P
 IMPACT_FRACTION = 0.7        # ui/stage.js: where in a beat the screen lands its impact, when we cannot do better
 
 def _rest_pose(T, cfg, arm):
@@ -258,11 +267,12 @@ def move_timing(name, arm="A", scale=1.0):
     t, Q = M["t"], M["q"]
     rest = _rest_pose(T, T.get("_cfg") or {}, arm)
     q0 = [float(x) for x in Q[0]]; q1 = [float(x) for x in Q[-1]]
-    lead = MIN_EASE + _ease(rest, q0, EASE_SPEED) + SETTLE
+    P = turn_profile(); hold = float(P["hold_end"])
+    lead = MIN_EASE + _ease(rest, q0, float(P["ease_speed"])) + float(P["settle"])
     motion = float(t[-1]) / max(0.01, scale)
-    ret = _ease(q1, rest, RETURN_SPEED)
-    return {"lead": round(lead, 3), "motion": round(motion, 3), "hold": HOLD_END, "ret": round(ret, 3),
-            "total": round(lead + motion + HOLD_END + ret, 3), "pinned": round(lead + motion, 3),
+    ret = _ease(q1, rest, float(P["return_speed"]))
+    return {"lead": round(lead, 3), "motion": round(motion, 3), "hold": hold, "ret": round(ret, 3),
+            "total": round(lead + motion + hold + ret, 3), "pinned": round(lead + motion, 3),
             "gantry": bool(M.get("gantry_mm"))}
 
 TUNED_CACHE = {"path": "", "mtime": 0.0, "data": None}
@@ -437,13 +447,15 @@ def beat_cycle(ours, theirs, scale, job):
     ap = gantry_stop("apart")
     if g.get("x") is None or abs(g["x"] - ap["X"]) > 2 or abs(g["y"] - ap["Y"]) > 2:
         carriages(job, "apart")                       # a pass starts from apart; the daemon's /turn also checks
-    step(job, "charging", f"charge in; {' '.join(ours)} vs {' '.join(theirs)} start as the carriages leave, then disentangle and back out")
-    r = daemon("a", "/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": float(scale), "overlap": True, "salute": False, "apart_after": True}, timeout=300)
+    P = turn_profile()
+    step(job, "charging", f"charge in; {' '.join(ours)} vs {' '.join(theirs)} x{scale}" + (" start as the carriages leave" if P["overlap"] else " once the carriages arrive")
+         + (", salute first" if P["salute"] and not P["overlap"] else "") + (", then back out" if P["apart_after"] else ""))
+    r = daemon("a", "/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": float(scale)}, timeout=300)   # overlap / salute / apart_after / hold / feeds: the profile
     bad = failed(r, "turn")
     if bad: raise RuntimeError(bad)
-    ok, g = gantry_settled(where=ap)
-    if not ok: raise RuntimeError(f"carriages never settled apart after the pass (last: {json.dumps(g)})")
-    step(job, "done", f"pass over: arms at rest, carriages apart at X={g.get('x')} Y={g.get('y')}")
+    ok, g = gantry_settled(where=ap if P["apart_after"] else None)
+    if not ok: raise RuntimeError(f"carriages never settled after the pass (last: {json.dumps(g)})")
+    step(job, "done", f"pass over: arms at rest, carriages at X={g.get('x')} Y={g.get('y')}")
     return {**r, "gantry": g}
 
 def emote_moves(scene, swap):
@@ -572,8 +584,10 @@ def api(path, body, query=None):
         ours, theirs = body.get("ours", []), body.get("theirs", [])
         return log("exchange", " ".join(map(str, ours)) + " vs " + " ".join(map(str, theirs)),
                    lambda job: exchange(ours, theirs, job))
+    if path == "/api/profile":
+        return turn_profile()
     if path == "/api/beat_cycle":
-        ours, theirs = body.get("ours", []), body.get("theirs", []); scale = float(body.get("scale", 0.7))
+        ours, theirs = body.get("ours", []), body.get("theirs", []); scale = float(body.get("scale") or turn_profile()["scale"])
         return log("beat_cycle", f"pass: {' '.join(map(str, ours))} vs {' '.join(map(str, theirs))} x{scale}",
                    lambda job: beat_cycle(ours, theirs, scale, job))
     if path == "/api/prepare":

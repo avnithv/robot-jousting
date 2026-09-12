@@ -178,6 +178,13 @@ def api(handler, path, body):
         arm = body.get("arm", "A"); f = os.path.join(OUT, f"feasible_{arm}.json")
         if body.get("refresh") or not os.path.exists(f): subprocess.run([PY, "matrices.py", "feasible"], cwd=SIM, capture_output=True)
         return json.load(open(f))
+    if path == "/api/profile":   # the turn profile (arm/turn_profile.json): GET returns it, POST with {"set": {...}} updates keys
+        f = os.path.join(ARM, "turn_profile.json"); P = json.load(open(f))
+        if body.get("set"):
+            for k, v in body["set"].items():
+                if k in P and not k.startswith("_"): P[k] = (type(P[k])(v) if not isinstance(P[k], bool) else (v in (True, "true", "on", 1, "1")))
+            json.dump(P, open(f + ".tmp", "w"), indent=1); os.replace(f + ".tmp", f)
+        return P
     if path == "/api/turn":
         ensure_daemon()
         def go():
@@ -245,7 +252,7 @@ def api(handler, path, body):
         subprocess.run([PY, "chain.py", "pair", *ours, "--", *theirs], cwd=SIM, capture_output=True)
         def go():
             j = start_job("arm", f"CHARGE + PAIR {body['key']} x{body.get('scale', 0.5)}", ["true"], ARM)
-            try: rr = daemon("/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": body.get("scale", 0.5), "overlap": True, "salute": False, "apart_after": False}, timeout=300); open(j["log"], "a").write(json.dumps(rr) + "\n"); j["status"] = "done" if rr.get("ok") else "failed"
+            try: rr = daemon("/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": body.get("scale", 0.5), "apart_after": False}, timeout=300)   # the rest comes from arm/turn_profile.json; open(j["log"], "a").write(json.dumps(rr) + "\n"); j["status"] = "done" if rr.get("ok") else "failed"
             except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}

@@ -11,6 +11,10 @@ import arena, ik, tune
 from tune import JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
 RETURN_T = 0.4   # after an attack's retract, seconds to come back along the strike line to the strike-ready pose before any connector
+try:   # arm/turn_profile.json overrides the beat model (edit it there; every consumer reads the same file)
+    _P = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "arm", "turn_profile.json")))
+    BEAT, IMPACT, GUARD, RETURN_T = float(_P.get("beat", BEAT)), float(_P.get("impact", IMPACT)), float(_P.get("guard", GUARD)), float(_P.get("return_t", RETURN_T))
+except Exception: pass
 TIP_MIN = -0.10             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
 REACH_MAX = 0.40            # hand reach allowed in transit (m): the extended low slashes reach 0.38; contact safety comes from the calibrated stops
 BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)

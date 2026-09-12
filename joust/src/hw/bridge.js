@@ -119,7 +119,9 @@ export class SimBridge {
    *  disentangle and rest -> carriages apart. Returns { started, done }: `started` resolves when the pass is
    *  about to leave the apart stop (on hardware: the pair is compiled), `done` when the arms and carriages
    *  are back where they began. Sim: nothing to drive, so both are timers. */
-  beatCycle(/* index, moveA, moveB */) { return { started: Promise.resolve(null), done: this.nap(this.beatMs + 600) }; }
+  beatCycle(index, movesA, movesB) { const n = Math.max(1, (movesA || []).length); void index; void movesB; return { started: Promise.resolve(null), done: this.nap(this.beatMs * n + 600) }; }
+  /** How many beats one pass of the simple duel plays before the carriages back out (arm/turn_profile.json). Sim: all three. */
+  passBeats() { return 3; }
   /** The winner's flourish after the knockout. Sim: a short pause so the beat lands. */
   async flourish(/* side, name */) { await this.nap(600); }
   /** Two-arm emote scene (openers, hits, gloats, finales, idle -- see robot-jousting/sim/emotes/).
@@ -260,6 +262,7 @@ export class ArmBridge extends SimBridge {
     await this.status();
     if (!this.live) return;
     this.note = 'preparing the hardware...'; this.emit();
+    await this.loadProfile();
     const job = await this.job('/api/prepare', {}, { timeout: this.prepareMs });
     this.prepared = job.status === 'done';
     if (!this.prepared) { this.note = 'prepare did not finish: ' + (job.result || job.status); console.warn(this.note); }
@@ -388,14 +391,18 @@ export class ArmBridge extends SimBridge {
    *  the arms starting as the charge begins and the carriages backing out after). `started` resolves at the
    *  job's `charging` step, with the compiled pair's beat schedule loaded so beatMsFor(0) / impactAtFor(0)
    *  size the screen's beat; `done` when the job has finished and both arms and the gantry are idle. */
-  beatCycle(index, moveA, moveB) {
-    this.pending = null; this.beats = null; this.lead = 0; this.tail = 0; this.beatSource = ''; this.chainLen = 1;
-    if (!this.live) return { started: Promise.resolve(null), done: this.nap(this.beatMs + 600) };
+  /** The turn profile (arm/turn_profile.json via GET /api/profile): scale, beats per pass, and the rest of the
+   *  pass shape. Fetched at prepare() and before each pass so an edit in the studio applies to the next pass. */
+  async loadProfile() { try { this.profile = await this.api('/api/profile'); } catch (e) { this.profile = this.profile || {}; } return this.profile; }
+  passBeats() { const n = Number(this.profile && this.profile.beats_per_pass); return n >= 1 ? Math.min(3, Math.round(n)) : 3; }
+  beatCycle(index, movesA, movesB) {
+    this.pending = null; this.beats = null; this.lead = 0; this.tail = 0; this.beatSource = ''; this.chainLen = (movesA || []).length || 1;
+    if (!this.live) return { started: Promise.resolve(null), done: this.nap(this.beatMs * this.chainLen + 600) };
     let resolveStart; const started = new Promise(res => { resolveStart = res; });
-    const scale = Math.max(0.1, Math.min(1, (Number(settings.get('armScale')) || 70) / 100));
     const done = (async () => {
       let r = null;
-      try { r = await this.api('/api/beat_cycle', { ours: [moveA], theirs: [moveB], scale }); }
+      await this.loadProfile();
+      try { r = await this.api('/api/beat_cycle', { ours: movesA, theirs: movesB }); }   // scale and the pass shape come from the profile
       catch (e) { console.warn('beat cycle failed', e); resolveStart(null); return null; }
       if (!r || !r.job) { console.warn('beat cycle was not queued', r); resolveStart(null); return r; }
       const job = await this.waitJob(r.job, { timeout: this.compileMs, until: j => j.phase === 'charging' });

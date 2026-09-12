@@ -491,22 +491,31 @@ export class Match {
     this.phaseNow = 'exchange';
     this.phase('exchange', { live: !!bridge.live, beats: null, turnMs: 0, simple: true });
     let dead = false;
-    for (let i = 0; i < BEATS_PER_TURN && !dead; i++) {
+    // beats are resolved up front, one pass at a time: a pass is `passBeats` beats (arm/turn_profile.json
+    // beats_per_pass: 1 = back and forth every beat, 3 = the whole turn in one fluid ride)
+    const per = Math.max(1, Math.min(BEATS_PER_TURN, bridge.passBeats ? bridge.passBeats() : BEATS_PER_TURN));
+    for (let p0 = 0; p0 < BEATS_PER_TURN && !dead; p0 += per) {
       await this.hold();
       if (this.forced) throw new FightEnded(this.forced);
-      battle.setBeat(i); this.beatKey = `${this.turn}:${i}`; this.outcome = '';
-      const cA = chainA[i] ? card(chainA[i]) : null, cB = chainB[i] ? card(chainB[i]) : null;
-      const r = resolveBeat(cA, cB, this.st.a, this.st.b);
+      const idx = []; for (let i = p0; i < Math.min(p0 + per, BEATS_PER_TURN); i++) idx.push(i);
+      // resolve the pass's beats now (statuses chain through them) so the arms get every move of the pass at once
+      const beats = []; let sa = this.st.a, sb = this.st.b;
+      for (const i of idx) {
+        const cA = chainA[i] ? card(chainA[i]) : null, cB = chainB[i] ? card(chainB[i]) : null;
+        const r = resolveBeat(cA, cB, sa, sb); sa = r.status.a; sb = r.status.b; beats.push({ i, cA, cB, r });
+      }
       // the pass on the metal. `started` resolves once the pair is compiled and the carriages are leaving the
-      // apart stop; `done` once both arms are back at rest and the carriages are apart again.
-      const cyc = bridge.beatCycle ? bridge.beatCycle(i, r.played.a.hw, r.played.b.hw) : { started: Promise.resolve(), done: Promise.resolve() };
-      this.sting('charge'); sfx.drumroll(0.6); this.react('murmur_up'); if (i === 0) this.herald('charge');
+      // apart stop; `done` once both arms are back at rest and the carriages are where the profile leaves them.
+      const cyc = bridge.beatCycle ? bridge.beatCycle(p0, beats.map(b => b.r.played.a.hw), beats.map(b => b.r.played.b.hw)) : { started: Promise.resolve(), done: Promise.resolve() };
+      this.sting('charge'); sfx.drumroll(0.6); this.react('murmur_up'); if (p0 === 0) this.herald('charge');
       await this.g(cyc.started);
       await this.g(stage.charge(1100)); stage.cheer(600); this.energy(0.9);
-      // this pass has one beat, so it is beat 0 of the bridge's schedule (the compiled pair's own boundaries on
-      // live arms, the host's beat length in sim)
-      const beatMs = bridge.beatMsFor ? bridge.beatMsFor(0) : this.beatMs;
-      const impactAt = bridge.impactAtFor ? bridge.impactAtFor(0) : null;
+      for (let k = 0; k < beats.length && !dead; k++) {
+      const { i, cA, cB, r } = beats[k];
+      battle.setBeat(i); this.beatKey = `${this.turn}:${i}`; this.outcome = '';
+      // beat k of this pass: the compiled pair's own boundaries on live arms, the host's beat length in sim
+      const beatMs = bridge.beatMsFor ? bridge.beatMsFor(k) : this.beatMs;
+      const impactAt = bridge.impactAtFor ? bridge.impactAtFor(k) : null;
       this.beatNow = beatMs; this.animMs = beatMs * ((impactAt != null ? impactAt : IMPACT) / IMPACT);
       const kinds = { a: undefined, b: undefined };
       for (const e of r.events) { if (e.type === 'hit') kinds[e.from] = 'hit'; else if (e.type === 'blocked') { kinds[e.attacker] = 'block'; kinds[e.blocker] = 'block'; } else if (e.type === 'clash') { kinds.a = 'clash'; kinds.b = 'clash'; } }
@@ -524,13 +533,14 @@ export class Match {
       this.phase('beat', { i, plannedA: cA ? cA.id : null, plannedB: cB ? cB.id : null,
                            playedA: r.played.a.id, playedB: r.played.b.id, outcome: this.outcome || '', ms: beatMs });
       this.st = r.status; for (const s of ['a', 'b']) battle.setStatus(s, this.st[s]);
-      // disentangle and reset: the knights back off on screen while the arms pull back, rest, and the carriages
-      // go apart. The next pass does not start until the metal says this one is over.
-      const out = stage.retreat(900);
-      await this.g(cyc.done); await this.g(out);
       if (this.hp.a <= 0 || this.hp.b <= 0) { dead = true; await this.wait(600); }
       else await this.wait(OUTCOME_GAP);
       if (this.forced) throw new FightEnded(this.forced);
+      }
+      // disentangle and reset: the knights back off on screen while the arms pull back, rest, and the carriages
+      // go where the profile leaves them. The next pass does not start until the metal says this one is over.
+      const out = stage.retreat(900);
+      await this.g(cyc.done); await this.g(out);
     }
     battle.setBeat(null);
     await this.wait(300); battle.hideDuel(); this.energy(0.4);

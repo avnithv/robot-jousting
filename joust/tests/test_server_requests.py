@@ -416,8 +416,8 @@ class LiveBeatLength(unittest.TestCase):
         t = server.move_timing("ATTACK_HIGH", "A")
         traj = float(server.tuned_json()["ATTACK_HIGH"]["t"][-1])   # the library's own trajectory length (1.26 s before the pause and retract were added)
         self.assertAlmostEqual(t["motion"], traj, places=2, msg="the trajectory itself")
-        self.assertGreater(t["total"], 4.0, "...but the arm is busy for more than three times that")
-        self.assertEqual(t["hold"], 1.5)
+        self.assertGreater(t["total"], t["motion"] + t["hold"] + 0.4, "...but the arm is busy for longer: lead, hold and the return")
+        self.assertEqual(t["hold"], server.turn_profile()["hold_end"])
         self.assertAlmostEqual(t["total"], t["lead"] + t["motion"] + t["hold"] + t["ret"], places=3)
 
     def test_a_feint_is_longer_still(self):
@@ -427,7 +427,7 @@ class LiveBeatLength(unittest.TestCase):
     def test_the_blow_lands_at_the_end_of_the_trajectory_not_at_the_end_of_the_beat(self):
         t = server.move_timing("ATTACK_HIGH", "A")
         self.assertAlmostEqual(t["pinned"], t["lead"] + t["motion"], places=3)
-        self.assertLess(t["pinned"] / t["total"], 0.5, "the hold and the return are most of a live beat")
+        self.assertLessEqual(t["pinned"], t["total"] - t["hold"] - t["ret"] + 1e-6, "the hold and the return come after the blow")
 
     def test_each_arm_gets_its_own_timing(self):
         # BLOCK_HIGH ends far from arm B's rest, so B's return is twice A's. A beat is the slower of the two.
@@ -438,7 +438,7 @@ class LiveBeatLength(unittest.TestCase):
         plan = server.fallback_beat_plan(["ATTACK_HIGH"], ["BLOCK_HIGH"])
         slower = max(server.move_timing("ATTACK_HIGH", "A")["total"], server.move_timing("BLOCK_HIGH", "B")["total"])
         self.assertAlmostEqual(plan[0]["end"] - plan[0]["start"], slower, places=2)
-        self.assertGreater(plan[0]["end"], 4.0)
+        self.assertGreater(plan[0]["end"], 1.4 + server.turn_profile()["hold_end"])   # a whole motion: lead + trajectory + hold + return
 
     def test_a_fallback_plan_is_cumulative_and_carries_the_impact_instant(self):
         plan = server.fallback_beat_plan(["ATTACK_HIGH", "BLOCK_LEFT", "REST"], ["BLOCK_HIGH", "ATTACK_LOW_LR", "REST"])
@@ -480,7 +480,7 @@ class LiveBeatLength(unittest.TestCase):
                                      "theirs": ["BLOCK_HIGH", "REST", "REST"]}), timeout=10)
         self.assertEqual(job["source"], "per-beat")
         self.assertEqual(len(job["beats"]), 3)
-        self.assertGreater(job["beats"][0]["end"], 4.0, "a real attack beat, not 1.4 s")
+        self.assertGreater(job["beats"][0]["end"], 1.4 + server.turn_profile()["hold_end"], "a real attack beat, not 1.4 s")
         self.assertEqual(job["lead"], 0.0, "each per-beat play carries its own ease-in inside its beat")
 
     def test_a_compiled_beat_plan_carries_the_pinned_instant(self):

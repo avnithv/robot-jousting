@@ -17,7 +17,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import serial
 from grbl_manual import XYController
 HERE = os.path.dirname(os.path.abspath(__file__)); RATE = 50.0; EASE_SPEED = 150.0
-HOLD_END = 1.5; RETURN_SPEED = 60.0   # hold the final pose, then return to rest slowly (the return is not part of the move)
+HOLD_END = 1.5; RETURN_SPEED = 60.0   # fallbacks only: the live values come from arm/turn_profile.json (see profile())
+PROFILE = os.path.join(HERE, "turn_profile.json")
+def profile(body=None):
+    """The turn profile (every timing knob of a live exchange), read fresh each call so edits apply without a restart,
+    with any same-named keys in a request body overriding it."""
+    P = {"scale": 1.0, "beats_per_pass": 3, "overlap": True, "salute": False, "apart_after": True, "pause_before_charge": 0.2, "charge_feed": None, "apart_feed": None,
+         "settle": 0.1, "ease_speed": EASE_SPEED, "hold_end": HOLD_END, "return_speed": RETURN_SPEED}
+    try: P.update({k: v for k, v in json.load(open(PROFILE)).items() if not k.startswith("_")})
+    except Exception: pass
+    for k, v in (body or {}).items():
+        if k in P and v is not None: P[k] = v
+    return P
 CFG = os.path.join(HERE, "arms.json"); TUNED = os.path.join(HERE, "motions_tuned.json")
 STREAM_DT = 0.25      # gantry channel: one merged G1 per this many seconds of the trajectory (see GantryStream)
 STREAM_DEADBAND_MM = 0.2   # below this the carriage is not really moving: skip the block rather than creep
@@ -67,11 +78,12 @@ class Arm:
             if c.get("roll_offset") is None: raise RuntimeError(f"arm {self.name}: roll_offset not set in arms.json (find the sword-on-top roll first)")
             Q[:, 4] = np.clip(Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"], -175, 175)   # never touch the +/-180 wrap
         return Q
-    def prepare(self, move):
+    def prepare(self, move, P=None):
+        P = P or profile()
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); self._entry_arm = M.get("arm", "A"); Q = self.rebase(M["q"]); rest = self.rest_pose()
         self._gantry = (M.get("gantry_axis"), M.get("gantry_mm"))   # ADDITIVE: an emote's carriage channel, or (None, None)
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
-        self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
+        self.abort = False; self.ease_to(rest, max_speed=float(P["ease_speed"])); self.ease_to(Q[0], max_speed=float(P["ease_speed"])); time.sleep(float(P["settle"]))
         return t, Q, rest
     def trajectory(self, move):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; self._entry_arm = M.get("arm", "A")
@@ -88,8 +100,10 @@ class Arm:
             if now >= T: self.send(qi(t1)); return False, 1.0, qi(t1)
             self.send(qi(t0 + frac * (t1 - t0))); time.sleep(1 / RATE)
 
-    def play(self, move, scale, repeat, barrier=None):
-        t, Q, rest = self.prepare(move)
+    def play(self, move, scale, repeat, barrier=None, P=None):
+        """Ease to rest and into the first key, play the trajectory at `scale`, hold the final pose for P['hold_end'] s, return to
+        rest at P['return_speed'] deg/s. P is the turn profile (arm/turn_profile.json) with any per-request overrides."""
+        P = P or profile(); t, Q, rest = self.prepare(move, P)
         # ADDITIVE: if this motion carries a gantry channel (the emote scenes do), park the carriage where the
         # scene starts while the arm is still easing in, then stream the channel alongside the arm samples.
         gax, gmm = getattr(self, "_gantry", (None, None)); streaming = gstream.usable(gax, gmm)
@@ -107,10 +121,10 @@ class Arm:
                     self.send(np.array([np.interp(now * scale, t, Q[:, k]) for k in range(6)])); time.sleep(1 / RATE)
             finally:
                 if streaming: gstream.remove(gax)                 # ADDITIVE: never stream through the hold/return
-            time.sleep(HOLD_END)
+            time.sleep(float(P["hold_end"]))
         if self.abort:
             self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
-        self.ease_to(rest, max_speed=RETURN_SPEED)
+        self.ease_to(rest, max_speed=float(P["return_speed"]))
         self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg"
 
 class Gantry:
@@ -365,11 +379,12 @@ class H(BaseHTTPRequestHandler):
             if not (A.busy.acquire(blocking=False)): return self._json({"error": "A busy"}, 409)
             if not (B.busy.acquire(blocking=False)): A.busy.release(); return self._json({"error": "B busy"}, 409)
             try:
-                scale = float(body.get("scale", 0.5)); feed = float(body.get("feed", gantry.cfg["charge_feed"])); log = []
+                P = profile(body); scale = float(body.get("scale", P["scale"])); log = []
+                feed = float(body.get("feed") or P["charge_feed"] or gantry.cfg["charge_feed"]); afeed = float(P["apart_feed"] or feed)
                 def both(mA, mB, sc):
                     bar = threading.Barrier(2); errs = {}
                     def run(arm, move):
-                        try: arm.play(move, sc, 1, barrier=bar)
+                        try: arm.play(move, sc, 1, barrier=bar, P=P)
                         except Exception as e: arm.last = f"error: {e}"; errs[arm.name] = str(e)
                     ta = threading.Thread(target=run, args=(A, mA)); tb = threading.Thread(target=run, args=(B, mB)); ta.start(); tb.start(); ta.join(); tb.join()
                     if errs: raise RuntimeError(str(errs))
@@ -377,23 +392,23 @@ class H(BaseHTTPRequestHandler):
                 with gantry.lock:
                     st = gantry.status(); apart = gantry.cfg["apart"]
                     if abs(st.get("x", 0) - apart["X"]) > 2 or abs(st.get("y", 0) - apart["Y"]) > 2:
-                        gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
-                    time.sleep(0.5); mA, mB = body.get("moveA", "CHAIN_A"), body.get("moveB", "CHAIN_B"); errs = {}
-                    if body.get("overlap"):   # arms start the instant the charge-in is sent, so the moves run during the ride
+                        gantry.move(apart["X"], apart["Y"], afeed); log.append("moved apart")
+                    time.sleep(float(P["pause_before_charge"])); mA, mB = body.get("moveA", "CHAIN_A"), body.get("moveB", "CHAIN_B"); errs = {}
+                    if P["overlap"]:   # arms start the instant the charge-in is sent, so the moves run during the ride
                         def go():
                             try: both(mA, mB, scale)
                             except Exception as e: errs["arms"] = str(e)
                         th = threading.Thread(target=go); th.start()
                     gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], feed); log.append("charged in")
-                if body.get("overlap"):
+                if P["overlap"]:
                     th.join()
                     if errs: raise RuntimeError(errs["arms"])
                     log.append("played during the charge")
                 else:
-                    if body.get("salute", True): both("SALUTE", "SALUTE", 1.0); log.append("saluted")
+                    if P["salute"]: both("SALUTE", "SALUTE", 1.0); log.append("saluted")
                     both(mA, mB, scale); log.append("played")
-                if body.get("apart_after", True):
-                    with gantry.lock: gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
+                if P["apart_after"]:
+                    with gantry.lock: gantry.move(apart["X"], apart["Y"], afeed); log.append("moved apart")
                 self._json({"ok": True, "log": log, "A": A.last, "B": B.last})
             except Exception as e:
                 self._json({"error": str(e)}, 500)
@@ -416,7 +431,7 @@ class H(BaseHTTPRequestHandler):
         if not a.busy.acquire(blocking=False): return self._json({"error": "busy"}, 409)
         a.abort = False   # a stale STOP/ABORT must not cancel the next commanded motion
         try:
-            if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)))
+            if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)), P=profile(body))
             elif self.path == "/rest": a.ease_to(a.rest_pose()); a.last = "at rest"
             elif self.path == "/hold": a.ease_to(np.array(a.pose()), min_t=0.05); a.last = "holding current pose"
             elif self.path == "/release": a.set_torque(False); a.last = "torque off: move the arm by hand"
