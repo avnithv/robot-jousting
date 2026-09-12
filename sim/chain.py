@@ -9,7 +9,7 @@ import sys, os, json, numpy as np, mujoco, imageio
 import arena, ik, tune
 from tune import PARAMS, REST, ROLL_OFFSET, JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
-TIP_MIN = -0.06             # blade tip floor (m). The real board sits below the sim's base plane; the captured guards reach -0.05 without touching.
+TIP_MIN = -0.08             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
 BLEND_RATE = 200.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}

@@ -1,7 +1,61 @@
 {
- "_doc": "Hub poses (sim convention degrees [pan, lift, elbow, wrist, roll, jaw]) that transitions route through when a direct blend is unsafe. From docs/transitions_and_flourishes.md.",
- "EN_GARDE":  [0, -60, 30, 20, 0, 0],
- "READY_MID": [0, -50, 60, -20, 0, 0],
- "TUCK":      [10, 20, -20, -90, 0, 0],
- "GATE":      [20, 10, -95, -94, 0, 0]
+ "_doc": "Named intermediate states (sim convention degrees [pan, lift, elbow, wrist, roll, jaw]). MID is the routing hub (in the middle of the workspace and halfway in roll between the sword-on-top moves and the sword-underneath guards). SALUTE and LOW_TIP are flair/taunt states that also work as hubs. Charge/ride-in happens at REST.",
+ "MID": [
+  0,
+  -65,
+  35,
+  0,
+  -45,
+  0
+ ],
+ "SALUTE": [
+  0,
+  -40,
+  -25,
+  -15,
+  0,
+  0
+ ],
+ "LOW_TIP": [
+  0,
+  -30,
+  40,
+  40,
+  -180,
+  0
+ ],
+ "_legacy": {
+  "EN_GARDE": [
+   0,
+   -60,
+   30,
+   20,
+   0,
+   0
+  ],
+  "READY_MID": [
+   0,
+   -50,
+   60,
+   -20,
+   0,
+   0
+  ],
+  "TUCK": [
+   10,
+   20,
+   -20,
+   -90,
+   0,
+   0
+  ],
+  "GATE": [
+   20,
+   10,
+   -95,
+   -94,
+   0,
+   0
+  ]
+ }
 }
