@@ -40,6 +40,6 @@
  "swing": 0.5,
  "t_back_fast": 0.25,
  "t_back_slow": 0.15,
- "retreat": 0.55,
+ "retreat": 0.7,
  "strike_slow": 1.0
 }
