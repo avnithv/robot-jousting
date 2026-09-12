@@ -17,7 +17,8 @@
  <div class="bar" style="margin-top:8px"><video id="vid" controls loop muted></video></div>
  <div class="bar"><label>show: <select id="opp" onchange="oppChanged()"><option value="">this move alone</option></select></label>
   <span style="flex:1"></span>
-  <label>arm speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
+  <label>arm <select id="arm"><option value="A">A: SO-100</option><option value="B">B: SO-101</option></select></label>
+  <label>speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
   <button class="primary" onclick="runArm()">Run on arm</button> <span class="arm" id="armst"></span></div>
  <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Power off arm (move by hand)</button> <span class="arm" id="live"></span>
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
@@ -51,11 +52,12 @@ function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title'
    tr.innerHTML=`<td class="k">${k}</td><td>${ro?`<span>${val}</span>`:`<input type="number" step="any" data-k="${k}" value="${val}">`}</td><td class="h">${help[k]||''}</td>`;t.appendChild(tr)}}}
 async function oppChanged(){const opp=document.getElementById('opp').value;if(opp){await api('/api/pair',{a:cur,b:opp})}refreshMain(false);poll()}
 async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p});poll()}
-async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t,attach_pose:document.getElementById('attach').checked});document.getElementById('fb').value='';poll()}
-async function release(){await api('/api/release',{});poll()}
-async function capture(which){await api('/api/capture',{move:cur,which});poll()}
+async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t,attach_pose:document.getElementById('attach').checked,arm:arm()});document.getElementById('fb').value='';poll()}
+function arm(){return document.getElementById('arm').value}
+async function release(){await api('/api/release',{arm:arm()});poll()}
+async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
-async function runArm(){await api('/api/run',{move:cur,scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
+async function runArm(){await api('/api/run',{move:cur,arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
 async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;
  for(const j of js.slice(0,30)){const run=(j.status==='running'||j.status==='queued');if(run)anyRun=true;const d=document.createElement('div');d.className='job';
@@ -63,7 +65,7 @@ async function poll(){const js=await api('/api/jobs');const l=document.getElemen
   d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${esc(j.label)} <small>${el}s</small>`+(run&&j.kind==='agent'?` <a href="#" onclick="stopJob('${j.id}');return false">stop</a>`:'')+prog+
    (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>full log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
  const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
- const a=await api('/api/arm');document.getElementById('armst').textContent=a.offline?'arm: idle (connects on first run)':(a.busy?'arm: moving':(a.torque?'arm: holding':'arm: limp, move it by hand'));
+ const st=await api('/api/arm');const a=(st.arms||{})[arm()]||{};document.getElementById('armst').textContent=st.offline?'arms: idle (connect on first use)':(!st.arms[arm()]?'arm '+arm()+': not connected':(a.busy?'moving':(a.torque?'holding':'limp, move it by hand')));
  document.getElementById('live').textContent=a.pose?'live '+JSON.stringify(a.pose):'';
  setTimeout(poll,anyRun?1500:4000)}
 async function stopJob(id){await api('/api/stop',{id});poll()}

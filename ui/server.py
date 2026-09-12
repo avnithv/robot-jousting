@@ -114,11 +114,11 @@ def api(handler, path, body):
     if path == "/api/gen": return start_job("gen", f"regenerate {body['move']}", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
     if path == "/api/pair": return start_job("pair", f"pair {body['a']} vs {body['b']}", [PY, "pair.py", body["a"], body["b"]], SIM, lock=gen_lock)
     if path == "/api/run":
-        ensure_daemon()
+        ensure_daemon(); arm = body.get("arm", "A")
         def go():
-            j = start_job("arm", f"ARM {body['move']} x{body.get('scale', 1)}", ["true"], ARM)   # placeholder job card
+            j = start_job("arm", f"ARM {arm} {body['move']} x{body.get('scale', 1)}", ["true"], ARM)   # placeholder job card
             try:
-                r = daemon("/play", {"move": body["move"], "scale": body.get("scale", 1.0), "repeat": body.get("repeat", 1)}, timeout=120)
+                r = daemon("/play", {"arm": arm, "move": body["move"], "scale": body.get("scale", 1.0), "repeat": body.get("repeat", 1)}, timeout=120)
                 open(j["log"], "a").write(json.dumps(r) + "\n"); j["status"] = "done" if "error" not in r else "failed"
             except Exception as e:
                 open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
@@ -133,21 +133,24 @@ def api(handler, path, body):
         if p: j["stopped"] = True; p.terminate(); return {"ok": True}
         return {"error": "not running"}
     if path == "/api/arm": return daemon_status()
-    if path == "/api/hold": ensure_daemon(); return daemon("/hold", {}, timeout=30)
+    if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)
     if path == "/api/capture":
-        ensure_daemon(); st = daemon_status(); pose = st.get("pose")
+        ensure_daemon(); arm = body.get("arm", "A"); st = daemon_status().get("arms", {}).get(arm, {}); pose = st.get("pose")
         if not pose: return {"error": "no pose"}
+        if arm != "A" and body["move"] == "REST":   # arm B keeps its own rest pose in arms.json
+            c = json.load(open(os.path.join(ARM, "arms.json"))); c[arm]["rest"] = pose; json.dump(c, open(os.path.join(ARM, "arms.json"), "w"), indent=1)
+            return {"ok": True, "rest": pose}
         f = os.path.join(PARAMS, f"{body['move']}.json"); p = json.load(open(f))
         p.setdefault("captured", {})[body["which"]] = pose
         p.setdefault("_help", {})[f"captured.{body['which']}"] = "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
         json.dump(p, open(f, "w"), indent=1)
         return start_job("gen", f"regenerate {body['move']} (captured {body['which']})", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
-    if path == "/api/release": ensure_daemon(); return daemon("/release", {}, timeout=30)
+    if path == "/api/release": ensure_daemon(); return daemon("/release", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/feedback":
         jid = uuid.uuid4().hex[:8]; text = body["text"]
         if body.get("attach_pose"):
-            st = daemon_status(); pose = st.get("pose")
+            st = daemon_status().get("arms", {}).get(body.get("arm", "A"), {}); pose = st.get("pose")
             if pose:
                 sim = list(pose); sim[4] = round(sim[4] - 76.0, 1)
                 text += (f"\n\nATTACHED ARM POSE: the user physically posed the real arm while writing this. Its joints are {pose} in real-arm degrees "

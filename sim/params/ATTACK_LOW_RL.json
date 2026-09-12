@@ -15,8 +15,22 @@
  "t_windup": 0.85,
  "t_slash": 0.4,
  "captured": {
-  "start": [20.0, -4.0, 88.3, -91.5, -14.0, 55.0],
-  "end": [-20.0, 16.4, 66.7, -81.9, -14.0, 0.0]
+  "start": [
+   20.0,
+   -4.0,
+   88.3,
+   -91.5,
+   -14.0,
+   55.0
+  ],
+  "end": [
+   -22.3,
+   1.7,
+   77.8,
+   -61.8,
+   -17.6,
+   7.9
+  ]
  },
  "_help": {
   "end.x": "hand distance forward at the end of the slash (m, keep <= 0.27)",
@@ -30,6 +44,6 @@
   "t_windup": "seconds: rest -> cocked low on the start side (0.85 = the old mirror timing)",
   "t_slash": "seconds: the sweep (base pan speed)",
   "captured.start": "windup pose (real degrees): the old mirrored windup, kept so only the end changes. Delete to recompute from start.*",
-  "captured.end": "end pose (real degrees): hand at (0.27, 0.08), blade pitched -14 deg (was -7: tip pointed up a bit). Delete to recompute from end.*"
+  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
  }
 }

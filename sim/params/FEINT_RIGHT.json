@@ -1,28 +1,37 @@
 {
- "_doc": "Mirror of FEINT_LEFT (uses ATTACK_LOW_RL's windup), then pulls back to rest (captured.end).",
+ "_doc": "Mirror of FEINT_LEFT: ATTACK_LOW_RL's windup (sword cocked low on the RIGHT), committed ~30% into the sweep (captured.start), then a late, quick pull back to rest (captured.end). The recipe only has 3 keys (rest, windup, pull-back), so 'following the sweep' is done by aiming the windup at a pose 30% along the windup->slash-end line. In a chain the pull-back key is pinned at 1.0 s, so shorter t_back = pull back starts later. pull_back offsets only apply when captured.end is removed.",
  "like": "ATTACK_LOW_RL",
  "pull_back": {
   "lift": -25,
   "wrist": 0
  },
  "jaw_after": 8,
- "t_back": 0.5,
+ "t_back": 0.46,
  "_help": {
   "like": "uses this slash's windup (sword cocked low on the RIGHT), then pulls back",
   "pull_back.lift": "shoulder offset from the windup for the pull back (deg; negative = up/back)",
   "pull_back.wrist": "wrist offset for the pull back (deg)",
   "jaw_after": "jaw after the pull back (0..100)",
-  "t_back": "seconds: the pull back",
-  "captured.end": "end pose captured from the arm (real degrees): the rest pose, so the feint pulls all the way back at the end. Overrides pull_back. Delete the entry to go back to the computed pose."
+  "t_back": "seconds: the pull back (0.46 = as quick as the shoulder's 300 deg/s cap allows: this windup has the shoulder ~91 deg from rest)",
+  "captured.start": "windup pose (real degrees): ATTACK_LOW_RL's captured windup moved 30% toward its captured slash end (pan +8 instead of +20), so the feint starts the sweep before pulling back. Delete to use the attack's exact windup.",
+  "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose."
  },
  "captured": {
+  "start": [
+   8.0,
+   2.1,
+   81.8,
+   -88.6,
+   -14.0,
+   55.0
+  ],
   "end": [
-   -3.3,
+   -3.8,
    -89.0,
-   47.3,
-   3.6,
-   76.4,
-   7.9
+   48.0,
+   3.2,
+   76.1,
+   7.4
   ]
  }
 }

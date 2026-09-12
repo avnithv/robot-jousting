@@ -1,19 +1,23 @@
-"""Shared bits for talking to the real SO-101 follower through LeRobot.
-Connection settings come from the earlier hand-tracking session (hand_to_so101/teleoperate.py)."""
+"""Shared bits for talking to the real arms through LeRobot. Two arms: A = SO-100 (the one all moves were tuned on),
+B = SO-101 (the opponent). Each has its own port, calibration id and roll offset (real wrist_roll reading when the sword is on top)."""
 import json, os, time
 import numpy as np
 
-PORT = os.environ.get("ARM_PORT", "/dev/cu.usbmodem5AE60818001")   # lerobot-find-port
-ROBOT_ID = os.environ.get("ARM_ID", "my_follower")                    # lerobot calibration id
 JOINTS = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]
 HERE = os.path.dirname(os.path.abspath(__file__))
-POSES_REAL = os.path.join(HERE, "poses_real.json")
-POSES_SIM = os.path.join(HERE, "..", "sim", "poses_v1.json")
+ARMS = {
+    "A": {"port": os.environ.get("ARM_PORT", "/dev/cu.usbmodem5AE60818001"), "id": os.environ.get("ARM_ID", "my_follower"), "roll_offset": 76.0, "model": "SO-100"},
+    "B": {"port": os.environ.get("ARM_B_PORT", "/dev/cu.usbmodem5AE60824811"), "id": os.environ.get("ARM_B_ID", "so101_arm"), "roll_offset": None, "model": "SO-101 (leader build)"},
+}
+PORT, ROBOT_ID = ARMS["A"]["port"], ARMS["A"]["id"]   # backwards compatibility
+POSES_REAL = os.path.join(HERE, "poses_real.json"); POSES_SIM = os.path.join(HERE, "..", "sim", "poses_v1.json")
 
-def connect(max_relative_target=None):
+def connect(max_relative_target=None, arm="A", hold_on_disconnect=False):
     from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
-    robot = SO101Follower(SO101FollowerConfig(port=PORT, id=ROBOT_ID, use_degrees=True, max_relative_target=max_relative_target))
-    robot.connect(calibrate=True)   # loads the saved calibration; only runs the sweep if none exists
+    cfg = ARMS[arm]
+    robot = SO101Follower(SO101FollowerConfig(port=cfg["port"], id=cfg["id"], use_degrees=True, max_relative_target=max_relative_target,
+                                              disable_torque_on_disconnect=not hold_on_disconnect))
+    robot.connect(calibrate=True)   # loads the saved calibration; only runs the sweep if none matches
     return robot
 
 def read_pose(robot):
@@ -22,8 +26,7 @@ def read_pose(robot):
 
 def load_poses(path):
     if not os.path.exists(path): return {}
-    data = json.load(open(path))
-    poses = data.get("poses", data)
+    data = json.load(open(path)); poses = data.get("poses", data)
     return {k: [float(x) for x in v] for k, v in poses.items()}
 
 def save_poses(path, poses):

@@ -1,0 +1,5 @@
+{
+ "_doc": "Per-arm settings. rest = real degrees [pan, lift, elbow, wrist_flex, wrist_roll, jaw]. roll_offset = real wrist_roll when the sword is on top (sim roll 0). Tuned trajectories are stored in arm A's real coordinates; arm B gets roll re-based to its own offset.",
+ "A": {"model": "SO-100", "roll_offset": 76.0, "rest": null},
+ "B": {"model": "SO-101", "roll_offset": null, "rest": null}
+}

@@ -1,20 +1,28 @@
 {
- "_doc": "ATTACK_HIGH's raise + cock, then a pull back to rest (captured.end): follows the attack, then withdraws fully. pull_back offsets only apply when captured.end is removed.",
+ "_doc": "ATTACK_HIGH's raise, committed ~30% into the slam (captured.start), then a late, quick pull back to rest (captured.end). The recipe only has 4 keys (rest, raise, cock, pull-back), so 'following the slam' is done by aiming the raise at a pose 30% along the cocked->slam-end line; the pull back is as quick as the elbow's 300 deg/s cap allows to REST. In a chain the pull-back key is pinned at 1.0 s, so shorter t_back = pull back starts later. pull_back offsets only apply when captured.end is removed.",
  "like": "ATTACK_HIGH",
  "pull_back": {
   "lift": -20,
   "wrist": -10
  },
  "jaw_after": 8,
- "t_back": 0.5,
+ "t_back": 0.38,
  "captured": {
+  "start": [
+   0.0,
+   -24.2,
+   -32.0,
+   33.5,
+   76.0,
+   50.0
+  ],
   "end": [
-   -3.3,
+   -3.8,
    -89.0,
-   47.3,
-   3.6,
-   76.4,
-   7.9
+   48.0,
+   3.2,
+   76.1,
+   7.4
   ]
  },
  "_help": {
@@ -22,7 +30,8 @@
   "pull_back.lift": "shoulder offset from the raised pose for the snap back (deg; negative = pulls back/up)",
   "pull_back.wrist": "wrist offset for the snap back (deg)",
   "jaw_after": "jaw after the snap (0..100)",
-  "t_back": "seconds: the snap back",
-  "captured.end": "end pose captured from the arm (real degrees): the rest pose, so the feint pulls all the way back at the end. Overrides pull_back. Delete the entry to go back to the computed pose."
+  "t_back": "seconds: the snap back (0.38 = the fastest that keeps the elbow under 300 deg/s on the way to rest; 0.35 hit 316)",
+  "captured.start": "raised/cocked pose (real degrees): ATTACK_HIGH's cocked pose moved 30% toward its slam end, so the feint commits into the slam line before pulling back (40% brought the blade within 2.0 cm of an opponent resting blade as the jaw closes on the pull-back). Delete to use the attack's exact cocked pose.",
+  "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose."
  }
 }
