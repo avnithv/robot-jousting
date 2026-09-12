@@ -339,7 +339,7 @@ class H(BaseHTTPRequestHandler):
                 op = self.path.split("/")[-1]
                 if op == "abort": gantry.abort(); return self._json({"ok": True, "last": gantry.last})
                 if op == "unlock": gantry.lock = threading.RLock(); gantry.last = "lock cleared"; return self._json({"ok": True, "last": gantry.last})
-                if not gantry.lock.acquire(blocking=False): return self._json({"error": "gantry busy"}, 409)
+                if not gantry.lock.acquire(timeout=5): return self._json({"error": "gantry busy"}, 409)   # a status poll holds the lock for ms: wait it out; a real move still answers 409
                 try:
                     if op == "home": gantry.home()
                     elif op == "reconnect": gantry.reconnect()

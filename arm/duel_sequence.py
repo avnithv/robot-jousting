@@ -16,9 +16,16 @@ single_ride = "moves" in D and "passes" not in D
 if single_ride: D["passes"] = D["moves"]
 if len(args) <= 1 or not any(not a.endswith(".json") for a in args): scale = float(D.get("scale", scale))
 rs = float(D.get("return_speed", 120))
-def daemon(p, body, timeout=300):
-    req = urllib.request.Request("http://127.0.0.1:8766" + p, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
-    return json.load(urllib.request.urlopen(req, timeout=timeout))
+def daemon(p, body, timeout=300, tries=8):
+    """POST to the arm daemon. A 409 (an arm or the gantry busy, e.g. the studio's status poll holding the gantry lock for a
+    moment) is retried a few times; any other error prints the daemon's own message instead of a traceback."""
+    for i in range(tries):
+        req = urllib.request.Request("http://127.0.0.1:8766" + p, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        try: return json.load(urllib.request.urlopen(req, timeout=timeout))
+        except urllib.error.HTTPError as e:
+            msg = e.read().decode(errors="replace")[:200]
+            if e.code == 409 and i < tries - 1: print(f"   ({p}: {msg.strip()}; retrying)"); time.sleep(1.5); continue
+            sys.exit(f"{p} failed: HTTP {e.code} {msg}")
 def turn(mA, mB, overlap, apart_after=True):
     r = daemon("/turn", {"moveA": mA, "moveB": mB, "scale": scale, "overlap": overlap, "salute": False, "apart_after": apart_after})
     if not r.get("ok"): sys.exit(f"turn failed: {r}")

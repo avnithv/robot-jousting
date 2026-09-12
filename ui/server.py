@@ -29,7 +29,15 @@ def strike_frac(arm, move, pose):
     t, Q, t0, t1 = strike_segment(arm, move); fr = np.linspace(0, 1, 201); p = np.array(pose[:5])
     d = [np.linalg.norm(np.array([np.interp(t0 + f * (t1 - t0), t, Q[:, k]) for k in range(5)]) - p) for f in fr]; return float(fr[int(np.argmin(d))])
 SHOW = {"stop": False}
-def daemon(path, body, timeout=10):
+def daemon(path, body, timeout=10, tries=6):
+    """POST to the arm daemon; a 409 (busy) on a gantry op is retried a few times (the status poll holds the gantry lock for ms)."""
+    for i in range(tries):
+        try: return _daemon(path, body, timeout)
+        except urllib.error.HTTPError as e:
+            if e.code == 409 and path.startswith("/gantry/") and i < tries - 1: time.sleep(1.5); continue
+            try: return json.loads(e.read().decode())
+            except Exception: return {"error": f"HTTP {e.code}"}
+def _daemon(path, body, timeout=10):
     req = urllib.request.Request("http://127.0.0.1:8766" + path, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
     return json.load(urllib.request.urlopen(req, timeout=timeout))
 def daemon_status():
