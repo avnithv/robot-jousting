@@ -134,14 +134,14 @@ class Arm:
             # start to the instant the blow is pinned), the servos' loads are read every tick; if a watched joint pushes
             # back over the limit, the forward sequence ends where it is and the clock jumps to the point of the backward
             # sequence (retract, return) nearest the current pose, so the arm reverses out from where it met resistance.
-            fw = self.forward_windows(move); fs = {}; self.force_events = []
+            fw = self.forward_windows(move); fs = {}; self.force_events = []; self.peak_load = 0
             try:
                 while not self.abort:
                     now = time.perf_counter() - t0; tt = now * scale
                     if now > T: self.send(Q[-1]); break
                     self.send(np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]))
                     if fw and tt >= fw[0][1]: fw.pop(0); fs = {}
-                    elif fw and fw[0][0] <= tt and self.force_over(P, fs):
+                    elif fw and fw[0][0] <= tt and self.force_tick(P, fs):
                         cur = np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]); idx = np.where(t >= fw[0][1])[0]
                         j = int(idx[np.argmin(np.linalg.norm(Q[idx][:, :5] - cur[:5], axis=1))]) if len(idx) else None
                         if j is not None: t0 = time.perf_counter() - float(t[j]) / scale
@@ -155,7 +155,10 @@ class Arm:
         if self.abort:
             self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
         self.ease_to(rest, max_speed=float(P["return_speed"]))
-        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg" + (f"; force stop x{len(self.force_events)} " + str(self.force_events) if getattr(self, "force_events", None) else "")
+        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg; peak load {getattr(self, 'peak_load', 0)} in the strike windows" + (f"; force stop x{len(self.force_events)} " + str(self.force_events) if getattr(self, "force_events", None) else "")
+    def force_tick(self, P, fs):
+        """force_over() plus the peak-load bookkeeping that play() reports afterwards."""
+        over = self.force_over(P, fs); self.peak_load = max(getattr(self, "peak_load", 0), int(fs.get("load", 0))); return over
     def forward_windows(self, move):
         """[(t_start, t_pinned)] trajectory spans where the blade is on its way IN: every attack/feint beat of a compiled chain
         (its start to where the compiler pinned the blow), or a lone attack/feint's run-up to its strike END key."""
