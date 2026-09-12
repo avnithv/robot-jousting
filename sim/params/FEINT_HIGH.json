@@ -1,21 +1,21 @@
 {
- "_doc": "Feint: follows ATTACK_HIGH into its strike up to `swing`, then eases back to the cocked pose over `t_back`.",
+ "_doc": "Feint: follows ATTACK_HIGH into its strike up to `swing`, then the hand snaps back over t_back_fast while the arm settles over t_back_slow.",
  "like": "ATTACK_HIGH",
  "pull_back": {
   "lift": -8,
   "wrist": 0
  },
  "jaw_after": 60,
- "t_back": 0.6,
  "_help": {
   "like": "uses this attack's raise and cock, then snaps back",
   "pull_back.lift": "shoulder offset from the cocked pose at the end of the retreat (deg; negative = pulled back/up)",
   "pull_back.wrist": "wrist offset at the end of the retreat (deg)",
   "jaw_after": "jaw at the end of the retreat (0 shut .. 100 open): keeps the sword cocked if high",
-  "t_back": "seconds for the smooth retreat back to the cocked pose (longer = softer)",
   "captured.start": "raised/cocked pose (real degrees): ATTACK_HIGH's cocked pose moved 30% toward its slam end, so the feint commits into the slam line before pulling back (40% brought the blade within 2.0 cm of an opponent resting blade as the jaw closes on the pull-back). Delete to use the attack's exact cocked pose.",
   "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose.",
-  "swing": "how far into the attack's strike the feint goes before stopping (0 = stops at the cocked pose, 1 = full strike)"
+  "swing": "how far into the attack's strike the feint goes before stopping (0 = stops at the cocked pose, 1 = full strike)",
+  "t_back_fast": "seconds for the wrist and jaw to pull back after the stop (fast is fine here)",
+  "t_back_slow": "seconds for the base, shoulder and elbow to settle back (slow = no visible jerk)"
  },
  "captured_retired_2026-09-12": {
   "start": [
@@ -35,5 +35,7 @@
    7.4
   ]
  },
- "swing": 0.5
+ "swing": 0.5,
+ "t_back_fast": 0.35,
+ "t_back_slow": 1.0
 }
