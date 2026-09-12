@@ -49,7 +49,8 @@ if single_ride:
         subprocess.run([PY, "stash_pair.py", f"SHOW{i}"], cwd=SIM, capture_output=True); names.append(f"SHOW{i}")
     print("== show: carriages together"); print("  ", daemon("/gantry/together", {}, timeout=120))
     if start == 1 and "--no-opener" not in flags:
-        print("== salute"); print("  ", daemon("/play_both", {"moveA": D["opener"]["a"], "moveB": D["opener"]["b"], "scale": 1.0, "return_speed": rs}, timeout=120))
+        print("== salute"); r = daemon("/play_both", {"moveA": D["opener"]["a"], "moveB": D["opener"]["b"], "scale": 1.0, "return_speed": rs}, timeout=120); print("  ", r)
+        if not r.get("ok"): sys.exit(f"salute failed, show stopped: {r.get('errors')}")
     for i, p in enumerate(D["passes"], 1):
         if i < start: continue
         print(f"== pair {i}: A {p['a']} vs B {p['b']}  ({p.get('note', '')})")
