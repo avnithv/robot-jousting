@@ -8,3 +8,4 @@ arm/live.json
 arm/cmd.txt
 arm/motions_tuned.json.lock
 .claude/
+.DS_Store

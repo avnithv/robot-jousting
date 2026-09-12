@@ -12,7 +12,8 @@ small web UI ("move studio") to tweak parameters, preview, and run moves.
 | `sim/params/*.json` | **The move definitions.** One file per move, every parameter has a `_help` note. `REST.json` is the rest pose (real-arm degrees). |
 | `sim/tune.py` | Turns a parameter file into key poses, splines them, checks joint speed, saves a 50 Hz trajectory to `arm/motions_tuned.json` and renders `sim/out/tuned_<MOVE>.mp4` (+ filmstrip png). `python tune.py ALL` |
 | `sim/pair.py` | Two-arm simulation: `python pair.py BLOCK_HIGH ATTACK_HIGH` (A = us, B = opponent). Reports closest blade distance, renders a clip. |
-| `sim/arena.py` | MuJoCo scene: SO101 + SO100 facing each other 0.61 m apart, plastic sword on the moving jaw, SO100 joint-convention mapping. |
+| `sim/arena.py` | MuJoCo scene: SO101 + SO100 facing each other 0.61 m apart, the printed fencing gripper's blade on the moving jaw (real `Sword_Blade_8in_<style>` mesh from `sim/assets/blades/`, socket mouth 56 mm from the jaw pivot, 203 mm showing, tip 259 mm from the pivot; `JOUST_BLADE=none` restores the old capsule), SO100 joint-convention mapping. |
+| `sim/emote.py`, `sim/emote_lib.py` | Two-arm emote framework (openers, hit reactions, gloats, finales, idle): `Track` keyframe builder, checks, MuJoCo clips, trajectories as `NAME` / `NAME@B`. Scene files go in `sim/emotes/<family>.py`; the first batch of scenes was cut (see `docs/emotes_brainstorm.md` for the vocabulary and the intended scene list). |
 | `sim/ik.py` | Planar IK / FK helpers on the sim (hand position + sword pitch -> joints). |
 | `sim/reel.py` | Concatenates clips into one labelled video. |
 | `arm/arm_daemon.py` | Stays connected to the real arm, holds REST, plays moves on request (HTTP :8766). Used by the UI. |
@@ -32,6 +33,7 @@ small web UI ("move studio") to tweak parameters, preview, and run moves.
 - `docs/move_catalogue.md` - 41 candidate moves/flourishes/reactions with joint-level descriptions, plus signature combos.
 - `docs/reactions_and_pairs.md` - how each beat outcome is performed by both arms, timing, and pair safety checks.
 - `docs/transitions_and_flourishes.md` - end-pose to next-move transition table, hub poses, flourishes, worked example turns.
+- `docs/emotes_brainstorm.md` - the arms' emotional vocabulary (what each joint can say), two-arm principles, scene families for the emote framework.
 
 ## Setup
 1. Arm models: clone https://github.com/TheRobotStudio/SO-ARM100 to `~/so-arm/SO-ARM100` (or set `SO_ARM_DIR`).
