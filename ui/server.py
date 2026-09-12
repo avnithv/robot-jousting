@@ -95,6 +95,15 @@ def api(handler, path, body):
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
     if path == "/api/arm": return daemon_status()
+    if path == "/api/hold": ensure_daemon(); return daemon("/hold", {}, timeout=30)
+    if path == "/api/capture":
+        ensure_daemon(); st = daemon_status(); pose = st.get("pose")
+        if not pose: return {"error": "no pose"}
+        f = os.path.join(PARAMS, f"{body['move']}.json"); p = json.load(open(f))
+        p.setdefault("captured", {})[body["which"]] = pose
+        p.setdefault("_help", {})[f"captured.{body['which']}"] = "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
+        json.dump(p, open(f, "w"), indent=1)
+        return start_job("gen", f"regenerate {body['move']} (captured {body['which']})", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
     if path == "/api/release": ensure_daemon(); return daemon("/release", {}, timeout=30)
     if path == "/api/feedback":
         jid = uuid.uuid4().hex[:8]; prompt = agent_prompt(body["move"], body["text"], jid)

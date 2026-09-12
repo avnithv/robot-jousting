@@ -37,10 +37,20 @@ def pose_search(x, z, pan, pitch, tol, roll=0, jaw=0, near=None):
     print(f"    pose_search ({x},{z},pan {pan},pitch {pitch}) -> {np.round(best[1],0).astype(int).tolist()} sword pitch {best[2]:.0f}")
     cache[key] = best[1].tolist(); json.dump(cache, open(POSE_CACHE, "w")); q = best[1]; q[4] = roll; q[5] = jaw; return q
 
+def cap(P, which, jaw=None):
+    """Captured pose (real degrees, from the arm) as sim joints, or None."""
+    c = (P.get("captured") or {}).get(which)
+    if not c: return None
+    q = np.array(c, float); q[4] -= ROLL_OFFSET
+    if jaw is not None: q[5] = jaw
+    return q
+
 # ---------------- recipes: list of (key pose, seconds to reach it) ----------------
 def attack_high(P):
     e = P["end"]; k3 = np.array([e["pan"], e["lift"], e["elbow"], e["wrist"], 0, 0], float)
+    if cap(P, "end") is not None: k3 = cap(P, "end", jaw=0)
     k2 = k3.copy(); k2[1] -= P["cock"]["lift_back"]; k2[3] -= P["cock"]["wrist_up"]; k2[5] = P["jaw_open"]
+    if cap(P, "start") is not None: k2 = cap(P, "start", jaw=P["jaw_open"])
     k1 = k2.copy(); k1[5] = 5
     return [(REST, 0), (k1, P["t_raise"]), (k2, P["t_cock"]), (k3, P["t_slam"])]
 
@@ -53,6 +63,8 @@ def attack_low(P, mirror=False):
             seed = k.copy(); seed[0] *= -1; seed[4] *= -1
             q, err, h, tt = ik.solve(x, z, 0, pan=-pan, roll=-P["roll"], init=seed); q[5] = jaw; k[:] = q
             if err[0] + err[1] > 0.01 or err[2] > 5: print(f"    WARNING mirror ik ({x},{z}) off by {np.round(err,3).tolist()}")
+    if cap(P, "start") is not None: k1 = cap(P, "start", jaw=P["jaw_open"])
+    if cap(P, "end") is not None: k2 = cap(P, "end", jaw=0)
     return [(REST, 0), (k1, P["t_windup"] + (0.15 if mirror else 0)), (k2, P["t_slash"])]
 
 def block(P):
@@ -60,6 +72,7 @@ def block(P):
         j = P["joints"]; k = np.array([P["pan"], j["lift"], j["elbow"], j["wrist"], P["roll"], P["jaw"]], float)
     else:
         k = pose_search(P["x"], P["z"], P["pan"], P["pitch"], P["tol"])
+    if cap(P, "end") is not None: k = cap(P, "end")
     return [(REST, 0), (k, P["t_move"]), (k, P["t_hold"])]
 
 def feint(P):
@@ -67,15 +80,20 @@ def feint(P):
     if like.startswith("ATTACK_HIGH"):
         rec = attack_high(base)[:3]                                # REST, raised, cocked
         kb = rec[1][0].copy(); kb[1] += P["pull_back"]["lift"]; kb[3] += P["pull_back"]["wrist"]; kb[5] = P["jaw_after"]
+        if cap(P, "start") is not None: rec[1] = (cap(P, "start", jaw=5), rec[1][1]); rec[2] = (cap(P, "start", jaw=rec[2][0][5]), rec[2][1])
+        if cap(P, "end") is not None: kb = cap(P, "end", jaw=P["jaw_after"])
         return rec + [(kb, P["t_back"])]
     mirror = "mirror_of" in base; src = PARAMS[base["mirror_of"]] if mirror else base
     rec = attack_low(src, mirror=mirror)[:2]                       # REST, windup
     kb = rec[1][0].copy(); kb[1] += P["pull_back"]["lift"]; kb[3] += P["pull_back"]["wrist"]; kb[5] = P["jaw_after"]   # pull back = windup + joint offsets
+    if cap(P, "start") is not None: rec[1] = (cap(P, "start", jaw=rec[1][0][5]), rec[1][1])
+    if cap(P, "end") is not None: kb = cap(P, "end", jaw=P["jaw_after"])
     return rec + [(kb, P["t_back"])]
 
 def recipe(name):
     P = PARAMS[name]
-    if name == "REST": return [(REST, 0), (REST, 0.5)]
+    if name == "REST":
+        r = cap(P, "end") if cap(P, "end") is not None else REST; return [(r, 0), (r, 0.5)]
     if "mirror_of" in P: return attack_low(PARAMS[P["mirror_of"]], mirror=True)
     if name.startswith("ATTACK_HIGH"): return attack_high(P)
     if name.startswith("ATTACK_LOW"): return attack_low(P)

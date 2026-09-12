@@ -6,7 +6,8 @@ import numpy as np
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import connect, read_pose, JOINTS
-HERE = os.path.dirname(os.path.abspath(__file__)); RATE = 50.0; EASE_SPEED = 150.0   # deg/s for the ease in/out
+HERE = os.path.dirname(os.path.abspath(__file__)); RATE = 50.0; EASE_SPEED = 150.0   # deg/s for the ease into the start
+HOLD_END = 1.5; RETURN_SPEED = 60.0   # hold the final pose, then return to rest slowly (the return is not part of the move)
 state = {"busy": False, "last": "", "torque": True}; lock = threading.Lock()
 robot = connect(); print("arm connected", flush=True)
 rest = np.array(json.load(open(os.path.join(HERE, "motions_tuned.json")))["REST"]["q"][0])
@@ -30,8 +31,8 @@ def do_play(move, scale, repeat):
     ease_to(rest); ease_to(Q[0]); time.sleep(0.1)
     for i in range(repeat):
         if i: ease_to(Q[0]); time.sleep(0.1)
-        play(t, Q, scale); time.sleep(0.4)
-    ease_to(rest); state["last"] = f"{move} x{scale} done, end err {np.abs(np.array(read_pose(robot))[:5] - rest[:5]).max():.1f} deg"
+        play(t, Q, scale); time.sleep(HOLD_END)
+    ease_to(rest, max_speed=RETURN_SPEED); state["last"] = f"{move} x{scale} done, end err {np.abs(np.array(read_pose(robot))[:5] - rest[:5]).max():.1f} deg"
 ease_to(rest); print("holding REST", flush=True)
 
 class H(BaseHTTPRequestHandler):
@@ -49,7 +50,10 @@ class H(BaseHTTPRequestHandler):
             elif self.path == "/rest":
                 if not state["torque"]: robot.bus.enable_torque(); state["torque"] = True
                 ease_to(rest)
-            elif self.path == "/release": ease_to(rest); robot.bus.disable_torque(); state["torque"] = False; state["last"] = "torque off (arm limp at REST)"
+            elif self.path == "/hold":
+                if not state["torque"]: robot.bus.enable_torque(); state["torque"] = True
+                send(np.array(read_pose(robot))); state["last"] = "holding current pose"
+            elif self.path == "/release": robot.bus.disable_torque(); state["torque"] = False; state["last"] = "torque off: move the arm by hand"
             self._json({"ok": True, "last": state["last"]})
         except Exception as e:
             state["last"] = f"error: {e}"; self._json({"error": str(e)}, 500)

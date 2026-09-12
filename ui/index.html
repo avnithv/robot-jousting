@@ -18,6 +18,8 @@
   <span style="flex:1"></span>
   <label>arm speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
   <button class="primary" onclick="runArm()">Run on arm</button> <span class="arm" id="armst"></span></div>
+ <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Release arm</button> <span class="arm" id="live"></span>
+  <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
  <table id="ptable"></table>
  <div class="bar"><button class="primary" onclick="apply()">Apply changes</button><small>saves and regenerates this move; the clip refreshes when done</small></div>
  <div class="bar" style="flex-direction:column;align-items:stretch"><textarea id="fb" rows="2" placeholder="Feedback for a tuning agent, e.g. the slash should start further left and end higher. Each message runs its own agent."></textarea>
@@ -44,6 +46,8 @@ function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title'
 async function oppChanged(){const opp=document.getElementById('opp').value;if(opp){await api('/api/pair',{a:cur,b:opp})}refreshMain(false);poll()}
 async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p});poll()}
 async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t});document.getElementById('fb').value='';poll()}
+async function release(){await api('/api/release',{});poll()}
+async function capture(which){await api('/api/capture',{move:cur,which});poll()}
 async function runArm(){await api('/api/run',{move:cur,scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
 async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;
@@ -51,7 +55,8 @@ async function poll(){const js=await api('/api/jobs');const l=document.getElemen
   const dur=j.ended?((j.ended-j.started)|0)+'s':'';d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${j.label} <small>${dur}</small>`+
    (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
  const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
- const a=await api('/api/arm');document.getElementById('armst').textContent=a.offline?'arm: idle (connects on first run)':(a.busy?'arm: moving':'arm: holding rest'+(a.torque?'':' (torque off)'));
+ const a=await api('/api/arm');document.getElementById('armst').textContent=a.offline?'arm: idle (connects on first run)':(a.busy?'arm: moving':(a.torque?'arm: holding':'arm: limp, move it by hand'));
+ document.getElementById('live').textContent=a.pose?'live '+JSON.stringify(a.pose):'';
  setTimeout(poll,anyRun?1500:4000)}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 load();poll();
