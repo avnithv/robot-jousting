@@ -186,7 +186,7 @@ def api(handler, path, body):
         f = os.path.join(ARM, "turn_profile.json"); P = json.load(open(f))
         if body.get("set"):
             for k, v in body["set"].items():
-                if k in P and not k.startswith("_"): P[k] = (type(P[k])(v) if not isinstance(P[k], bool) else (v in (True, "true", "on", 1, "1")))
+                if k in P and not k.startswith("_"): P[k] = (v in (True, "true", "on", 1, "1")) if isinstance(P[k], bool) else (list(v) if isinstance(P[k], list) else (type(P[k])(v) if isinstance(P[k], (int, float)) else str(v)))
             json.dump(P, open(f + ".tmp", "w"), indent=1); os.replace(f + ".tmp", f)
         return P
     if path == "/api/turn":

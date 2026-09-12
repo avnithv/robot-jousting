@@ -175,9 +175,9 @@ async function kfPlayBoth(){await api('/api/run_both',{moveA:kfMove('A'),moveB:k
 let PROF=null;
 async function profLoad(){PROF=await api('/api/profile');const g=document.getElementById('profgrid');g.innerHTML='';
  for(const k of Object.keys(PROF)){if(k.startsWith('_'))continue;const v=PROF[k];const help=(PROF._help||{})[k]||'';const lab=document.createElement('label');lab.title=help;lab.style.display='flex';lab.style.flexDirection='column';lab.style.fontSize='12px';
-  const inp=document.createElement(typeof v==='boolean'?'input':'input');if(typeof v==='boolean'){inp.type='checkbox';inp.checked=v}else{inp.type='number';inp.step=Number.isInteger(v)?'1':'0.05';inp.value=v;inp.style.width='90px'}
+  const inp=document.createElement('input');if(typeof v==='boolean'){inp.type='checkbox';inp.checked=v}else if(typeof v==='number'){inp.type='number';inp.step=Number.isInteger(v)?'1':'0.05';inp.value=v;inp.style.width='90px'}else{inp.type='text';inp.value=Array.isArray(v)?v.join(','):v;inp.style.width='150px'}
   inp.dataset.k=k;lab.append(k+' ',inp);const h=document.createElement('small');h.textContent=help;h.style.opacity='0.7';lab.appendChild(h);g.appendChild(lab)}}
-async function profSave(){const set={};for(const inp of document.querySelectorAll('#profgrid input'))set[inp.dataset.k]=inp.type==='checkbox'?inp.checked:parseFloat(inp.value);
+async function profSave(){const set={};for(const inp of document.querySelectorAll('#profgrid input'))set[inp.dataset.k]=inp.type==='checkbox'?inp.checked:inp.type==='number'?parseFloat(inp.value):(Array.isArray(PROF[inp.dataset.k])?inp.value.split(',').map(s=>s.trim()).filter(Boolean):inp.value);
  PROF=await api('/api/profile',{set});document.getElementById('profst').textContent='saved '+new Date().toLocaleTimeString();profLoad()}
 profLoad();
 async function runBoth(){await api('/api/run_both',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value)});poll()}

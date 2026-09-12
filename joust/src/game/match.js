@@ -541,6 +541,19 @@ export class Match {
       // go where the profile leaves them. The next pass does not start until the metal says this one is over.
       const out = stage.retreat(900);
       await this.g(cyc.done); await this.g(out);
+      // The force watch: an arm that met too much resistance has dropped its torque and is waiting for a person.
+      // Stop the show here, say so on screen, and only carry on once someone has reset it and pressed Continue.
+      const limp = bridge.limpArms ? await this.g(bridge.limpArms()) : [];
+      if (limp.length) {
+        const who = limp.map(l => `arm ${l.arm}`).join(' and ');
+        this.music.setMood('town'); this.energy(0.2);
+        stage.stamp('HOLD', 'small');
+        await this.g(this.dialogue.say(`${who.toUpperCase()} HIT SOMETHING AND WENT LIMP (load ${limp.map(l => l.load).join(' / ')}). Free the blade, put the arm roughly back, then click here to continue.`, { modal: true }));
+        await this.g(bridge.recover());
+        const still = bridge.limpArms ? await this.g(bridge.limpArms()) : [];
+        if (still.length) { await this.g(this.dialogue.say('Still limp. Check the arm and click again.', { modal: true })); await this.g(bridge.recover()); }
+        this.music.setMood('duel');
+      }
     }
     battle.setBeat(null);
     await this.wait(300); battle.hideDuel(); this.energy(0.4);

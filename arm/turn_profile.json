@@ -1,7 +1,7 @@
 {
  "_doc": "The turn profile: every timing knob of a live exchange in one place. Read live (no restarts) by the arm daemon, sim/chain.py, the studio (Run TURN, Charge+play) and the game's simple duel. Edit here or in the studio's Turn profile panel. Scale > 1 plays faster than the moves were tuned (1.5 = 50% faster); the servos are the limit, watch for 'OVER CAP' in the compile log.",
  "scale": 1.0,
- "beats_per_pass": 3,
+ "beats_per_pass": 1,
  "overlap": true,
  "salute": false,
  "apart_after": true,
@@ -35,7 +35,8 @@
   "return_t": "chain compiler: seconds an attack takes to come back along its strike line before the next connector",
   "force_limit": "servo load (0-1000, tenths of a percent of rated torque) above which a strike on its way in is ended and the arm reverses out; 0 = off. The studio's arm status shows live loads",
   "force_ticks": "how many consecutive 50 Hz ticks the load must stay over the limit before it counts (debounce)",
-  "force_joints": "which servos the force watch reads"
+  "force_joints": "which servos the force watch reads",
+  "force_action": "what a strike does when it meets the force limit: 'limp' = drop torque, stop the other arm, and wait for a human to reset it (the game pauses and asks); 'reverse' = end the forward sequence and back out along the strike line"
  },
  "force_limit": 600,
  "force_ticks": 2,
@@ -45,5 +46,6 @@
   "wrist_flex",
   "wrist_roll",
   "gripper"
- ]
+ ],
+ "force_action": "limp"
 }

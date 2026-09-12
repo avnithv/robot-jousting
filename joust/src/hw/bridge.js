@@ -115,6 +115,9 @@ export class SimBridge {
   /** Where in beat `i` the blow lands, as a fraction. null = use the screen's own default (stage.IMPACT). */
   impactAtFor(/* i */) { return null; }
   async returnHome() {}
+  /** Arms the force watch dropped (they went limp and need a human reset). Sim: none. */
+  async limpArms() { return []; }
+  async recover() {}
   /** The simple duel's pass for one beat: carriages apart -> charge in with both moves playing -> arms
    *  disentangle and rest -> carriages apart. Returns { started, done }: `started` resolves when the pass is
    *  about to leave the apart stop (on hardware: the pair is compiled), `done` when the arms and carriages
@@ -391,6 +394,21 @@ export class ArmBridge extends SimBridge {
    *  the arms starting as the charge begins and the carriages backing out after). `started` resolves at the
    *  job's `charging` step, with the compiled pair's beat schedule loaded so beatMsFor(0) / impactAtFor(0)
    *  size the screen's beat; `done` when the job has finished and both arms and the gantry are idle. */
+  /** Which arms report `limp` in /api/status: the force watch dropped their torque mid-strike. The fight must not go
+   *  on until a person has reset them and pressed Continue (then recover()). */
+  async limpArms() {
+    if (!this.live) return [];
+    const s = await this.status(); const out = [];
+    for (const k of ['A', 'B']) { const d = s['arm' + k]; if (d && !d.offline && d.limp) out.push({ arm: k, ...d.limp }); }
+    return out;
+  }
+  /** Torque back on, both arms to rest, carriages apart. A job; waits for it. */
+  async recover() {
+    if (!this.live) return;
+    this.note = 'recovering the arms...'; this.emit();
+    const job = await this.job('/api/recover', {}, { timeout: 180000 });
+    await this.status(); return job;
+  }
   /** The turn profile (arm/turn_profile.json via GET /api/profile): scale, beats per pass, and the rest of the
    *  pass shape. Fetched at prepare() and before each pass so an edit in the studio applies to the next pass. */
   async loadProfile() { try { this.profile = await this.api('/api/profile'); } catch (e) { this.profile = this.profile || {}; } return this.profile; }

@@ -586,6 +586,17 @@ def api(path, body, query=None):
                    lambda job: exchange(ours, theirs, job))
     if path == "/api/profile":
         return turn_profile()
+    if path == "/api/recover":   # after a force limp: torque back on, both arms eased to rest, carriages apart, ready for the next pass
+        def go(job):
+            step(job, "recover", "torque on, both arms easing to rest")
+            r = daemon("a", "/recover", {}, timeout=120); bad = failed(r, "recover")
+            if bad: raise RuntimeError(bad)
+            if not r.get("ok"): raise RuntimeError("recover: " + json.dumps(r.get("arms")))
+            g = gantry_state()
+            if g.get("homed"): carriages(job, "apart")
+            step(job, "ready", "arms at rest" + (", carriages apart" if g.get("homed") else "; the gantry is not referenced: Prepare before the next fight"))
+            return r
+        return log("recover", "recover the arms after a force stop", go)
     if path == "/api/beat_cycle":
         ours, theirs = body.get("ours", []), body.get("theirs", []); scale = float(body.get("scale") or turn_profile()["scale"])
         return log("beat_cycle", f"pass: {' '.join(map(str, ours))} vs {' '.join(map(str, theirs))} x{scale}",

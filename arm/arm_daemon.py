@@ -24,7 +24,7 @@ def profile(body=None):
     with any same-named keys in a request body overriding it."""
     P = {"scale": 1.0, "beats_per_pass": 3, "overlap": True, "salute": False, "apart_after": True, "pause_before_charge": 0.2, "charge_feed": None, "apart_feed": None,
          "settle": 0.1, "ease_speed": EASE_SPEED, "hold_end": HOLD_END, "return_speed": RETURN_SPEED,
-         "force_limit": 600, "force_ticks": 2, "force_joints": ["shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]}
+         "force_limit": 600, "force_ticks": 2, "force_joints": ["shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"], "force_action": "limp"}
     try: P.update({k: v for k, v in json.load(open(PROFILE)).items() if not k.startswith("_")})
     except Exception: pass
     for k, v in (body or {}).items():
@@ -37,6 +37,7 @@ STREAM_DEADBAND_MM = 0.2   # below this the carriage is not really moving: skip 
 class Arm:
     def __init__(self, name):
         self.name = name; self.io = threading.Lock(); self.busy = threading.Lock(); self.last = ""; self.torque = True; self.abort = False
+        self.limp = None   # set when the force watch dropped this arm's torque: {"move", "t", "load"}; cleared by /recover, /rest, /hold, /goto
         self.robot = None
         for attempt in range(3):
             try: self.robot = connect(arm=name, hold_on_disconnect=True); break
@@ -142,6 +143,18 @@ class Arm:
                     self.send(np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]))
                     if fw and tt >= fw[0][1]: fw.pop(0); fs = {}
                     elif fw and fw[0][0] <= tt and self.force_tick(P, fs):
+                        if str(P.get("force_action", "limp")) == "limp":
+                            # go limp: drop torque so the arm yields instead of pushing, stop the other arm too, and leave
+                            # it to a human to reset (Recover / /rest re-enable torque). The motion ends with an error.
+                            self.limp = {"move": move, "t": round(float(tt), 2), "load": int(fs.get("load", 0))}
+                            try: self.set_torque(False)
+                            except Exception as e: print(f"arm {self.name}: torque off failed: {e}", flush=True)
+                            for x in arms.values():
+                                if x is not self: x.abort = True
+                            self.last = f"LIMP: {move} met load {self.limp['load']} at {tt:.2f}s; reset the arm by hand, then Recover"
+                            print(f"arm {self.name}: {self.last}", flush=True)
+                            if streaming: gstream.remove(gax)
+                            raise RuntimeError(f"arm {self.name} went limp on force {self.limp['load']} during {move}: reset it by hand, then recover")
                         cur = np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]); idx = np.where(t >= fw[0][1])[0]
                         j = int(idx[np.argmin(np.linalg.norm(Q[idx][:, :5] - cur[:5], axis=1))]) if len(idx) else None
                         if j is not None: t0 = time.perf_counter() - float(t[j]) / scale
@@ -308,7 +321,7 @@ class H(BaseHTTPRequestHandler):
         out = {}
         for n, a in arms.items():
             try:
-                out[n] = {"busy": a.busy.locked(), "last": a.last, "torque": a.torque, "pose": [round(x, 1) for x in a.pose()], "model": ARMS[n]["model"]}
+                out[n] = {"busy": a.busy.locked(), "last": a.last, "torque": a.torque, "pose": [round(x, 1) for x in a.pose()], "model": ARMS[n]["model"], "limp": a.limp}
                 if not a.busy.locked(): out[n]["load"] = a.loads()
             except Exception as e: out[n] = {"error": str(e)[:100]}
         self._json({"arms": out, "gantry": gantry.status()})
@@ -408,6 +421,14 @@ class H(BaseHTTPRequestHandler):
                 state["calibrating"] = False; A.last = B.last = f"error: {e}"; self._json({"error": str(e)}, 500)
             finally: A.busy.release(); B.busy.release()
             return
+        if self.path == "/recover":   # after a force limp (or any manual reset): torque on, ease both arms to rest slowly, clear the flags
+            out = {}
+            for x in arms.values():
+                if not x.busy.acquire(timeout=30): out[x.name] = "busy"; continue
+                try: x.abort = False; x.set_torque(True); x.ease_to(x.rest_pose(), max_speed=40.0); x.limp = None; x.last = "recovered: at rest"; out[x.name] = "at rest"
+                except Exception as e: x.last = f"recover failed: {e}"; out[x.name] = str(e)
+                finally: x.busy.release()
+            return self._json({"ok": all(v == "at rest" for v in out.values()), "arms": out})
         if self.path == "/calibrate_retreat":   # both arms slowly back to rest after a calibration
             for x in arms.values():
                 if x.busy.acquire(timeout=30):          # wait for a calibration back-off to finish rather than skipping the arm
@@ -473,6 +494,7 @@ class H(BaseHTTPRequestHandler):
             return
         if not a.busy.acquire(blocking=False): return self._json({"error": "busy"}, 409)
         a.abort = False   # a stale STOP/ABORT must not cancel the next commanded motion
+        if a.limp and self.path in ("/rest", "/hold", "/goto", "/play"): a.limp = None; a.torque = False   # a commanded motion re-enables torque (ease_to does) and ends the limp state
         try:
             if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)), P=profile(body))
             elif self.path == "/rest": a.ease_to(a.rest_pose()); a.last = "at rest"
