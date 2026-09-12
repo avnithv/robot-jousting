@@ -56,6 +56,8 @@ if single_ride:
         print(f"== pair {i}: A {p['a']} vs B {p['b']}  ({p.get('note', '')})")
         r = daemon("/play_both", {"moveA": names[i - 1], "moveB": names[i - 1], "scale": scale, "return_speed": rs, "hold_end": float(D.get("hold_end", 0.15))}, timeout=180); print("  ", r)
         if not r.get("ok"): sys.exit(f"pair failed: {r}")
+    c = D.get("closer")
+    if c: print("== closing salute"); print("  ", daemon("/play_both", {"moveA": c["a"], "moveB": c["b"], "scale": 1.0, "return_speed": rs}, timeout=120))
     print("== carriages apart"); print("  ", daemon("/gantry/apart", {}, timeout=120)); print("show over: arms at rest, carriages apart"); sys.exit(0)
 if start == 1 and "--no-opener" not in flags:
     print("== opener: charge in, salute, apart"); print(turn(D["opener"]["a"], D["opener"]["b"], overlap=False))

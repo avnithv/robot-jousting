@@ -278,6 +278,7 @@ def api(handler, path, body):
         return out
     if path == "/api/show":   # one ride in, salute, the pairs one at a time from rest, ride out
         ensure_daemon(); SHOW["stop"] = False; moves = body.get("moves") or []; scale = float(body.get("scale", 1.0)); rs = float(body.get("return_speed", 120)); opener = body.get("opener") or {"a": "SALUTE", "b": "SALUTE"}
+        if body.get("closer") is None: body["closer"] = {"a": "SALUTE", "b": "SALUTE"}
         def go():
             j = start_job("arm", f"SHOW {len(moves)} pairs x{scale}", ["true"], ARM); log = lambda s: open(j["log"], "a").write(s + "\n")
             try:
@@ -301,6 +302,10 @@ def api(handler, path, body):
                     r = daemon("/play_both", {"moveA": nm, "moveB": nm, "scale": scale, "return_speed": rs, "hold_end": float(body.get("hold_end", 0.15))}, timeout=180); log("   " + json.dumps({k: r.get(k) for k in ("A", "B")}))
                     if not r.get("ok"): raise RuntimeError(str(r))
                 if SHOW["stop"]: raise RuntimeError("stopped")
+                closer = body.get("closer")
+                if closer:
+                    log(f"closing salute: {closer['a']} / {closer['b']}"); r = daemon("/play_both", {"moveA": closer["a"], "moveB": closer["b"], "scale": 1.0, "return_speed": rs}, timeout=120)
+                    if not r.get("ok"): raise RuntimeError(str(r))
                 log("carriages apart"); r = daemon("/gantry/apart", {}, timeout=120)
                 if r.get("error"): raise RuntimeError(r["error"])
                 log("show over"); j["status"] = "done"

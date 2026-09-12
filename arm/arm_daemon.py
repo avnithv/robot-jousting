@@ -101,7 +101,9 @@ class Arm:
         self._gantry = (M.get("gantry_axis"), M.get("gantry_mm"))   # ADDITIVE: an emote's carriage channel, or (None, None)
         self._entry = M
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
-        self.abort = False; self.ease_to(rest, max_speed=float(P["ease_speed"])); self.ease_to(Q[0], max_speed=float(P["ease_speed"])); time.sleep(float(P["settle"]))
+        self.abort = False
+        if np.max(np.abs(np.array(self.pose())[:5] - rest[:5])) > 3.0: self.ease_to(rest, max_speed=float(P["ease_speed"]))   # already at rest: no 0.15 s no-op ease
+        self.ease_to(Q[0], max_speed=float(P["ease_speed"])); time.sleep(float(P["settle"]))
         return t, Q, rest
     def trajectory(self, move):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; self._entry_arm = M.get("arm", "A")
