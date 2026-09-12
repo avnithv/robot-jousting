@@ -45,7 +45,7 @@ class Arm:
         c = self.cfg(); Q = np.array(Q, float)
         if self.name != "A":
             if c.get("roll_offset") is None: raise RuntimeError(f"arm {self.name}: roll_offset not set in arms.json (find the sword-on-top roll first)")
-            Q[:, 4] = Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"]
+            Q[:, 4] = np.clip(Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"], -175, 175)   # never touch the +/-180 wrap
         return Q
     def play(self, move, scale, repeat):
         M = json.load(open(TUNED))[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
