@@ -7,16 +7,16 @@
  },
  "B": {
   "model": "SO-101",
-  "roll_offset": -89.1,
+  "roll_offset": -89.0,
   "rest": [
    -1.8,
-   -93.1,
-   34.4,
-   8.2,
-   -89.1,
+   -93.8,
+   36.6,
+   8.4,
+   -89.0,
    0.0
   ],
-  "lift_limit": -92.5
+  "lift_limit": -93.8
  },
  "gantry": {
   "port": "/dev/cu.usbserial-AL00JZ0H",
