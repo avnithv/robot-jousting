@@ -1,5 +1,42 @@
-{"from": "LOW_TIP", "to": "BLOCK_LEFT",
+{
+ "from": "LOW_TIP",
+ "to": "BLOCK_LEFT",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": []},
-  {"name": "drag_left", "style": "smooth", "via": [[-45, -25, 30, 40, -135, 20]], "durations": [0.3], "notes": "planted tip drags out past the left mark, then the blade lifts and settles into the hanging guard"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     -18,
+     -35,
+     25,
+     30,
+     -135,
+     30
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "tip lifts off the board as the hand rises with a quarter roll, then the arm swings left and settles into the hanging guard (the straight blend drags the tip to -9 cm on arm A)"
+  },
+  {
+   "name": "drag_left",
+   "style": "smooth",
+   "via": [
+    [
+     -45,
+     -30,
+     22,
+     40,
+     -140,
+     20
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "planted tip drags out past the left mark, then the blade lifts and settles into the hanging guard"
+  }
+ ]
+}

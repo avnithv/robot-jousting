@@ -1,5 +1,35 @@
-{"from": "ATTACK_LOW_LR", "to": "FEINT_HIGH",
+{
+ "from": "ATTACK_LOW_LR",
+ "to": "FEINT_HIGH",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "salute_cock", "style": "smooth", "via": ["SALUTE"], "durations": [0.47], "notes": "blade rises to vertical in front, then cocks back for the overhead"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     10,
+     -25,
+     30,
+     -40,
+     45,
+     30
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "hand rises and folds in with the blade turning onto its top, then cocks back for the overhead (the straight blend overreaches 0.33 m)"
+  },
+  {
+   "name": "salute_cock",
+   "style": "smooth",
+   "via": [
+    "SALUTE"
+   ],
+   "durations": [
+    0.47
+   ],
+   "notes": "blade rises to vertical in front, then cocks back for the overhead"
+  }
+ ]
+}

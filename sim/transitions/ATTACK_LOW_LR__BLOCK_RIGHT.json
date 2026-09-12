@@ -1,6 +1,53 @@
-{"from": "ATTACK_LOW_LR", "to": "BLOCK_RIGHT",
+{
+ "from": "ATTACK_LOW_LR",
+ "to": "BLOCK_RIGHT",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "up_over", "style": "smooth", "via": [[20, -50, 30, -10, -90, 40]], "durations": [0.85], "notes": "hand rises, the sword rolls over up high, then drops into the right guard"},
-  {"name": "mid_guard", "style": "smooth", "via": ["MID"], "durations": [0.68], "notes": "up through the hub, then down into the right guard"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     20,
+     -40,
+     35,
+     -20,
+     0,
+     30
+    ]
+   ],
+   "durations": [
+    0.45
+   ],
+   "notes": "hand rises and folds in with the blade rolled onto its top, then drops into the right guard (arm B's straight blend overreaches 0.32 m)"
+  },
+  {
+   "name": "up_over",
+   "style": "smooth",
+   "via": [
+    [
+     20,
+     -50,
+     30,
+     -10,
+     -90,
+     40
+    ]
+   ],
+   "durations": [
+    0.85
+   ],
+   "notes": "hand rises, the sword rolls over up high, then drops into the right guard"
+  },
+  {
+   "name": "mid_guard",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.68
+   ],
+   "notes": "up through the hub, then down into the right guard"
+  }
+ ]
+}

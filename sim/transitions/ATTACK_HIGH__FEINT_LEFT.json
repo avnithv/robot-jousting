@@ -3,11 +3,22 @@
  "to": "FEINT_LEFT",
  "paths": [
   {
-   "name": "direct",
+   "name": "plain",
    "style": "plain",
-   "via": [],
-   "durations": [],
-   "notes": "straight blend"
+   "via": [
+    [
+     -10,
+     -25,
+     30,
+     -20,
+     45,
+     30
+    ]
+   ],
+   "durations": [
+    0.46
+   ],
+   "notes": "hand lifts as the elbow folds and the blade turns onto its left side, then it drops into the wide left windup (the straight blend overreaches 0.34 m)"
   },
   {
    "name": "recoil_fold",
@@ -46,13 +57,22 @@
      72,
      0,
      0
+    ],
+    [
+     -10,
+     -25,
+     30,
+     -20,
+     45,
+     30
     ]
    ],
    "durations": [
     0.12,
-    0.12
+    0.12,
+    0.46
    ],
-   "notes": "blade shivers in the target (jaw flick x1) before it comes away, then swings down to the left windup"
+   "notes": "blade shivers in the target (jaw flick x1) before it comes away, folds up with the blade turning left, then swings down to the left windup"
   }
  ]
 }

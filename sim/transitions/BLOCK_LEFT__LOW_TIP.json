@@ -1,5 +1,51 @@
-{"from": "BLOCK_LEFT", "to": "LOW_TIP",
+{
+ "from": "BLOCK_LEFT",
+ "to": "LOW_TIP",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard slides across into the low tip pose (same roll world on arm A, a full roll under on arm B)"},
-  {"name": "dip_settle", "style": "flourish", "via": [[0, -36, 46, 34, -180, 0]], "durations": [0.95], "notes": "tip dips a touch under the low-tip pose then settles up into it"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     -18,
+     -35,
+     25,
+     30,
+     -135,
+     30
+    ]
+   ],
+   "durations": [
+    0.65
+   ],
+   "notes": "guard lifts and swings across with the blade a quarter turn off vertical, then the tip lowers onto the board (the straight blend drags the tip to -9 cm on arm A)"
+  },
+  {
+   "name": "dip_settle",
+   "style": "flourish",
+   "via": [
+    [
+     -18,
+     -35,
+     25,
+     30,
+     -135,
+     30
+    ],
+    [
+     0,
+     -36,
+     46,
+     34,
+     -180,
+     0
+    ]
+   ],
+   "durations": [
+    0.65,
+    0.3
+   ],
+   "notes": "guard lifts across, the tip dips a touch under the low-tip pose then settles up into it"
+  }
+ ]
+}

@@ -1,6 +1,53 @@
-{"from": "BLOCK_LEFT", "to": "FEINT_LEFT",
+{
+ "from": "BLOCK_LEFT",
+ "to": "FEINT_LEFT",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts and the blade rolls the long way over the top to the sideways low-left windup (arm A: 270 deg of roll)"},
-  {"name": "over_the_top", "style": "smooth", "via": [[-15, -50, 25, 0, 0, 0]], "durations": [0.95], "notes": "blade lifts and rolls onto the top level, then drops left and cocks sideways"},
-  {"name": "hub_drop", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts to the hub, then drops left into the sideways windup"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     -20,
+     -35,
+     45,
+     -20,
+     0,
+     30
+    ]
+   ],
+   "durations": [
+    0.9
+   ],
+   "notes": "guard lifts and folds in as the blade rolls onto its top, then drops into the wide left windup (arm B's straight blend overreaches 0.32 m)"
+  },
+  {
+   "name": "over_the_top",
+   "style": "smooth",
+   "via": [
+    [
+     -15,
+     -50,
+     25,
+     0,
+     0,
+     0
+    ]
+   ],
+   "durations": [
+    0.95
+   ],
+   "notes": "blade lifts and rolls onto the top level, then drops left and cocks sideways"
+  },
+  {
+   "name": "hub_drop",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.7
+   ],
+   "notes": "lifts to the hub, then drops left into the sideways windup"
+  }
+ ]
+}

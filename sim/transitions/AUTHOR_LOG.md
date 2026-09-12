@@ -105,3 +105,28 @@ recoil/sweep/recock/hover flourishes.
   search): ATTACK_LOW_LR/FEINT_LEFT -> BLOCK_LEFT/RIGHT/MIDDLE/LOW_TIP 1.3-1.57 s (270 deg of roll on arm A, 180 on B),
   FEINT_* -> opposite windup `salute_flip` 1.24-1.26 s, ATTACK_LOW_RL/FEINT_RIGHT -> BLOCK_LEFT `mid_guard` 1.26-1.28 s.
   Nothing was left unsafe.
+
+## Repair pass for the real 8 in blade meshes (20 files) — 2026-09-12
+The sim now carries the real 8 in fencing blade on the moving jaw (longer than the capsule, ~15 deg more open along the finger
+axis, so the tip reaches lower) and the low moves' START poses moved with it (ATTACK_LOW_LR/FEINT_LEFT windup is now
+[-20,0,92,-92,90,55]; FEINT_LEFT's END is lower too). validate_transition.py then failed 20 files; all 20 repaired, and the
+full run is back to 196 of 196 files fully valid (904 path/arm checks OK) on both arms. Three failure classes:
+- Straight blends that now overreach 0.32 m into/out of the wide LR windup (the elbow unfolds while the lift is near 0):
+  `direct` replaced by a `plain` route through a lifted, folded-in pose with the blade half-turned. ATTACK_HIGH ->
+  ATTACK_LOW_LR/FEINT_LEFT via [-10,-25,30,-20,45,30] (0.88 s; `quiver` gets the same via after the flick, 1.12 s);
+  ATTACK_LOW_LR -> ATTACK_HIGH/FEINT_HIGH via [10,-25,30,-40,45,30] (0.66 s); ATTACK_LOW_LR -> BLOCK_RIGHT via
+  [20,-40,35,-20,0,30] (1.48 s A roll-limited / 1.20 s B); BLOCK_LEFT -> ATTACK_LOW_LR/FEINT_LEFT via [-20,-35,45,-20,0,30]
+  (1.43 s, arm A's 270 deg of roll).
+- Blade tip below -8 cm on the LOW_TIP handoffs (the longer blade drags while the wrist unfolds through roll -150):
+  LOW_TIP -> ATTACK_LOW_RL/FEINT_RIGHT `plain` via [10,-45,70,-20,-120,30] (0.60 s A / 0.83 s B; tip stayed >= -6.6 cm);
+  FEINT_RIGHT -> LOW_TIP `plain` via [7,-35,60,-30,-135,20] (0.76 s); BLOCK_LEFT <-> LOW_TIP `plain` via
+  [-18,-35,25,30,-135,30] (a quarter roll off vertical: 0.91 s for BLOCK_LEFT -> LOW_TIP, 0.57 s A / 1.10 s B the other way;
+  roll -135 rather than -180 saves ~0.25 s on arm B's 180 deg roll). `dip_settle` now goes through that lifted pose before the
+  dip; `drag_left`'s via lifted to [-45,-30,22,40,-140,20] (tip -7.2 cm at worst on A).
+- Styled first legs now too fast for the moved poses: the snappy flicks out of FEINT_LEFT were re-authored next to the new END
+  so they stay 0.29 s (`recock` via [-26,-10,92,-95,90,75], `jaw_flick`/`jaw_snap` via [-14,-8,89,-91,90,0]) and `wag` out of
+  ATTACK_LOW_LR likewise ([32,14,68,-80,90,0], 0.45 s); the smooth arcs kept their vias and were re-timed at ~0.85x need
+  (`overhand_reload` 0.34, `recoil` 0.29, `sweep_up` 0.33, `glide` 0.35).
+No path was dropped; every file keeps a `direct` or `plain` path. Filmstrips checked for LOW_TIP -> ATTACK_LOW_RL,
+BLOCK_LEFT -> LOW_TIP and ATTACK_HIGH -> ATTACK_LOW_LR. Still over the ~1.2 s target (roll-limited as before):
+ATTACK_LOW_LR -> BLOCK_RIGHT and BLOCK_LEFT -> ATTACK_LOW_LR/FEINT_LEFT (1.2-1.5 s). Nothing was left unsafe.

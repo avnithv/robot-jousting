@@ -1,5 +1,31 @@
-{"from": "ATTACK_LOW_LR", "to": "SALUTE",
+{
+ "from": "ATTACK_LOW_LR",
+ "to": "SALUTE",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "sweep_up", "style": "smooth", "via": [[35, -30, 30, -20, 60, 0]], "durations": [0.21], "notes": "the slash carries on to the right and rises into the salute"}
- ]}
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "sweep_up",
+   "style": "smooth",
+   "via": [
+    [
+     35,
+     -30,
+     30,
+     -20,
+     60,
+     0
+    ]
+   ],
+   "durations": [
+    0.33
+   ],
+   "notes": "the slash carries on to the right and rises into the salute"
+  }
+ ]
+}

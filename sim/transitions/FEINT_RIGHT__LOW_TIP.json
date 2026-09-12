@@ -1,5 +1,42 @@
-{"from": "FEINT_RIGHT", "to": "LOW_TIP",
+{
+ "from": "FEINT_RIGHT",
+ "to": "LOW_TIP",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "hover_dip", "style": "smooth", "via": [[0, -30, 40, 20, -180, 0]], "durations": [0.56], "notes": "blade turns under and hovers level, then the tip dips to the board"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     7,
+     -35,
+     60,
+     -30,
+     -135,
+     20
+    ]
+   ],
+   "durations": [
+    0.35
+   ],
+   "notes": "hand lifts and the blade turns under up high, then the tip lowers onto the board (arm B's straight blend dips the tip to -9 cm)"
+  },
+  {
+   "name": "hover_dip",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -30,
+     40,
+     20,
+     -180,
+     0
+    ]
+   ],
+   "durations": [
+    0.56
+   ],
+   "notes": "blade turns under and hovers level, then the tip dips to the board"
+  }
+ ]
+}

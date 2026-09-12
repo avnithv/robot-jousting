@@ -1,5 +1,42 @@
-{"from": "LOW_TIP", "to": "FEINT_RIGHT",
+{
+ "from": "LOW_TIP",
+ "to": "FEINT_RIGHT",
  "paths": [
-  {"name": "direct", "style": "plain", "via": [], "durations": []},
-  {"name": "wag_in", "style": "smooth", "via": [[30, -30, 90, -60, -90, 30]], "durations": [0.6], "notes": "tip lifts and the arm swings right past the mark with the blade sideways, then eases back in and cocks"}
- ]}
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    [
+     10,
+     -45,
+     70,
+     -20,
+     -120,
+     30
+    ]
+   ],
+   "durations": [
+    0.4
+   ],
+   "notes": "tip lifts clear of the board with the hand folded in, then the arm swings right and cocks sideways (the straight blend dips the tip to -10 cm)"
+  },
+  {
+   "name": "wag_in",
+   "style": "smooth",
+   "via": [
+    [
+     30,
+     -30,
+     90,
+     -60,
+     -90,
+     30
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "tip lifts and the arm swings right past the mark with the blade sideways, then eases back in and cocks"
+  }
+ ]
+}
