@@ -18,6 +18,17 @@
   "roll": "wrist roll: 90 = jaw swings sideways so the open sword is a level bar",
   "jaw": "jaw opening: 100 = sword fully out sideways",
   "t_move": "seconds: rest -> bar",
-  "t_hold": "seconds: hold the bar"
+  "t_hold": "seconds: hold the bar",
+  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
+ },
+ "captured": {
+  "end": [
+   33.3,
+   -0.4,
+   35.8,
+   -86.8,
+   145.2,
+   53.7
+  ]
  }
 }
