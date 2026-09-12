@@ -91,7 +91,7 @@ How things work:
   Two-arm check: ../.venv/bin/python pair.py <OUR_MOVE> <THEIR_MOVE> (closest blade distance + out/pair_*_strip.png).
   Chains: ../.venv/bin/python chain.py pair M1 M2 M3 -- N1 N2 N3.  Helpers: ik.fk(q) -> hilt/tip/pitch; ik.solve(x, z, pitch, pan, roll).
 - NEVER run anything under ~/game/arm (that is the real robot) and do not edit tune.py/chain.py/arena.py.
-- Constraints: hand <= 0.27 m forward of the base, nothing below z=0, joint speeds under ~300 deg/s (somewhat over on the wrist or the
+- Constraints: HARD RULE: the wrist joints (wrist_flex and wrist_roll anchors) never go below z = 0.092 m in the sim, or the arm hits the board (tune.py enforces it on key poses and warns on trajectories; check `wrist_z(q)` in tune.py). Also: hand <= 0.27 m forward of the base, nothing below z=0, joint speeds under ~300 deg/s (somewhat over on the wrist or the
   jaw slam is fine), roll within -180..+100 in sim convention (real = sim + 76; the real wrist roll must not cross +/-180).
 - Iterate up to ~8 times. When done, write a short markdown summary (which files changed, numbers before/after, what you could not
   achieve) to ~/game/ui/jobs/{jid}.result.md and finish."""

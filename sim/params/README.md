@@ -4,3 +4,4 @@ Conventions: metres from the arm's own pan axis (x forward, z up from the base p
 pan: + = the arm's own right. roll: 0 = sword on top (real arm reads +76). jaw: 0 = shut, 100 = fully open.
 Joint angle lists are [pan, lift, elbow, wrist_flex, wrist_roll, jaw]. Positive lift/elbow/wrist pitch the chain DOWN.
 Rules: hand (hilt) no more than 0.27 m forward of the base; nothing below the base plane; servo cap ~300 deg/s.
+HARD RULE: the wrist joints never go below 0.092 m above the base plane (measured on the real arm: lower and the joint housing hits the board). tune.py nudges violating key poses to the nearest safe pose and warns if a trajectory dips between keys.

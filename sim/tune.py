@@ -8,6 +8,29 @@ import arena, ik
 from move_params import PARAMS
 JOINTS = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]
 SERVO_CAP_DPS = 300.0
+WRIST_Z_MIN = 0.092   # HARD RULE (user, 2026-09-12): the wrist joints never go below this height above the base plane, or the arm hits the board
+
+def wrist_z(q):
+    arena.set_pose(ik._m, ik._d, q, np.zeros(6))
+    return float(min(ik._d.jnt("A_wrist_flex").xanchor[2], ik._d.jnt("A_wrist_roll").xanchor[2]))
+
+def enforce_floor(q, label=""):
+    """If a key pose puts a wrist joint below WRIST_Z_MIN, move to the nearest joint config (lift/elbow/wrist) that clears it,
+    keeping the hand position and sword pitch as close as possible."""
+    q = np.array(q, float); z0 = wrist_z(q)
+    if z0 >= WRIST_Z_MIN: return q
+    h0, t0, p0 = ik.fk(q); best = None
+    for dl in np.arange(-30, 31, 3):
+        for de in np.arange(-30, 31, 3):
+            for dw in np.arange(-30, 31, 3):
+                qq = q.copy(); qq[1:4] += (dl, de, dw); qq = np.clip(qq, ik.LO + 1, ik.HI - 1)
+                if wrist_z(qq) < WRIST_Z_MIN: continue
+                h, tt, p = ik.fk(qq)
+                cost = abs(dl) + abs(de) + abs(dw) + 400 * (abs(h[0] - h0[0]) + abs(h[2] - h0[2])) + 2 * abs(((p - p0 + 180) % 360) - 180)
+                if best is None or cost < best[0]: best = (cost, qq, h, p)
+    if best is None: print(f"    FLOOR: {label} cannot be fixed within +-30 deg"); return q
+    print(f"    FLOOR: {label} wrist was {z0:.3f} m -> {wrist_z(best[1]):.3f} m; joints {np.round(q[1:4]).astype(int).tolist()} -> {np.round(best[1][1:4]).astype(int).tolist()}, hand ({h0[0]:.2f},{h0[2]:.2f})->({best[2][0]:.2f},{best[2][2]:.2f}), pitch {p0:.0f}->{best[3]:.0f}")
+    return best[1]
 ROLL_OFFSET = 76.0      # real-arm wrist_roll reading when the sword is exactly on top (sim roll 0). Confirmed by eye 2026-09-12.
 REAL = json.load(open("../arm/motions_real.json")); OUT = "../arm/motions_tuned.json"
 BEAT = 1.4            # seconds per beat (impact/guard pinned inside it by the chain compiler)
@@ -127,9 +150,11 @@ def replay(name, ts, Q, fps=30):
 
 def generate(name, render=True):
     print(f"== {name}")
-    rec = recipe(name); keys = [k for k, _ in rec]; times = np.cumsum([t for _, t in rec])
+    rec = recipe(name); keys = [enforce_floor(k, f"{name} key {i}") for i, (k, _) in enumerate(rec)]; times = np.cumsum([t for _, t in rec])
     for k, T in zip(keys, times): print(f"  key @ {T:.2f}s  {np.round(k, 0).astype(int).tolist()}")
     ts, Q = catmull_rom(keys, times); Q[:, 5] = np.clip(Q[:, 5], 0, 100)
+    zmin = min(wrist_z(q) for q in Q[::3])
+    if zmin < WRIST_Z_MIN - 0.005: print(f"    FLOOR WARNING: trajectory dips to wrist z {zmin:.3f} m between keys (limit {WRIST_Z_MIN})")
     peak = np.abs(np.gradient(Q, ts, axis=0)).max(0); over = [JOINTS[k] for k in range(5) if peak[k] > SERVO_CAP_DPS]
     print("  peak deg/s:", dict(zip(JOINTS, np.round(peak).astype(int).tolist())), ("OVER CAP: " + str(over)) if over else "")
     import fcntl; lock = open(OUT + ".lock", "w"); fcntl.flock(lock, fcntl.LOCK_EX)
