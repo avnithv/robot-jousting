@@ -50,6 +50,10 @@ def moves():
         t = tuned[n]; vid = os.path.join(OUT, f"tuned_{n}.mp4")
         out[n] = {"params": {"_doc": "chain: " + " > ".join(t["chain"]) + "  (beats: " + ", ".join(f"{b['move']} {b.get('connector', b.get('transition', ''))}" for b in t["beats"]) + ")", "moves": " ".join(t["chain"])},
                   "duration": round(t["t"][-1], 2), "end": [round(x) for x in t["keys"][-1]], "video": f"/video/{os.path.basename(vid)}?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None, "chain": True}
+    for n in sorted(k for k in tuned if k.startswith("KF_") and not k.endswith("@B")):   # hand-posed keyframe motions (Keyframes tab)
+        t = tuned[n]; tB = tuned.get(n + "@B")
+        out[n] = {"params": {"_doc": f"keyframes '{t.get('keyframes', n[3:])}' (Keyframes tab): {len(t['keys'])} keys on A" + (f", {len(tB['keys'])} on B" if tB else ", none on B")},
+                  "duration": round(t["t"][-1], 2), "duration_B": round(tB["t"][-1], 2) if tB else None, "end": [round(x) for x in t["keys"][-1]], "video": None, "keyframes": True}
     for f in sorted(os.listdir(PARAMS)):
         if not f.endswith(".json"): continue
         n = f[:-5]; p = json.load(open(os.path.join(PARAMS, f))); t = tuned.get(n); vid = os.path.join(OUT, f"tuned_{n}.mp4")
