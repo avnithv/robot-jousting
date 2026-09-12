@@ -21,6 +21,11 @@
  <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Power off arm (move by hand)</button> <span class="arm" id="live"></span>
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
  <table id="ptable"></table>
+ <div class="bar" style="flex-direction:column;align-items:stretch;margin-top:14px"><b>Chain builder</b>
+  <div class="bar"><label>ours <input id="ours" size="46" placeholder="FEINT_HIGH ATTACK_HIGH BLOCK_MIDDLE"></label>
+   <label>theirs <input id="theirs" size="46" placeholder="ATTACK_LOW_LR ATTACK_LOW_RL BLOCK_HIGH"></label>
+   <button onclick="buildChain()">Build chain</button></div>
+  <small>Builds CHAIN_A (ours) and CHAIN_B (theirs), keeps both arms' beats aligned, and renders the pair. They appear in the move list; Run on arm plays CHAIN_A.</small></div>
  <div class="bar"><button class="primary" onclick="apply()">Apply changes</button><small>saves and regenerates this move; the clip refreshes when done</small></div>
  <div class="bar" style="flex-direction:column;align-items:stretch"><textarea id="fb" rows="2" placeholder="Feedback for a tuning agent, e.g. the slash should start further left and end higher. Each message runs its own agent."></textarea>
   <div><button onclick="feedback()">Send to agent</button> <label><input type="checkbox" id="attach" checked> attach the arm's current pose (e.g. after posing it by hand as the pose you mean)</label></div></div>
@@ -48,6 +53,7 @@ async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));doc
 async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t,attach_pose:document.getElementById('attach').checked});document.getElementById('fb').value='';poll()}
 async function release(){await api('/api/release',{});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which});poll()}
+async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
 async function runArm(){await api('/api/run',{move:cur,scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
 async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;

@@ -1,12 +1,12 @@
 {
  "_doc": "Rest position between turns and at the start of every move, in REAL arm degrees as the arm reports them (wrist_roll 76 = sword on top). Apply regenerates every move.",
  "joints": {
-  "pan": -3.1,
-  "lift": -101.7,
-  "elbow": 30.1,
-  "wrist": 2.7,
-  "roll": 76.0,
-  "jaw": 7.7
+  "pan": -3.6,
+  "lift": -102.1,
+  "elbow": 47.2,
+  "wrist": 2.9,
+  "roll": 76.3,
+  "jaw": 7.6
  },
  "_help": {
   "joints.pan": "base rotation (deg)",

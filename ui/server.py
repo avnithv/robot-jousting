@@ -29,6 +29,10 @@ def ensure_daemon():
 def moves():
     tuned = json.load(open(os.path.join(ARM, "motions_tuned.json"))) if os.path.exists(os.path.join(ARM, "motions_tuned.json")) else {}
     out = {}
+    for n in sorted(k for k in tuned if k.startswith("CHAIN")):
+        t = tuned[n]; vid = os.path.join(OUT, f"tuned_{n}.mp4" if n == "CHAIN_A" and not os.path.exists(os.path.join(OUT, "pair_CHAIN_A_vs_CHAIN_B.mp4")) else "pair_CHAIN_A_vs_CHAIN_B.mp4")
+        out[n] = {"params": {"_doc": "chain: " + " > ".join(t["chain"]) + "  (beats: " + ", ".join(f"{b['move']} {b['transition']}" for b in t["beats"]) + ")", "moves": " ".join(t["chain"])},
+                  "duration": round(t["t"][-1], 2), "end": [round(x) for x in t["keys"][-1]], "video": f"/video/{os.path.basename(vid)}?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None, "chain": True}
     for f in sorted(os.listdir(PARAMS)):
         if not f.endswith(".json"): continue
         n = f[:-5]; p = json.load(open(os.path.join(PARAMS, f))); t = tuned.get(n); vid = os.path.join(OUT, f"tuned_{n}.mp4")
@@ -45,26 +49,31 @@ def start_job(kind, label, cmd, cwd, lock=None, env=None, jid=None):
             job["status"] = "running"
             with open(log, "w") as lf:
                 lf.write("$ " + " ".join(cmd if isinstance(cmd, list) else [cmd]) + "\n"); lf.flush()
-                r = subprocess.run(cmd, cwd=cwd, stdout=lf, stderr=subprocess.STDOUT, env=env, shell=isinstance(cmd, str))
+                r = subprocess.run(cmd, cwd=cwd, stdout=lf, stderr=subprocess.STDOUT, env=env, shell=isinstance(cmd, str), stdin=subprocess.DEVNULL)
             job["status"] = "done" if r.returncode == 0 else "failed"; job["ended"] = time.time()
             res = log.replace(".log", ".result.md")
             if os.path.exists(res): job["result"] = open(res).read()
     threading.Thread(target=run, daemon=True).start(); return job
 
 def agent_prompt(move, feedback, jid):
-    return f"""You are tuning ONE move of a robot-arm sword game in simulation. Work only in this directory (~/game/sim).
-Move: {move}. The user's feedback on the current version: "{feedback}"
+    return f"""You are tuning moves of a robot-arm sword game in simulation. Work in this directory (~/game/sim).
+The user was looking at move {move} and wrote: "{feedback}"
 
-Rules:
-- Edit ONLY sim/params/{move}.json (read sim/params/README.md for conventions; read sim/tune.py to see how the parameters become key poses).
-  If the move is a mirror or a feint that references another move, you may edit that referenced move's file instead, but say so.
-- Regenerate with: ../.venv/bin/python tune.py {move}   (prints key poses, peak joint speeds, warnings). Look at the result:
-  out/tuned_{move}_strip.png is an 8-frame filmstrip of the sim render (arm A, yellow, is this arm; the black arm is the opponent at rest).
-  For blocks you can also run: ../.venv/bin/python pair.py {move} <OPPONENT_ATTACK> which reports the closest blade distance and writes out/pair_*_strip.png.
-  Useful helpers: ik.fk(q) gives hilt/tip/pitch for joint angles; ik.solve(x, z, pitch, pan, roll) solves hand placement.
-- NEVER run anything under ~/game/arm (that is the real robot). Do not touch other moves' files or tune.py.
-- Constraints: hand <= 0.27 m forward of the base, nothing below z=0, joint speeds under ~300 deg/s (a bit over on the wrist or jaw slam is acceptable), roll stays within -180..+100 (sim convention).
-- Iterate at most ~6 times. When done, write a short markdown summary (what you changed, the numbers before/after, and anything you could not achieve) to ~/game/ui/jobs/{jid}.result.md and finish."""
+How things work:
+- Every move is generated from sim/params/<MOVE>.json (read sim/params/README.md for conventions; each file has _help notes per key;
+  read sim/tune.py to see how parameters become key poses). REST.json is the rest pose all moves start from. A "captured" entry
+  {{"start": [...], "end": [...]}} (real-arm degrees) overrides the computed start/end pose of a move.
+- Edit whichever params files the feedback calls for: usually the one move, but it may be several moves, or REST.json
+  (then regenerate everything). Mirrors/feints reference another move ("mirror_of", "like"); edit the referenced file when needed.
+- Regenerate with: ../.venv/bin/python tune.py <MOVE> [<MOVE> ...]   or   ../.venv/bin/python tune.py ALL   (prints key poses, peak joint
+  speeds, warnings). Look at out/tuned_<MOVE>_strip.png (8-frame filmstrip: yellow arm = this arm, black = opponent at rest).
+  Two-arm check: ../.venv/bin/python pair.py <OUR_MOVE> <THEIR_MOVE> (closest blade distance + out/pair_*_strip.png).
+  Chains: ../.venv/bin/python chain.py pair M1 M2 M3 -- N1 N2 N3.  Helpers: ik.fk(q) -> hilt/tip/pitch; ik.solve(x, z, pitch, pan, roll).
+- NEVER run anything under ~/game/arm (that is the real robot) and do not edit tune.py/chain.py/arena.py.
+- Constraints: hand <= 0.27 m forward of the base, nothing below z=0, joint speeds under ~300 deg/s (somewhat over on the wrist or the
+  jaw slam is fine), roll within -180..+100 in sim convention (real = sim + 76; the real wrist roll must not cross +/-180).
+- Iterate up to ~8 times. When done, write a short markdown summary (which files changed, numbers before/after, what you could not
+  achieve) to ~/game/ui/jobs/{jid}.result.md and finish."""
 
 def api(handler, path, body):
     if path == "/api/moves": return moves()
@@ -94,6 +103,10 @@ def api(handler, path, body):
                 open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/chain":
+        ours = [m.strip() for m in body["ours"].replace(",", " ").split() if m.strip()]; theirs = [m.strip() for m in body.get("theirs", "").replace(",", " ").split() if m.strip()]
+        cmd = [PY, "chain.py", "pair", *ours, "--", *theirs] if theirs else [PY, "chain.py", "CHAIN_A", *ours]
+        return start_job("chain", f"chain {' '.join(ours)}" + (f"  vs  {' '.join(theirs)}" if theirs else ""), cmd, SIM, lock=gen_lock)
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {}, timeout=30)
     if path == "/api/capture":

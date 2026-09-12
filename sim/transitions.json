@@ -1,0 +1,17 @@
+{
+ "_doc": "Explicit routes between the END of one move and the START (first key) of the next, keyed 'FROM->TO' (move names, or * wildcard). 'via' lists hub names to pass through in order; 'flourish' is reserved for a later flourish inserted before the route. Anything not listed is blended directly if the direct path passes the safety checks, otherwise routed via READY_MID automatically.",
+ "*->BLOCK_HIGH":            {"via": ["READY_MID"]},
+ "BLOCK_HIGH->ATTACK_LOW_LR": {"via": ["TUCK"]},
+ "BLOCK_HIGH->ATTACK_LOW_RL": {"via": ["TUCK"]},
+ "BLOCK_HIGH->FEINT_LEFT":    {"via": ["TUCK"]},
+ "BLOCK_HIGH->FEINT_RIGHT":   {"via": ["TUCK"]},
+ "BLOCK_HIGH->BLOCK_LEFT":    {"via": ["GATE"]},
+ "BLOCK_HIGH->BLOCK_RIGHT":   {"via": ["GATE"]},
+ "BLOCK_HIGH->BLOCK_MIDDLE":  {"via": ["GATE"]},
+ "ATTACK_LOW_LR->ATTACK_HIGH": {"via": ["EN_GARDE"]},
+ "ATTACK_LOW_RL->ATTACK_HIGH": {"via": ["EN_GARDE"]},
+ "ATTACK_LOW_LR->ATTACK_LOW_RL": {"via": ["READY_MID"]},
+ "ATTACK_LOW_RL->ATTACK_LOW_LR": {"via": ["READY_MID"]},
+ "ATTACK_LOW_LR->FEINT_RIGHT": {"via": ["READY_MID"]},
+ "ATTACK_LOW_RL->FEINT_LEFT":  {"via": ["READY_MID"]}
+}

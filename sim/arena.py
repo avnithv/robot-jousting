@@ -10,6 +10,7 @@ SO100 = os.path.join(_SO_ARM, "Simulation/SO100/so100.urdf")
 JOINTS = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]
 SWORD_LEN = 0.18   # metres of blade past the jaw tip (plastic knife)
 SWORD_ON_JAW = True  # sword on the moving finger; False = fixed along the gripper
+SHIELD = False       # no shield in v1
 BASE_GAP = 0.61    # metres between the two shoulder_pan axes at the clash (2 ft gantry stop)
 B_OFFSET_DEG = np.array([0.0, 102.77, -90.0, -31.94, 0.0, 0.0])
 B_SIGN = np.array([-1.0, 1.0, 1.0, 1.0, 1.0, 1.0])   # pan: +ve = each arm's OWN right (B mirrors A)
@@ -57,17 +58,18 @@ def _arm_with_sword(path, q_zero_rad, forward_in_arm_frame, hilt_dist_from_pan, 
         _add_sword(child, "", jaw_name, list(start_local), _blade_quat_local(Rj, dir_world), rgba, sword_len)
     else:
         _add_sword(child, "", "gripper", list(pos_local), _blade_quat_local(R, fwd), rgba, sword_len)
-    # Shield plate on the OUTSIDE of the fixed finger: the side facing away from the moving jaw. At the canonical
-    # zero pose the jaw sits above the finger, so the plate faces down; rolling the wrist 180 deg brings it face up.
-    jaw0 = d0.body(next(b.name for b in child.bodies if "jaw" in b.name and b.name != "gripper"))
-    axis = d0.jnt("gripper").xaxis; away = np.cross(fwd, axis); away /= np.linalg.norm(away)   # perpendicular to forward and to the jaw hinge
-    if away @ (g.xpos + fwd * 0.05 - jaw0.xpos) < 0: away = -away                                   # pointing away from the jaw
-    centre_world = g.xpos + fwd * (hilt_dist_from_pan - covered - 0.05) + away * 0.02
-    n_local = R.T @ away; f_local = R.T @ fwd; s_local = np.cross(n_local, f_local)
-    quat = np.zeros(4); mujoco.mju_mat2Quat(quat, np.column_stack([f_local, s_local, n_local]).flatten())
-    g_spec = child.body("gripper")
-    g_spec.add_geom(name="shield", type=mujoco.mjtGeom.mjGEOM_BOX, size=[0.05, 0.04, 0.004], pos=list(R.T @ (centre_world - g.xpos)), quat=list(quat),
-                    rgba=[0.85, 0.75, 0.2, 1], mass=0.02, contype=1, conaffinity=1)
+    if SHIELD:   # optional shield plate on the outside of the fixed finger (not used in v1)
+        # Shield plate on the OUTSIDE of the fixed finger: the side facing away from the moving jaw. At the canonical
+        # zero pose the jaw sits above the finger, so the plate faces down; rolling the wrist 180 deg brings it face up.
+        jaw0 = d0.body(next(b.name for b in child.bodies if "jaw" in b.name and b.name != "gripper"))
+        axis = d0.jnt("gripper").xaxis; away = np.cross(fwd, axis); away /= np.linalg.norm(away)   # perpendicular to forward and to the jaw hinge
+        if away @ (g.xpos + fwd * 0.05 - jaw0.xpos) < 0: away = -away                                   # pointing away from the jaw
+        centre_world = g.xpos + fwd * (hilt_dist_from_pan - covered - 0.05) + away * 0.02
+        n_local = R.T @ away; f_local = R.T @ fwd; s_local = np.cross(n_local, f_local)
+        quat = np.zeros(4); mujoco.mju_mat2Quat(quat, np.column_stack([f_local, s_local, n_local]).flatten())
+        g_spec = child.body("gripper")
+        g_spec.add_geom(name="shield", type=mujoco.mjtGeom.mjGEOM_BOX, size=[0.05, 0.04, 0.004], pos=list(R.T @ (centre_world - g.xpos)), quat=list(quat),
+                        rgba=[0.85, 0.75, 0.2, 1], mass=0.02, contype=1, conaffinity=1)
     if any(b.name == "jaw" for b in child.bodies):   # SO100 URDF: base mesh overlaps the shoulder mesh, gripper has no collision geom
         for b in child.bodies:
             if b.name in ("world", "base"):
