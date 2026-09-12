@@ -874,6 +874,8 @@ def mp_api(method, path, query, body):
 
 
 class H(SimpleHTTPRequestHandler):
+    # macOS's mime table calls .m4a "audio/mp4a-latm", which browsers do not treat as a playable container
+    extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".mp4": "video/mp4", ".webm": "video/webm", ".js": "text/javascript", ".mjs": "text/javascript"}
     def __init__(self, *a, **k): super().__init__(*a, directory=HERE, **k)
     def log_message(self, *a): pass
     def end_headers(self):
