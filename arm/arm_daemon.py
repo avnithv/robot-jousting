@@ -53,6 +53,7 @@ class Arm:
         return Q
     def prepare(self, move):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
+        if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
         self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         return t, Q, rest
     def play(self, move, scale, repeat, barrier=None):
