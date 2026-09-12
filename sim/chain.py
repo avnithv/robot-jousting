@@ -1,7 +1,8 @@
 """Chain compiler v2: states, connectors, flourishes, per-arm.
     ../.venv/bin/python chain.py CHAIN_A ATTACK_HIGH BLOCK_LEFT ATTACK_LOW_RL [--arm A|B] [--seed 1]
     ../.venv/bin/python chain.py pair ATTACK_HIGH BLOCK_LEFT -- BLOCK_HIGH ATTACK_LOW_LR      # A chain vs B chain, beats aligned, pair render
-Beat model: BEAT s per move; attacks/feints pin their last key at IMPACT s, blocks pin their guard key at GUARD s; the arm holds
+Beat model: BEAT s per move; attacks pin their strike key at IMPACT s (then retract and return along the strike line to the
+strike-ready pose), feints pin their mid-swing stop at IMPACT, blocks pin their guard key at GUARD s; the arm holds
 to the beat end. The gap before each move's windup is filled by a CONNECTOR: a flourish (flourishes.json) if one fits the
 window, else a direct blend if the straight joint path is safe, else a route through the MID hub (hubs.json).
 Charge/ride-in happens at REST. Connectors never touch a move's keys or its pinned time."""
@@ -9,6 +10,7 @@ import sys, os, json, random, numpy as np, mujoco, imageio
 import arena, ik, tune
 from tune import JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
+RETURN_T = 0.4   # after an attack's retract, seconds to come back along the strike line to the strike-ready pose before any connector
 TIP_MIN = -0.10             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
 REACH_MAX = 0.40            # hand reach allowed in transit (m): the extended low slashes reach 0.38; contact safety comes from the calibrated stops
 BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
@@ -40,7 +42,7 @@ def pin_of(move):
     feints pin the mid-swing stop (third key from the end) at IMPACT so the fake commits when a real attack would land."""
     if move.startswith("BLOCK"): return ("first", GUARD)
     if move.startswith("FEINT"): return ("feint", IMPACT)
-    return ("last", IMPACT)
+    return ("strike", IMPACT)   # attacks: the strike key itself lands at IMPACT (the retract and the return follow it)
 def seg_time(a, b): return max(float(np.max(np.abs(b[:5] - a[:5])) / BLEND_RATE), 0.15)
 
 def path_ok(a, b, n=12):
@@ -86,6 +88,14 @@ def candidates(prev_move, prev_pose, move, first, window, last_flourish=None):
         add(f"via {h}", [HUBS[h]], 1.0)
     return sorted(out, key=lambda c: -c[3])
 
+def strike_index(rec):
+    """Index of an attack's strike END key: the last key, unless the last key is a retract (moves back toward the previous key)."""
+    keys = [k for k, _ in rec]
+    if len(rec) >= 3:
+        a, b, cc = keys[-3], keys[-2], keys[-1]
+        if np.dot(cc - b, a - b) > 0 and np.linalg.norm(cc - b) < 0.6 * np.linalg.norm(a - b): return len(rec) - 2
+    return len(rec) - 1
+
 STOPS_FILE = os.path.join(HERE, "contact_stops.json")
 def apply_stop(rec, stop_pose_sim, retract=0.2, t_retract=0.3):
     """Truncate a move's strike at a calibrated stop: the strike END key becomes the stop pose (strike time scaled by the
@@ -110,7 +120,9 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
         start, rec = move_keys(move)                                          # transition targets START; the move plays from there
         if stops and len(beats) in stops:                                     # a calibrated contact stop for this beat's pairing
             rec = apply_stop(rec, stops[len(beats)]); print(f"  {move:14s} strike truncated at the calibrated stop") if verbose else None
-        pin_which, pin_t = pin_of(move); pin_i = {"first": 0, "last": len(rec) - 1, "feint": len(rec) - 3}[pin_which]
+        strike_i = strike_index(rec) if move.startswith("ATTACK") else None
+        if strike_i is not None: rec = rec + [(rec[0][0].copy(), RETURN_T)]   # pull back the way it came, all the way to the strike-ready pose, before any connector
+        pin_which, pin_t = pin_of(move); pin_i = {"first": 0, "last": len(rec) - 1, "feint": len(rec) - 3, "strike": strike_i}[pin_which]
         windup = sum(d for _, d in rec[1:pin_i + 1]); window = pin_t - windup
         cands = candidates(prev_move, keys[-1], move, rec[0][0], window, last_fl)
         if not cands: raise RuntimeError(f"no safe connector {prev_move} -> {move}")
