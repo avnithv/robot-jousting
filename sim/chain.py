@@ -1,85 +1,109 @@
-"""Chain compiler: stitch moves so each starts where the previous ended, on a fixed beat, with transitions.
-    ../.venv/bin/python chain.py CHAIN_A ATTACK_HIGH BLOCK_LEFT ATTACK_LOW_RL          # build + render (opponent at rest)
-    ../.venv/bin/python chain.py pair ATTACK_HIGH BLOCK_LEFT -- BLOCK_HIGH ATTACK_LOW_LR   # build CHAIN_A and CHAIN_B, render the pair
-Beat model (BEAT s per move): attacks and feints have their last key (impact / pull-back) pinned at IMPACT s into the beat,
-blocks have their guard key pinned at GUARD s; the arm then holds until the beat ends. The transition from the previous
-end pose to the move's first key fills the time before the windup; it is a direct blend when the straight joint path is
-safe, otherwise it routes through hub poses (hubs.json) per transitions.json, or READY_MID by default."""
-import sys, os, json, numpy as np, mujoco, imageio
+"""Chain compiler v2: states, connectors, flourishes, per-arm.
+    ../.venv/bin/python chain.py CHAIN_A ATTACK_HIGH BLOCK_LEFT ATTACK_LOW_RL [--arm A|B] [--seed 1]
+    ../.venv/bin/python chain.py pair ATTACK_HIGH BLOCK_LEFT -- BLOCK_HIGH ATTACK_LOW_LR      # A chain vs B chain, beats aligned, pair render
+Beat model: BEAT s per move; attacks/feints pin their last key at IMPACT s, blocks pin their guard key at GUARD s; the arm holds
+to the beat end. The gap before each move's windup is filled by a CONNECTOR: a flourish (flourishes.json) if one fits the
+window, else a direct blend if the straight joint path is safe, else a route through the MID hub (hubs.json).
+Charge/ride-in happens at REST. Connectors never touch a move's keys or its pinned time."""
+import sys, os, json, random, numpy as np, mujoco, imageio
 import arena, ik, tune
-from tune import PARAMS, REST, ROLL_OFFSET, JOINTS, OUT, catmull_rom, recipe
+from tune import JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
 TIP_MIN = -0.08             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
-BLEND_RATE = 200.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
+REACH_MAX = 0.32            # hand reach allowed in transit (m); the pair collision matrix is the real check
+BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}
-ROUTES = {k: v for k, v in json.load(open(os.path.join(HERE, "transitions.json"))).items() if not k.startswith("_")}
+FLOURISHES = {k: v for k, v in json.load(open(os.path.join(HERE, "flourishes.json"))).items() if not k.startswith("_")}
+FAMILY = {"ATTACK_HIGH": "high", "FEINT_HIGH": "high", "ATTACK_LOW_LR": "low_left", "FEINT_LEFT": "low_left", "ATTACK_LOW_RL": "low_right", "FEINT_RIGHT": "low_right",
+          "BLOCK_HIGH": "bar", "BLOCK_LEFT": "guard", "BLOCK_RIGHT": "guard", "BLOCK_MIDDLE": "guard", "REST": "rest"}
 
 def pin_of(move):
-    if move.startswith("BLOCK"): return "first", GUARD
-    return "last", IMPACT
-
-def path_ok(a, b, n=12):
-    """Straight joint-space path from a to b: hand reach <= 0.30, blade and hand above the table, roll inside the wrap."""
-    for s in np.linspace(0, 1, n):
-        q = a + s * (b - a); h, t, p = ik.fk(q)
-        if np.hypot(h[0], h[1]) > 0.30 or h[2] < 0.04 or t[2] < TIP_MIN or not (-185 <= q[4] <= 100) or q[1] < -89: return False
-    return True
-
-def route(prev_move, prev_pose, move, first):
-    key = f"{prev_move}->{move}"; r = ROUTES.get(key) or ROUTES.get(f"*->{move}") or ROUTES.get(f"{prev_move}->*")
-    if r: return [HUBS[h] for h in r["via"]], f"route {r['via']}"
-    if path_ok(prev_pose, first): return [], "direct"
-    return [HUBS["READY_MID"]], "auto via READY_MID (direct path unsafe)"
-
+    """Which key is pinned to the beat clock: blocks pin the guard key at GUARD; attacks pin the impact (last) key at IMPACT;
+    feints pin the mid-swing stop (third key from the end) at IMPACT so the fake commits when a real attack would land."""
+    if move.startswith("BLOCK"): return ("first", GUARD)
+    if move.startswith("FEINT"): return ("feint", IMPACT)
+    return ("last", IMPACT)
 def seg_time(a, b): return max(float(np.max(np.abs(b[:5] - a[:5])) / BLEND_RATE), 0.15)
 
-def compile_chain(moves, name, start_pose=None, verbose=True, beat_extra=None, save=True):
-    """beat_extra: optional per-beat extra seconds (used to keep two arms' beats aligned). Returns (ts, Q, beats, stretches)."""
-    stretches = []
-    keys = [start_pose if start_pose is not None else REST.copy()]; times = [0.0]; beats = []; prev_move = "REST"; t_beat = 0.0
+def path_ok(a, b, n=12):
+    """Straight joint-space path from a to b: hand reach <= 0.30, hand above the table, tip above TIP_MIN, roll inside the wrap, lift floor."""
+    for s in np.linspace(0, 1, n):
+        q = a + s * (b - a); h, t, p = ik.fk(q)
+        if np.hypot(h[0], h[1]) > REACH_MAX or h[2] < 0.04 or t[2] < TIP_MIN or not (-185 <= q[4] <= 100) or q[1] < tune.LIFT_MIN: return False
+    return True
+
+def resolve_via(via):
+    return [HUBS[v] if isinstance(v, str) else np.array(v, float) for v in via]
+
+def matches(pattern, move):
+    return pattern == "*" or pattern == move or pattern == FAMILY.get(move, "") or pattern in HUBS and move == pattern
+
+def candidates(prev_move, prev_pose, move, first, window, last_flourish=None):
+    """All valid connectors for this gap: (name, path poses, seconds needed, score). Higher score wins."""
+    out = []
+    def add(name, path, base):
+        segs = list(zip([prev_pose] + path[:-1] if path else [], path)); segs = list(zip([prev_pose] + path, path + [first]))
+        if all(path_ok(a, b) for a, b in segs):
+            need = sum(seg_time(a, b) for a, b in segs); fits = need <= window
+            out.append((name, path, need, (base - 0.1 * need) if fits else (-100 - 10 * need)))   # if nothing fits, the fastest wins
+    add("direct", [], 2.0)
+    for name, f in FLOURISHES.items():
+        if matches(f["from"], prev_move) and matches(f["to"], move):
+            add(name, resolve_via(f["via"]), 2.0 + f.get("weight", 1) - (2 if name == last_flourish else 0))
+    for h in HUBS:
+        add(f"via {h}", [HUBS[h]], 1.0)
+    return sorted(out, key=lambda c: -c[3])
+
+def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verbose=True):
+    tune.use_arm(arm); rest = tune.REST.copy(); rng = random.Random(seed)
+    tuned = json.load(open(OUT)); suffix = "" if arm == "A" else f"@{arm}"
+    keys = [rest]; times = [0.0]; beats = []; prev_move = "REST"; t_beat = 0.0; stretches = []; last_fl = None
     for move in moves:
-        rec = [(np.array(k, float), float(d)) for k, d in recipe(move)][1:]   # drop the leading REST key
-        pin_which, pin_t = pin_of(move); pin_i = 0 if pin_which == "first" else len(rec) - 1
-        windup = sum(d for _, d in rec[1:pin_i + 1])                          # time from first key to the pinned key
-        via, how = route(prev_move, keys[-1], move, rec[0][0])
-        path = via + [rec[0][0]]; need = sum(seg_time(a, b) for a, b in zip([keys[-1]] + path[:-1], path))
-        avail = pin_t - windup; t_tr = max(avail, need); stretch = t_tr - avail
-        if beat_extra is not None: stretch = max(stretch, beat_extra[len(beats)]); t_tr = avail + stretch
+        rec = [(np.array(k, float), float(d)) for k, d in recipe(move)][1:]   # this arm's keys, dropping the leading REST
+        pin_which, pin_t = pin_of(move); pin_i = {"first": 0, "last": len(rec) - 1, "feint": len(rec) - 3}[pin_which]
+        windup = sum(d for _, d in rec[1:pin_i + 1]); window = pin_t - windup
+        cands = candidates(prev_move, keys[-1], move, rec[0][0], window, last_fl)
+        if not cands: raise RuntimeError(f"no safe connector {prev_move} -> {move}")
+        top = [c for c in cands if c[3] >= cands[0][3] - 0.5]; cname, path, need, _ = rng.choice(top)   # a little variety among near-equal options
+        last_fl = cname if cname in FLOURISHES else None
+        t_tr = max(window, need); stretch = t_tr - window
+        if beat_extra is not None: stretch = max(stretch, beat_extra[len(beats)]); t_tr = window + stretch
         stretches.append(stretch)
-        if verbose: print(f"  {move:14s} transition {how}: {t_tr:.2f}s (needs {need:.2f}, budget {avail:.2f}){'  ** beat stretched by %.2fs' % stretch if stretch > 1e-3 else ''}")
-        # distribute the transition time over its segments proportionally to what each needs
-        segs = list(zip([keys[-1]] + path[:-1], path)); w = np.array([seg_time(a, b) for a, b in segs]); w = w / w.sum() * t_tr
+        if verbose: print(f"  {move:14s} connector: {cname:14s} {t_tr:.2f}s (needs {need:.2f}, window {window:.2f})" + (f"  ** beat stretched {stretch:.2f}s" if stretch > 1e-3 else ""))
+        full = path + [rec[0][0]]; segs = list(zip([keys[-1]] + full[:-1], full)); w = np.array([seg_time(a, b) for a, b in segs]); w = w / w.sum() * t_tr
         t = t_beat
         for (a, b), dt in zip(segs, w): t += dt; keys.append(b); times.append(t)
         for k, d in rec[1:]: t += d; keys.append(k); times.append(t)
-        beat_end = max(t_beat + BEAT + stretch, t + 0.05)
-        keys.append(keys[-1].copy()); times.append(beat_end)                  # hold to the end of the beat
-        beats.append({"move": move, "start": round(t_beat, 3), "pinned_at": round(t_beat + t_tr + windup, 3), "end": round(beat_end, 3), "transition": how})
+        beat_end = max(t_beat + BEAT + stretch, t + 0.05); keys.append(keys[-1].copy()); times.append(beat_end)
+        beats.append({"move": move, "start": round(t_beat, 3), "pinned_at": round(t_beat + t_tr + windup, 3), "end": round(beat_end, 3), "connector": cname})
         prev_move = move; t_beat = beat_end
+    # disengage: back to REST after the last beat
+    keys.append(rest.copy()); times.append(t_beat + max(seg_time(keys[-1], rest), 0.6))
     ts, Q = catmull_rom(keys, times); Q[:, 5] = np.clip(Q[:, 5], 0, 100)
     peak = np.abs(np.gradient(Q, ts, axis=0)).max(0); over = [JOINTS[k] for k in range(5) if peak[k] > tune.SERVO_CAP_DPS]
     if verbose: print(f"  total {ts[-1]:.2f}s; peak deg/s {dict(zip(JOINTS, np.round(peak).astype(int).tolist()))}" + (f"  OVER CAP: {over}" if over else ""))
-    if not save: return ts, Q, beats, stretches
-    # save in real-arm coordinates, same format as single moves
-    import fcntl; lock = open(OUT + ".lock", "w"); fcntl.flock(lock, fcntl.LOCK_EX)
-    tuned = json.load(open(OUT)) if os.path.exists(OUT) else {}
-    Qr = Q.copy(); Qr[:, 4] += ROLL_OFFSET; keys_r = [np.array(k) + np.array([0, 0, 0, 0, ROLL_OFFSET, 0]) for k in keys]
-    tuned[name] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in r] for r in Qr], "roll_offset": ROLL_OFFSET, "joints": JOINTS,
-                   "keys": [[round(float(x), 1) for x in k] for k in keys_r], "key_times": [round(float(x), 2) for x in times], "chain": moves, "beats": beats}
-    json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN)
+    if save:
+        import fcntl; lock = open(OUT + ".lock", "w"); fcntl.flock(lock, fcntl.LOCK_EX); tuned = json.load(open(OUT))
+        Qr = Q.copy(); Qr[:, 4] += tune.ROLL_OFFSET; keys_r = [np.array(k) + np.array([0, 0, 0, 0, tune.ROLL_OFFSET, 0]) for k in keys]
+        tuned[name] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in r] for r in Qr], "roll_offset": tune.ROLL_OFFSET, "arm": arm, "joints": JOINTS,
+                       "keys": [[round(float(x), 1) for x in k] for k in keys_r], "key_times": [round(float(x), 2) for x in times], "chain": moves, "beats": beats, "seed": seed}
+        json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN)
     return ts, Q, beats, stretches
 
+def compile_pair(ours, theirs, seed=0):
+    sA = compile_chain(ours, "CHAIN_A", "A", seed, verbose=False, save=False)[3]; sB = compile_chain(theirs, "CHAIN_B", "B", seed, verbose=False, save=False)[3]
+    n = max(len(sA), len(sB)); extra = [max((sA + [0] * n)[i], (sB + [0] * n)[i]) for i in range(n)]
+    print("beat lengths:", [round(BEAT + e, 2) for e in extra])
+    print("== CHAIN_A (arm A)", ours); compile_chain(ours, "CHAIN_A", "A", seed, beat_extra=extra)
+    print("== CHAIN_B (arm B)", theirs); compile_chain(theirs, "CHAIN_B", "B", seed, beat_extra=extra)
+    import pair; pair.run("CHAIN_A", "CHAIN_B")
+
 if __name__ == "__main__":
-    a = sys.argv[1:]
+    a = sys.argv[1:]; seed = 0; arm = "A"
+    if "--seed" in a: i = a.index("--seed"); seed = int(a[i + 1]); a = a[:i] + a[i + 2:]
+    if "--arm" in a: i = a.index("--arm"); arm = a[i + 1]; a = a[:i] + a[i + 2:]
     if a and a[0] == "pair":
-        i = a.index("--"); ours, theirs = a[1:i], a[i + 1:]
-        # pass 1: how much each arm would stretch each beat; pass 2: both use the max so the beats stay aligned
-        sA = compile_chain(ours, "CHAIN_A", verbose=False, save=False)[3]; sB = compile_chain(theirs, "CHAIN_B", verbose=False, save=False)[3]
-        n = max(len(sA), len(sB)); extra = [max((sA + [0] * n)[i], (sB + [0] * n)[i]) for i in range(n)]
-        print("beat lengths:", [round(BEAT + e, 2) for e in extra])
-        print("== CHAIN_A", ours); compile_chain(ours, "CHAIN_A", beat_extra=extra)
-        print("== CHAIN_B", theirs); compile_chain(theirs, "CHAIN_B", beat_extra=extra)
-        import pair; pair.run("CHAIN_A", "CHAIN_B")
+        i = a.index("--"); compile_pair(a[1:i], a[i + 1:], seed)
     else:
-        name, moves = a[0], a[1:]; print("==", name, moves); ts, Q, beats, _ = compile_chain(moves, name); tune.replay(name, ts, Q)
+        name, moves = a[0], a[1:]; print("==", name, moves, "arm", arm); ts, Q, beats, _ = compile_chain(moves, name, arm, seed); tune.replay(name, ts, Q)

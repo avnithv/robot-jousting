@@ -3,9 +3,11 @@ Reports the closest approach between the two blades over time and at the end, an
 import sys, json, numpy as np, mujoco, imageio
 import arena
 TUNED = json.load(open("../arm/motions_tuned.json")); ROLL = 76.0
+def reload():
+    global TUNED; TUNED = json.load(open("../arm/motions_tuned.json"))
 
 def traj(name):
-    M = TUNED[name]; t = np.array(M["t"]); q = np.array(M["q"]); q[:, 4] -= ROLL; return t, q
+    M = TUNED[name]; t = np.array(M["t"]); q = np.array(M["q"]); q[:, 4] -= M.get("roll_offset", ROLL); return t, q
 
 def seg_dist(p1, p2, q1, q2):
     """min distance between segments p1-p2 and q1-q2"""
@@ -17,7 +19,7 @@ def seg_dist(p1, p2, q1, q2):
     return best
 
 def run(nameA, nameB, render=True, fps=30):
-    tA, QA = traj(nameA); tB, QB = traj(nameB); T = max(tA[-1], tB[-1]) + 0.6
+    reload(); tA, QA = traj(nameA); tB, QB = traj(nameB); T = max(tA[-1], tB[-1]) + 0.6
     spec, m = arena.build(); d = mujoco.MjData(m)
     arena.set_pose(m, d, QA[0], QB[0]); d.qvel[:] = 0
     qi = lambda tt, t, Q: np.array([np.interp(tt, t, Q[:, k]) for k in range(6)])

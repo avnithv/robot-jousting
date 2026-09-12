@@ -1,0 +1,9 @@
+{
+ "_doc": "Flourish connectors: optional, chosen for looks when they fit the beat window. `from`/`to` match a move name, a state name (REST/MID/SALUTE/LOW_TIP), a family tag (high/low_left/low_right/guard/bar), or '*'. `via` lists named states and/or explicit poses [pan, lift, elbow, wrist, roll, jaw] (sim degrees) the arm passes through in order. `weight` ranks flourishes when several fit; `min_window` seconds needed.",
+ "twirl_up":     {"from": "high", "to": "high", "via": ["SALUTE", [0, -40, -25, -15, -45, 0], [0, -40, -25, -15, 45, 0], "SALUTE"], "weight": 3, "note": "sword vertical, wrist twirls back and forth, then re-cock"},
+ "salute_reset": {"from": "*", "to": "high", "via": ["SALUTE"], "weight": 2, "note": "come up through the salute before a high move"},
+ "tip_tap":      {"from": "guard", "to": "guard", "via": ["LOW_TIP", [0, -30, 40, 40, -180, 30], "LOW_TIP"], "weight": 3, "note": "tap the blade tip on the board between guards (jaw flick)"},
+ "low_crouch":   {"from": "low_left", "to": "low_right", "via": ["LOW_TIP"], "weight": 2, "note": "dip through the low tip pose when switching slash sides"},
+ "low_crouch_r": {"from": "low_right", "to": "low_left", "via": ["LOW_TIP"], "weight": 2, "note": "mirror of low_crouch"},
+ "hub_pause":    {"from": "*", "to": "*", "via": ["MID"], "weight": 1, "note": "plain route through the hub (the default fallback)"}
+}
