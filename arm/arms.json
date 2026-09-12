@@ -8,13 +8,13 @@
  },
  "B": {
   "model": "SO-101",
-  "roll_offset": -88.8,
+  "roll_offset": -88.7,
   "rest": [
-   -1.8,
-   -93.8,
-   36.6,
-   8.4,
-   -88.8,
+   -2.0,
+   -88.9,
+   43.5,
+   -0.2,
+   -88.7,
    0.0
   ],
   "lift_limit": -93.8
@@ -35,6 +35,7 @@
   },
   "charge_feed": 24000.0,
   "jog_feed": 600.0,
-  "_doc": "GRBL gantry. 0,0 = arms fully together (clash), 200,200 = apart. Feeds in mm/min (controller max 24000)."
+  "_doc": "GRBL gantry. 0,0 = arms fully together (clash), 200,200 = apart. Feeds in mm/min (controller max 24000). At X=0,Y=0 the bases are 19.5 in (0.495 m) apart bumper to bumper (measured 2026-09-12).",
+  "bumper_gap_together_m": 0.495
  }
 }
