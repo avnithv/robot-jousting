@@ -28,6 +28,7 @@ def strike_frac(arm, move, pose):
     import numpy as np
     t, Q, t0, t1 = strike_segment(arm, move); fr = np.linspace(0, 1, 201); p = np.array(pose[:5])
     d = [np.linalg.norm(np.array([np.interp(t0 + f * (t1 - t0), t, Q[:, k]) for k in range(5)]) - p) for f in fr]; return float(fr[int(np.argmin(d))])
+SHOW = {"stop": False}
 def daemon(path, body, timeout=10):
     req = urllib.request.Request("http://127.0.0.1:8766" + path, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
     return json.load(urllib.request.urlopen(req, timeout=timeout))
@@ -258,6 +259,39 @@ def api(handler, path, body):
             j = start_job("arm", f"CHARGE + PAIR {body['key']} x{body.get('scale', 0.5)}", ["true"], ARM)
             try: rr = daemon("/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": body.get("scale", 0.5), "apart_after": False}, timeout=300)   # the rest comes from arm/turn_profile.json; open(j["log"], "a").write(json.dumps(rr) + "\n"); j["status"] = "done" if rr.get("ok") else "failed"
             except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/show_load":
+        f = os.path.join(SIM, "safe_show.json"); return json.load(open(f))
+    if path == "/api/show_stop":   # the big STOP: both arms stop where they are, the gantry is reset (re-home afterwards)
+        SHOW["stop"] = True; ensure_daemon(); out = {"arms": daemon("/abort", {"arm": "both"}, timeout=5)}
+        try: out["gantry"] = daemon("/gantry/abort", {}, timeout=15)
+        except Exception as e: out["gantry"] = str(e)
+        return out
+    if path == "/api/show":   # one ride in, salute, the pairs one at a time from rest, ride out
+        ensure_daemon(); SHOW["stop"] = False; moves = body.get("moves") or []; scale = float(body.get("scale", 1.0)); rs = float(body.get("return_speed", 120)); opener = body.get("opener") or {"a": "SALUTE", "b": "SALUTE"}
+        def go():
+            j = start_job("arm", f"SHOW {len(moves)} pairs x{scale}", ["true"], ARM); log = lambda s: open(j["log"], "a").write(s + "\n")
+            try:
+                if not daemon_status().get("gantry", {}).get("homed"): raise RuntimeError("gantry not referenced: Home first")
+                log("carriages together"); r = daemon("/gantry/together", {}, timeout=120)
+                if r.get("error"): raise RuntimeError(r["error"])
+                if SHOW["stop"]: raise RuntimeError("stopped")
+                log(f"salute: {opener['a']} / {opener['b']}"); r = daemon("/play_both", {"moveA": opener["a"], "moveB": opener["b"], "scale": 1.0, "return_speed": rs}, timeout=120)
+                if not r.get("ok"): raise RuntimeError(str(r))
+                for i, m in enumerate(moves, 1):
+                    if SHOW["stop"]: raise RuntimeError("stopped")
+                    out = subprocess.run([PY, "chain.py", "pair", m["a"], "--", m["b"], "--no-render"], cwd=SIM, capture_output=True, text=True)
+                    if out.returncode: raise RuntimeError("compile failed: " + out.stderr[-300:])
+                    close = [l for l in out.stdout.splitlines() if "closest" in l]; log(f"pair {i}/{len(moves)}: A {m['a']} vs B {m['b']}  " + (close[0] if close else ""))
+                    if SHOW["stop"]: raise RuntimeError("stopped")
+                    r = daemon("/play_both", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": scale, "return_speed": rs}, timeout=180); log("   " + json.dumps({k: r.get(k) for k in ("A", "B")}))
+                    if not r.get("ok"): raise RuntimeError(str(r))
+                if SHOW["stop"]: raise RuntimeError("stopped")
+                log("carriages apart"); r = daemon("/gantry/apart", {}, timeout=120)
+                if r.get("error"): raise RuntimeError(r["error"])
+                log("show over"); j["status"] = "done"
+            except Exception as e: log("STOPPED: " + str(e)); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
     if path == "/api/home_arms":   # both arms slowly to their own rest poses

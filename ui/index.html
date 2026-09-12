@@ -18,7 +18,14 @@
  #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
  body.A #main{box-shadow:inset 6px 0 0 #d4a800} body.B #main{box-shadow:inset 6px 0 0 #2b5bd7}
 </style></head><body>
-<div id="moves"><div class="bar" style="margin:0 0 8px"><button id="tabMoves" class="primary" onclick="tab('moves')">Moves</button><button id="tabChain" onclick="tab('chain')">Chain</button><button id="tabCal" onclick="tab('cal')">Calibrate</button><button id="tabKf" onclick="tab('kf')">Keyframes</button></div><div id="movelist"></div></div>
+<div id="moves"><div class="bar" style="margin:0 0 8px"><button id="tabMoves" class="primary" onclick="tab('moves')">Moves</button><button id="tabChain" onclick="tab('chain')">Chain</button><button id="tabCal" onclick="tab('cal')">Calibrate</button><button id="tabKf" onclick="tab('kf')">Keyframes</button><button id="tabShow" onclick="tab('show')">Show</button></div><div id="movelist"></div></div>
+<div id="showview" hidden style="padding:12px 16px;overflow:auto">
+ <h2>Show</h2><small>One ride in, both salute, each pair played from rest and back to rest, then the ride out. Every pair is compiled with its calibrated stop. Return to rest at <code>return speed</code> deg/s (120 = 0.8 of the ease speed). Safe pairs: attack/feint high vs block high, low slash vs the middle block, attack/feint high vs attack/feint high.</small>
+ <button id="showstop" onclick="showStop()" style="width:100%;max-width:760px;height:120px;font-size:44px;font-weight:700;background:#c00;color:#fff;border:0;border-radius:12px;margin:12px 0;letter-spacing:2px">STOP</button>
+ <div class="bar"><label>move speed <input id="showScale" type="number" value="1.0" step="0.1" min="0.1" max="2.5"></label> <label>return speed <input id="showRet" type="number" value="120" step="10" min="20" max="300"> deg/s</label>
+  <button class="primary" onclick="showRun()">Run show</button> <button onclick="showReload()">Reload safe_show.json</button> <span id="showst" class="arm"></span></div>
+ <div class="bar" style="align-items:flex-start"><label style="display:flex;flex-direction:column">pairs, one per line: A_MOVE B_MOVE<textarea id="showMoves" rows="6" style="width:420px;font-family:ui-monospace,monospace"></textarea></label></div>
+</div>
 <div id="kfview" hidden style="padding:12px 16px;overflow:auto">
  <h2>Keyframes</h2><small>Pose each arm by hand and capture keyframes into a timeline: Unfreeze an arm (torque off), move it, Capture; Freeze holds it where it is. Two keys (start, end) are usually enough. Save builds KF_&lt;name&gt; (arm A) and KF_&lt;name&gt;@B (arm B) into the move list, so they play on either arm, on both together, or in a TURN.</small>
  <div class="bar"><label>name <input id="kfName" size="18" placeholder="e.g. taunt"></label> <select id="kfNames" onchange="kfLoad(this.value)"><option value="">load saved...</option></select>
@@ -78,7 +85,7 @@
 <script>
 let MOVES={}, cur=null, SEQ=[], FEAS={};
 const STATES=['MID','SALUTE','LOW_TIP'];
-function tab(t){document.getElementById('kfview').hidden=(t!=='kf');document.getElementById('tabKf').className=t==='kf'?'primary':'';if(t==='kf')kfRefresh();document.getElementById('chainview').hidden=(t!=='chain');document.getElementById('calview').hidden=(t!=='cal');document.getElementById('main').hidden=(t!=='moves');document.getElementById('tabMoves').className=t==='moves'?'primary':'';document.getElementById('tabChain').className=t==='chain'?'primary':'';document.getElementById('tabCal').className=t==='cal'?'primary':'';if(t==='chain')chainRefresh();if(t==='cal')calRefresh()}
+function tab(t){document.getElementById('showview').hidden=(t!=='show');document.getElementById('tabShow').className=t==='show'?'primary':'';if(t==='show'&&!document.getElementById('showMoves').value)showReload();document.getElementById('kfview').hidden=(t!=='kf');document.getElementById('tabKf').className=t==='kf'?'primary':'';if(t==='kf')kfRefresh();document.getElementById('chainview').hidden=(t!=='chain');document.getElementById('calview').hidden=(t!=='cal');document.getElementById('main').hidden=(t!=='moves');document.getElementById('tabMoves').className=t==='moves'?'primary':'';document.getElementById('tabChain').className=t==='chain'?'primary':'';document.getElementById('tabCal').className=t==='cal'?'primary':'';if(t==='chain')chainRefresh();if(t==='cal')calRefresh()}
 async function chainRefresh(){FEAS=await api('/api/feasible',{arm:arm()});document.getElementById('ctitle').textContent='Chain for arm '+arm();
  const last=SEQ.length?SEQ[SEQ.length-1]:'REST';const sel=document.getElementById('nextstep');sel.innerHTML='';
  const opts=Object.keys(MOVES).filter(n=>!n.startsWith('CHAIN')&&n!=='REST').concat(STATES.filter(s=>!(s in MOVES)));
@@ -147,6 +154,12 @@ async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
 async function runTurn(){await api('/api/turn',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value),feed:parseFloat(document.getElementById('gfeed').value)});poll()}
+// ---- Show tab: the safe sequence with a big STOP ----
+async function showReload(){const d=await api('/api/show_load');document.getElementById('showMoves').value=d.moves.map(m=>m.a+' '+m.b).join('\n');document.getElementById('showScale').value=d.scale??1;document.getElementById('showRet').value=d.return_speed??120;document.getElementById('showst').textContent='loaded '+d.moves.length+' pairs'}
+async function showRun(){const moves=document.getElementById('showMoves').value.split('\n').map(l=>l.trim().split(/\s+/)).filter(p=>p.length===2).map(([a,b])=>({a,b}));
+ if(!moves.length){document.getElementById('showst').textContent='no pairs';return}
+ document.getElementById('showst').textContent='running: ride in, salute, '+moves.length+' pairs, ride out';await api('/api/show',{moves,scale:parseFloat(document.getElementById('showScale').value),return_speed:parseFloat(document.getElementById('showRet').value)});poll()}
+async function showStop(){const r=await api('/api/show_stop',{});document.getElementById('showst').textContent='STOPPED: arms hold where they are, gantry reset (Home before the next run)';poll()}
 // ---- Keyframes tab: two timelines side by side, each arm frozen / unfrozen on its own ----
 let KF={A:[],B:[]}, KFLIVE={A:null,B:null}, KFFROZEN={A:true,B:true};
 const fmtq=q=>q?q.map(x=>Math.round(x)).join(' '):'-';
