@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-12 12:46:23",
+ "generated": "2026-09-12 17:46:32",
  "families": [
   "finales",
   "openers"
@@ -113,8 +113,8 @@
       "gantry_peak_mps": 0.093,
       "cap_dps": [
        146.2,
-       192.3,
-       165.0,
+       271.0,
+       194.3,
        300.0,
        300.0,
        300.0
@@ -262,8 +262,8 @@
       "gantry_peak_mps": 0.093,
       "cap_dps": [
        146.2,
-       192.3,
-       165.0,
+       271.0,
+       194.3,
        300.0,
        300.0,
        300.0
@@ -458,7 +458,7 @@
     "body_contacts": 0,
     "blade_contacts": 0,
     "first_body_contact": null,
-    "gif_mb": 1.88,
+    "gif_mb": 1.94,
     "gif_colors": 128
    },
    "swap_render": {
@@ -472,13 +472,13 @@
     "body_contacts": 0,
     "blade_contacts": 0,
     "first_body_contact": null,
-    "gif_mb": 1.9,
+    "gif_mb": 1.96,
     "gif_colors": 128
    },
    "problems": [],
    "warnings": [],
    "ok": true,
-   "generated": "2026-09-12 12:45:40"
+   "generated": "2026-09-12 17:46:32"
   },
   {
    "name": "SAMURAI_FINISH",
@@ -530,8 +530,8 @@
       "gantry_peak_mps": 0.085,
       "cap_dps": [
        146.2,
-       192.3,
-       165.0,
+       271.0,
+       194.3,
        300.0,
        300.0,
        300.0
@@ -789,8 +789,8 @@
       "gantry_peak_mps": 0.072,
       "cap_dps": [
        146.2,
-       192.3,
-       165.0,
+       271.0,
+       194.3,
        300.0,
        300.0,
        300.0
@@ -1100,7 +1100,7 @@
     "body_contacts": 0,
     "blade_contacts": 10,
     "first_body_contact": null,
-    "gif_mb": 4.88,
+    "gif_mb": 4.89,
     "gif_colors": 128
    },
    "swap_render": {
@@ -1118,14 +1118,14 @@
      "A_wrist",
      "B_blade"
     ],
-    "gif_mb": 4.99,
+    "gif_mb": 5.03,
     "gif_colors": 128
    },
    "problems": [],
    "warnings": [],
    "ok": true,
-   "generated": "2026-09-12 12:45:24"
+   "generated": "2026-09-12 17:46:11"
   }
  ],
- "synced": "2026-09-12 12:47:34"
+ "synced": "2026-09-12 17:46:32"
 }

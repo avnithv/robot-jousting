@@ -148,8 +148,34 @@ def _arm_with_sword(path, q_zero_rad, forward_in_arm_frame, hilt_dist_from_pan, 
         half = np.linalg.norm(pos_local) / 2; axis = pos_local / np.linalg.norm(pos_local)
         z = np.array([0, 0, 1.0]); v = np.cross(z, axis); c = float(z @ axis); q = np.array([1 + c, *v]); q /= np.linalg.norm(q)
         grip.add_geom(name="gripper_col", type=mujoco.mjtGeom.mjGEOM_CAPSULE, size=[0.02, half, 0], pos=list(pos_local / 2), quat=list(q),
-                      rgba=[0.15, 0.15, 0.15, 1], contype=1, conaffinity=1)
+                      rgba=[0.15, 0.15, 0.15, 0], group=3, contype=1, conaffinity=1)   # collision only: alpha 0 keeps it out of every render
+        _dress_urdf_arm(child, os.path.join(os.path.dirname(path), "assets"))
     return child
+
+# The URDF importer keeps only each link's <collision> mesh (one near-black shell per link: no servos, no jaws), so the
+# SO100 rendered as a silhouette that ended in the collision capsule with the blade floating off it. These are the
+# URDF's <visual> meshes per link (all at the link origin), added as mass-less, non-colliding geoms.
+URDF_VISUALS = {"world": ["Base", "Base_Motor"], "shoulder": ["Rotation_Pitch", "Rotation_Pitch_Motor"],
+                "upper_arm": ["Upper_Arm", "Upper_Arm_Motor"], "lower_arm": ["Lower_Arm", "Lower_Arm_Motor"],
+                "wrist": ["Wrist_Pitch_Roll", "Wrist_Pitch_Roll_Motor"], "gripper": ["Fixed_Jaw", "Fixed_Jaw_Motor"], "jaw": ["Moving_Jaw"]}
+URDF_PLASTIC = [0.15, 0.15, 0.16, 1]   # the printed parts: charcoal, so "the black arm" keeps its identity but reads in the light
+URDF_MOTOR = [0.34, 0.34, 0.36, 1]     # the STS3215 servos: graphite
+
+def _dress_urdf_arm(child, asset_dir):
+    """Give a URDF-imported arm its visual meshes (printed parts + servos + both jaws) and hide the collision shells,
+    which are the same STLs and would z-fight with them. Physics is untouched: the visuals have mass 0 and no contacts."""
+    for link, meshes in URDF_VISUALS.items():
+        body = child.worldbody if link == "world" else child.body(link)
+        for g in body.geoms:
+            if g.name.startswith("vis_"): continue
+            g.rgba = [g.rgba[0], g.rgba[1], g.rgba[2], 0.0]; g.group = 3
+        for mn in meshes:
+            p = os.path.join(asset_dir, f"{mn}.stl")
+            if not os.path.exists(p): print(f"arena: no visual mesh {p}"); continue
+            v, f = load_stl(p)   # these STLs are in metres already
+            ms = child.add_mesh(name=f"vis_{mn}"); ms.uservert = v.flatten().tolist(); ms.userface = f.flatten().tolist()
+            body.add_geom(name=f"vis_{link}_{mn}", type=mujoco.mjtGeom.mjGEOM_MESH, meshname=f"vis_{mn}", contype=0, conaffinity=0, mass=0,
+                          rgba=URDF_MOTOR if mn.endswith("Motor") else URDF_PLASTIC)
 
 def _add_carriage(spec, name, x0, quat, gap_for_rail):
     """A gantry carriage body at x0 with a slide joint `<name>_gantry` along the arena x axis. The joint reads the
@@ -208,6 +234,16 @@ def build(base_gap=None, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None, gan
         act.gaintype = mujoco.mjtGain.mjGAIN_FIXED; act.biastype = mujoco.mjtBias.mjBIAS_AFFINE
         act.forcerange = list(ref.forcerange); act.ctrlrange = list(jn.range); act.ctrllimited = True
     model = spec.compile()
+    finish_model(model)
+    return spec, model
+
+def finish_model(model):
+    """The post-compile patches every arena model needs. Anyone who edits the spec build() returns and RECOMPILES it
+    (video/render/shot_common.py does, for 1080p) must call this on the new model: MjSpec.compile() starts from the
+    spec, so these patches are lost, and without them arm B runs undamped with the SO101 servo gains and its wrist and
+    jaw chatter visibly. (Kept as model patches rather than spec attributes on purpose: setting the armature on the
+    spec changes the solver weights MuJoCo precomputes at compile time and shifts the simulated exchanges by a few
+    millimetres; this keeps every trajectory bit-identical to what the move library was tuned against.)"""
     for jn in ("A_wrist_roll", "B_wrist_roll"):   # real roll is a full turn; let the sim reach +/-185 so roll -180 renders
         j = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, jn); u = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, jn)
         model.jnt_range[j] = [np.radians(-185), np.radians(185)]; model.actuator_ctrlrange[u] = [np.radians(-185), np.radians(185)]
@@ -216,7 +252,7 @@ def build(base_gap=None, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None, gan
         nm = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j)
         if nm.startswith("B_") and not nm.endswith("_gantry"):
             a = model.jnt_dofadr[j]; model.dof_damping[a] = 0.60; model.dof_armature[a] = 0.028; model.dof_frictionloss[a] = 0.052
-    return spec, model
+    return model
 
 _ADR = {}
 def addr(m):
