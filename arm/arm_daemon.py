@@ -489,7 +489,7 @@ class H(BaseHTTPRequestHandler):
             try:
                 bar = threading.Barrier(2); scale = float(body.get("scale", 0.5)); errs = {}
                 def run(arm, move):
-                    try: arm.play(move, scale, 1, barrier=bar)
+                    try: arm.play(move, scale, 1, barrier=bar, P=profile(body))   # per-request profile overrides (return_speed, hold_end...)
                     except Exception as e: arm.last = f"error: {e}"; errs[arm.name] = str(e)
                 ta = threading.Thread(target=run, args=(A, body["moveA"])); tb = threading.Thread(target=run, args=(B, body["moveB"])); ta.start(); tb.start(); ta.join(); tb.join()
                 self._json({"ok": not errs, "A": A.last, "B": B.last, "errors": errs})
