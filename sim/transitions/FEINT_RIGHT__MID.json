@@ -1,5 +1,5 @@
 {"from": "FEINT_RIGHT", "to": "MID",
  "paths": [
   {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "glide", "style": "smooth", "via": [[0, -60, 60, -20, -45, 20]], "durations": [0.39], "notes": "hand glides up to centre with the sword turning half over, then eases into the hub"}
+  {"name": "glide", "style": "smooth", "via": [[0, -60, 60, -20, -45, 20]], "durations": [0.52], "notes": "hand glides up to centre with the sword turning half over, then eases into the hub"}
  ]}

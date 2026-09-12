@@ -288,7 +288,7 @@ class H(BaseHTTPRequestHandler):
                 stop_frac = max(0.0, frac - float(body.get("backoff", 0.03))) if aborted else 1.0
                 qi = lambda tt: np.array([np.interp(tt, ta, Qa[:, k]) for k in range(6)]); stop_pose = qi(t0 + stop_frac * (t1 - t0))
                 if aborted: att.ease_to(stop_pose, max_speed=20.0)                                                    # back off to the saved point
-                rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stop_frac": round(stop_frac, 3),
+                rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": float(body.get("backoff", 0.03)),
                        "stop_pose_real": [round(float(x), 1) for x in stop_pose], "speed": speed, "when": time.strftime("%Y-%m-%d %H:%M")}
                 path = os.path.join(os.path.dirname(HERE), "sim", "contact_stops.json"); S = json.load(open(path)) if os.path.exists(path) else {}
                 S[f"{att.name}:{attack}|{dfn.name}:{dmove}"] = rec; json.dump(S, open(path, "w"), indent=1)

@@ -1,5 +1,5 @@
 {"from": "ATTACK_LOW_RL", "to": "BLOCK_RIGHT",
  "paths": [
   {"name": "plain", "style": "plain", "via": [[10, -45, 35, 0, -90, 30]], "durations": [0.45], "notes": "hand lifts to the middle, then swings across and down into the right guard"},
-  {"name": "mid_guard", "style": "smooth", "via": ["MID"], "durations": [0.48], "notes": "up through the hub, then down into the right guard"}
+  {"name": "mid_guard", "style": "smooth", "via": ["MID"], "durations": [0.52], "notes": "up through the hub, then down into the right guard"}
  ]}

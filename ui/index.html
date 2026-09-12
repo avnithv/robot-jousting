@@ -75,10 +75,17 @@ async function chainRefresh(){FEAS=await api('/api/feasible',{arm:arm()});docume
  const M=MOVES['CHAIN_'+arm()];const v=document.getElementById('cvid');const src=M&&M.video?M.video:null;if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}}
 const DEFMOVES=['BLOCK_HIGH','BLOCK_LEFT','BLOCK_RIGHT','BLOCK_MIDDLE','FEINT_HIGH','FEINT_LEFT','FEINT_RIGHT','ATTACK_HIGH','ATTACK_LOW_LR','ATTACK_LOW_RL'];
 async function calRefresh(){const sel=document.getElementById('calDef');if(!sel.options.length)for(const m of DEFMOVES){const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o)}
- const st=await api('/api/calib_status');const t=document.getElementById('caltable');t.innerHTML='<tr><td class="k">A move</td><td class="k">B move</td><td>intended</td><td>calibrated</td></tr>';
- for(const p of st.pairs){const attA=p.A.startsWith('ATTACK'),attB=p.B.startsWith('ATTACK');const keys=[];if(attA)keys.push('A:'+p.A+'|B:'+p.B);if(attB)keys.push('B:'+p.B+'|A:'+p.A);
-  const done=keys.map(k=>st.stops[k]?(k.split(':')[0]+' stop '+st.stops[k].stop_frac):null).filter(Boolean);
-  const tr=document.createElement('tr');tr.innerHTML=`<td class="k">${p.A}</td><td class="k">${p.B}</td><td class="h">${p.outcome}: ${p.touch||''}</td><td>${done.length?'<b style="color:#1a7f37">'+done.join(', ')+'</b>':'<span style="color:#b26a00">not yet</span>'}</td>`;t.appendChild(tr)}}
+ const st=await api('/api/calib_status');const t=document.getElementById('caltable');t.innerHTML='<tr><td class="k">A move</td><td class="k">B move</td><td>intended</td><td>calibrated</td><td>actions</td></tr>';
+ for(const p of st.pairs){const keys=[];if(p.A.startsWith('ATTACK'))keys.push('A:'+p.A+'|B:'+p.B);if(p.B.startsWith('ATTACK'))keys.push('B:'+p.B+'|A:'+p.A);
+  let cal='',act='';for(const k of keys){const r=st.stops[k];const att=k.split(':')[0];
+   if(r){cal+=`<div><b style="color:#1a7f37">${att} attacks: stop ${r.stop_frac}</b> back-off <input type="number" step="0.01" min="0" max="0.5" value="${r.backoff??0.03}" style="width:56px" onchange="calBackoff('${k}',this.value)"></div>`;
+    act+=`<div><button onclick="calTest('${k}',0.3)">Test 0.3</button> <button onclick="calTest('${k}',1.0)">Test full</button> <button onclick="calReplace('${k}')">Replace</button> <button onclick="calDelete('${k}')">Delete</button></div>`}
+   else{cal+=`<div><span style="color:#b26a00">${att} attacks: not yet</span></div>`;act+=`<div><button onclick="calReplace('${k}')">Calibrate</button></div>`}}
+  const tr=document.createElement('tr');tr.innerHTML=`<td class="k">${p.A}</td><td class="k">${p.B}</td><td class="h">${p.outcome}: ${p.touch||''}</td><td>${cal}</td><td>${act}</td>`;t.appendChild(tr)}}
+function calReplace(k){const [a,d]=k.split('|');document.getElementById('calAtt').value=a.split(':')[0];document.getElementById('calAttack').value=a.split(':')[1];document.getElementById('calDef').value=d.split(':')[1];calStart()}
+async function calDelete(k){if(!confirm('Delete the calibration for '+k+'?'))return;await api('/api/calib_delete',{key:k});calRefresh()}
+async function calBackoff(k,v){await api('/api/calib_backoff',{key:k,backoff:parseFloat(v)});calRefresh()}
+async function calTest(k,scale){document.getElementById('calst').textContent='testing '+k+' at '+scale+' (both arms)';await api('/api/calib_test',{key:k,scale});poll()}
 async function calStart(){const att=document.getElementById('calAtt').value;document.getElementById('calst').textContent='running: defender parks, attacker to strike start, then creeping... press STOP HERE when the blades meet';
  await api('/api/calibrate',{attacker:att,attack:document.getElementById('calAttack').value,defender_move:document.getElementById('calDef').value,speed:parseFloat(document.getElementById('calSpeed').value)});poll()}
 async function calStop(){await api('/api/abort',{arm:document.getElementById('calAtt').value});document.getElementById('calst').textContent='stopped; saving the stop point and backing off 3%';setTimeout(calRefresh,2500)}

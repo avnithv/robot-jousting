@@ -188,6 +188,28 @@ def api(handler, path, body):
         if M.get("arm", "A") != arm:   # entry is in arm A's coordinates: re-base the roll to this arm
             c = json.load(open(os.path.join(ARM, "arms.json"))); q = list(q); q[4] = q[4] - c["A"]["roll_offset"] + c[arm]["roll_offset"]
         return daemon("/goto", {"arm": arm, "q": q, "speed": 80}, timeout=60)
+    if path == "/api/calib_delete":
+        f = os.path.join(SIM, "contact_stops.json"); S = json.load(open(f)); S.pop(body["key"], None); json.dump(S, open(f, "w"), indent=1); return {"ok": True}
+    if path == "/api/calib_backoff":   # change a pair's back-off: recompute the stop pose from the press point on the attacker's trajectory
+        import numpy as np
+        f = os.path.join(SIM, "contact_stops.json"); S = json.load(open(f)); r = S[body["key"]]; nb = float(body["backoff"])
+        press = r.get("press_frac", r["stop_frac"] + r.get("backoff", 0.03)); stop = max(0.0, press - nb)
+        T = json.load(open(os.path.join(ARM, "motions_tuned.json"))); M = T.get(f"{r['attack']}@{r['attacker']}") or T[r["attack"]]
+        t = np.array(M["t"]); Q = np.array(M["q"]); kt = M["key_times"]; si = 1 + (1 if r["attack"] in ("ATTACK_HIGH", "FEINT_HIGH") else 0); t0, t1 = kt[si], kt[-1]
+        if M.get("arm", "A") != r["attacker"]:
+            c = json.load(open(os.path.join(ARM, "arms.json"))); Q = Q.copy(); Q[:, 4] = Q[:, 4] - c["A"]["roll_offset"] + c[r["attacker"]]["roll_offset"]
+        tt = t0 + stop * (t1 - t0); pose = [float(np.interp(tt, t, Q[:, k])) for k in range(6)]
+        r.update({"press_frac": round(press, 3), "backoff": nb, "stop_frac": round(stop, 3), "stop_pose_real": [round(x, 1) for x in pose]}); json.dump(S, open(f, "w"), indent=1); return {"ok": True, "record": r}
+    if path == "/api/calib_test":      # compile the 1-beat pair with the stop applied and play both arms
+        ensure_daemon(); r = json.load(open(os.path.join(SIM, "contact_stops.json")))[body["key"]]
+        ours, theirs = ([r["attack"]], [r["defender_move"]]) if r["attacker"] == "A" else ([r["defender_move"]], [r["attack"]])
+        subprocess.run([PY, "chain.py", "pair", *ours, "--", *theirs], cwd=SIM, capture_output=True)
+        def go():
+            j = start_job("arm", f"TEST PAIR {body['key']} x{body.get('scale', 0.3)}", ["true"], ARM)
+            try: rr = daemon("/play_both", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": body.get("scale", 0.3)}, timeout=180); open(j["log"], "a").write(json.dumps(rr) + "\n"); j["status"] = "done" if rr.get("ok") else "failed"
+            except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
     if path == "/api/calibrate_retreat": ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)
     if path == "/api/calib_status":
         stops = json.load(open(os.path.join(SIM, "contact_stops.json"))) if os.path.exists(os.path.join(SIM, "contact_stops.json")) else {}

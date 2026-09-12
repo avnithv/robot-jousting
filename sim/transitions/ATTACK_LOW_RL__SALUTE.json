@@ -1,5 +1,5 @@
 {"from": "ATTACK_LOW_RL", "to": "SALUTE",
  "paths": [
   {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "sweep_up", "style": "smooth", "via": [[-35, -30, 30, -40, -60, 0]], "durations": [0.32], "notes": "the slash carries on to the left and rises into the salute"}
+  {"name": "sweep_up", "style": "smooth", "via": [[-35, -30, 30, -40, -60, 0]], "durations": [0.42], "notes": "the slash carries on to the left and rises into the salute"}
  ]}

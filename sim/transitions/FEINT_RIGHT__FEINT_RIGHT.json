@@ -1,6 +1,6 @@
 {"from": "FEINT_RIGHT", "to": "FEINT_RIGHT",
  "paths": [
   {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "recock", "style": "snappy", "via": [[26, -38, 92, -54, -90, 75]], "durations": [0.21], "notes": "pulls a touch further back with the jaw wide, then snaps to the windup"},
-  {"name": "jaw_flick", "style": "snappy", "via": [[14, -24, 88, -58, -90, 0]], "durations": [0.18], "notes": "the sword snaps shut to the finger, then re-opens into the windup"}
+  {"name": "recock", "style": "snappy", "via": [[24, 40, 34, -70, -86, 75]], "durations": [0.14], "notes": "pulls a touch further back with the jaw wide, then snaps to the windup"},
+  {"name": "jaw_flick", "style": "snappy", "via": [[14, 44, 26, -66, -86, 0]], "durations": [0.14], "notes": "the sword snaps shut to the finger, then re-opens into the windup"}
  ]}

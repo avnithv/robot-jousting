@@ -9,7 +9,7 @@ import sys, os, json, random, numpy as np, mujoco, imageio
 import arena, ik, tune
 from tune import JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
-TIP_MIN = -0.08             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
+TIP_MIN = -0.10             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
 REACH_MAX = 0.40            # hand reach allowed in transit (m): the extended low slashes reach 0.38; contact safety comes from the calibrated stops
 BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -47,7 +47,7 @@ def path_ok(a, b, n=12):
     """Straight joint-space path from a to b: hand reach <= 0.30, hand above the table, tip above TIP_MIN, roll inside the wrap, lift floor."""
     for s in np.linspace(0, 1, n):
         q = a + s * (b - a); h, t, p = ik.fk(q)
-        if np.hypot(h[0], h[1]) > REACH_MAX or h[2] < 0.04 or t[2] < TIP_MIN or not (-185 <= q[4] <= 100) or q[1] < tune.LIFT_MIN: return False
+        if np.hypot(h[0], h[1]) > REACH_MAX or h[2] < 0.0 or t[2] < TIP_MIN or not (-185 <= q[4] <= 100) or q[1] < tune.LIFT_MIN: return False
     return True
 
 def resolve_via(via):
@@ -86,12 +86,30 @@ def candidates(prev_move, prev_pose, move, first, window, last_flourish=None):
         add(f"via {h}", [HUBS[h]], 1.0)
     return sorted(out, key=lambda c: -c[3])
 
-def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verbose=True):
+STOPS_FILE = os.path.join(HERE, "contact_stops.json")
+def apply_stop(rec, stop_pose_sim, retract=0.2, t_retract=0.3):
+    """Truncate a move's strike at a calibrated stop: the strike END key becomes the stop pose (strike time scaled by the
+    remaining fraction) and the retract, if any, backs out from there."""
+    keys = [k for k, _ in rec]; durs = [d for _, d in rec]
+    end_i = len(rec) - 1 if not (len(rec) >= 2 and np.allclose(keys[-1][:5], keys[-2][:5], atol=15) and durs[-1] <= 0.35 and len(rec) > 2 and False) else len(rec) - 1
+    # find the strike END key: the last key whose successor (if any) is a retract (moves back toward the previous key)
+    strike_i = len(rec) - 1
+    if len(rec) >= 3:
+        a, b, cc = keys[-3], keys[-2], keys[-1]
+        if np.dot(cc - b, a - b) > 0 and np.linalg.norm(cc - b) < 0.6 * np.linalg.norm(a - b): strike_i = len(rec) - 2   # last key is a retract
+    start = keys[strike_i - 1]; full = keys[strike_i]; frac = float(np.linalg.norm(stop_pose_sim[:5] - start[:5]) / max(np.linalg.norm(full[:5] - start[:5]), 1e-6))
+    new = list(rec); new[strike_i] = (stop_pose_sim, max(durs[strike_i] * min(frac, 1.0), 0.08))
+    if strike_i == len(rec) - 2: new[-1] = (stop_pose_sim + retract * (start - stop_pose_sim), durs[-1])
+    return new
+
+def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verbose=True, stops=None):
     tune.use_arm(arm); load_hubs(); rest = tune.REST.copy(); rng = random.Random(seed)
     tuned = json.load(open(OUT)); suffix = "" if arm == "A" else f"@{arm}"
     keys = [rest]; times = [0.0]; beats = []; prev_move = "REST"; t_beat = 0.0; stretches = []; last_fl = None
     for move in moves:
         start, rec = move_keys(move)                                          # transition targets START; the move plays from there
+        if stops and len(beats) in stops:                                     # a calibrated contact stop for this beat's pairing
+            rec = apply_stop(rec, stops[len(beats)]); print(f"  {move:14s} strike truncated at the calibrated stop") if verbose else None
         pin_which, pin_t = pin_of(move); pin_i = {"first": 0, "last": len(rec) - 1, "feint": len(rec) - 3}[pin_which]
         windup = sum(d for _, d in rec[1:pin_i + 1]); window = pin_t - windup
         cands = candidates(prev_move, keys[-1], move, rec[0][0], window, last_fl)
@@ -122,15 +140,25 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
         json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN)
     return ts, Q, beats, stretches
 
+def pair_stops(ours, theirs):
+    """Per-beat calibrated stops for each arm from contact_stops.json (keys 'A:ATTACK|B:DEFENCE' / 'B:ATTACK|A:DEFENCE')."""
+    if not os.path.exists(STOPS_FILE): return {}, {}
+    S = json.load(open(STOPS_FILE)); arms_cfg = json.load(open(os.path.join(HERE, "..", "arm", "arms.json"))); sa, sb = {}, {}
+    for i, (a, b) in enumerate(zip(ours, theirs)):
+        if f"A:{a}|B:{b}" in S: q = np.array(S[f"A:{a}|B:{b}"]["stop_pose_real"], float); q[4] -= arms_cfg["A"]["roll_offset"]; sa[i] = q
+        if f"B:{b}|A:{a}" in S: q = np.array(S[f"B:{b}|A:{a}"]["stop_pose_real"], float); q[4] -= arms_cfg["B"]["roll_offset"]; sb[i] = q
+    return sa, sb
+
 def compile_pair(ours, theirs, seed=0, render=True):
-    sA = compile_chain(ours, "CHAIN_A", "A", seed, verbose=False, save=False)[3]; sB = compile_chain(theirs, "CHAIN_B", "B", seed, verbose=False, save=False)[3]
+    sa, sb = pair_stops(ours, theirs)
+    if sa or sb: print("calibrated stops applied at beats:", {"A": sorted(sa), "B": sorted(sb)})
+    sA = compile_chain(ours, "CHAIN_A", "A", seed, verbose=False, save=False, stops=sa)[3]; sB = compile_chain(theirs, "CHAIN_B", "B", seed, verbose=False, save=False, stops=sb)[3]
     n = max(len(sA), len(sB)); extra = [max((sA + [0] * n)[i], (sB + [0] * n)[i]) for i in range(n)]
     print("beat lengths:", [round(BEAT + e, 2) for e in extra])
-    print("== CHAIN_A (arm A)", ours); compile_chain(ours, "CHAIN_A", "A", seed, beat_extra=extra)
-    print("== CHAIN_B (arm B)", theirs); compile_chain(theirs, "CHAIN_B", "B", seed, beat_extra=extra)
+    print("== CHAIN_A (arm A)", ours); compile_chain(ours, "CHAIN_A", "A", seed, beat_extra=extra, stops=sa)
+    print("== CHAIN_B (arm B)", theirs); compile_chain(theirs, "CHAIN_B", "B", seed, beat_extra=extra, stops=sb)
     # The pair pass does two things: the blade-distance SAFETY CHECK (always) and a MuJoCo video (optional).
-    # The game only needs the check, and the render is the overwhelming bulk of the time -- rendering between
-    # a player locking in and the arms moving is 10-80 s of frozen screen. server.py passes --no-render.
+    # The game only needs the check, and the render is the overwhelming bulk of the time. server.py passes --no-render.
     import pair; pair.run("CHAIN_A", "CHAIN_B", render=render)
 
 if __name__ == "__main__":

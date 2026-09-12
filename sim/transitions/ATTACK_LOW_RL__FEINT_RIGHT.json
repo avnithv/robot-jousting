@@ -1,6 +1,6 @@
 {"from": "ATTACK_LOW_RL", "to": "FEINT_RIGHT",
  "paths": [
   {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "overhand_reload", "style": "smooth", "via": [[0, -50, 60, -40, -90, 55]], "durations": [0.43], "notes": "hand arcs up and over to the right windup, jaw opening on the way"},
-  {"name": "wag", "style": "snappy", "via": [[-32, 17, 65, -80, -90, 0]], "durations": [0.14], "notes": "a small extra push to the left, then the blade swings back to the windup"}
+  {"name": "overhand_reload", "style": "smooth", "via": [[0, -50, 60, -40, -90, 55]], "durations": [0.45], "notes": "hand arcs up and over to the right windup, jaw opening on the way"},
+  {"name": "wag", "style": "snappy", "via": [[-18, 52, 2, -58, -86, 0]], "durations": [0.14], "notes": "a small extra push to the left, then the blade swings back to the windup"}
  ]}

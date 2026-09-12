@@ -1,5 +1,5 @@
 {"from": "FEINT_RIGHT", "to": "SALUTE",
  "paths": [
   {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
-  {"name": "lift_roll", "style": "smooth", "via": [[14, -40, 20, -30, -45, 20]], "durations": [0.37], "notes": "hand lifts on the right with the blade turning upright, then centres into the salute"}
+  {"name": "lift_roll", "style": "smooth", "via": [[14, -40, 20, -30, -45, 20]], "durations": [0.44], "notes": "hand lifts on the right with the blade turning upright, then centres into the salute"}
  ]}

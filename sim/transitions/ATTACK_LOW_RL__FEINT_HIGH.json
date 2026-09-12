@@ -1,5 +1,5 @@
 {"from": "ATTACK_LOW_RL", "to": "FEINT_HIGH",
  "paths": [
   {"name": "plain", "style": "plain", "via": ["SALUTE"], "durations": [0.43], "notes": "blade rises to vertical in front, then cocks back for the overhead"},
-  {"name": "mid_cock", "style": "smooth", "via": ["MID"], "durations": [0.48], "notes": "hand lifts through the hub with the sword coming on top, then cocks back"}
+  {"name": "mid_cock", "style": "smooth", "via": ["MID"], "durations": [0.52], "notes": "hand lifts through the hub with the sword coming on top, then cocks back"}
  ]}

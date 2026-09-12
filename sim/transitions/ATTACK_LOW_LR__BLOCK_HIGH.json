@@ -1,5 +1,5 @@
 {"from": "ATTACK_LOW_LR", "to": "BLOCK_HIGH",
  "paths": [
-  {"name": "plain", "style": "plain", "via": [[35, -30, 0, -60, 80, 80]], "durations": [0.34], "notes": "hand lifts straight up on the right, jaw opening, and settles into the high bar"},
+  {"name": "plain", "style": "plain", "via": [[35, -30, 0, -60, 80, 80]], "durations": [0.42], "notes": "hand lifts straight up on the right, jaw opening, and settles into the high bar"},
   {"name": "salute_bar", "style": "smooth", "via": ["SALUTE"], "durations": [0.47], "notes": "blade rises to vertical, then swings out into the bar"}
  ]}
