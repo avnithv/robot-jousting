@@ -106,7 +106,16 @@ def api(handler, path, body):
         return start_job("gen", f"regenerate {body['move']} (captured {body['which']})", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
     if path == "/api/release": ensure_daemon(); return daemon("/release", {}, timeout=30)
     if path == "/api/feedback":
-        jid = uuid.uuid4().hex[:8]; prompt = agent_prompt(body["move"], body["text"], jid)
+        jid = uuid.uuid4().hex[:8]; text = body["text"]
+        if body.get("attach_pose"):
+            st = daemon_status(); pose = st.get("pose")
+            if pose:
+                sim = list(pose); sim[4] = round(sim[4] - 76.0, 1)
+                text += (f"\n\nATTACHED ARM POSE: the user physically posed the real arm while writing this. Its joints are {pose} in real-arm degrees "
+                         f"[pan, lift, elbow, wrist_flex, wrist_roll, jaw], which is {sim} in the sim convention (roll - 76). Treat this as the pose the "
+                         f"feedback refers to (usually the desired END pose of the move, or the START if the text says so). The cleanest way to use it is to set "
+                         f"\"captured\": {{\"end\": {pose}}} (real degrees) in the move's params file, which overrides the computed pose; then regenerate and check the filmstrip.")
+        prompt = agent_prompt(body["move"], text, jid)
         cmd = [CLAUDE, "-p", prompt, "--allowedTools", "Read,Edit,Write,Bash", "--max-turns", "60"]
         return start_job("agent", f"agent: {body['move']}: {body['text'][:60]}", cmd, SIM, jid=jid)
     return {"error": "unknown"}
