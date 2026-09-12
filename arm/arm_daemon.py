@@ -298,6 +298,43 @@ class H(BaseHTTPRequestHandler):
                 state["calibrating"] = False; att.last = f"error: {e}"; self._json({"error": str(e)}, 500)
             finally: att.busy.release(); dfn.busy.release()
             return
+        if self.path == "/calibrate_clash":   # attack vs attack: both arms creep through their strikes in step; STOP freezes both at the meeting point
+            A, B = arms.get("A"), arms.get("B")
+            if not (A and B): return self._json({"error": "both arms must be connected"}, 404)
+            if not A.busy.acquire(blocking=False): return self._json({"error": "A busy"}, 409)
+            if not B.busy.acquire(blocking=False): A.busy.release(); return self._json({"error": "B busy"}, 409)
+            try:
+                mA, mB, speed, backoff = body["moveA"], body["moveB"], float(body.get("speed", 0.12)), float(body.get("backoff", 0.03))
+                def prep(x, mv):
+                    M, t, Q = x.trajectory(mv); kt = M["key_times"]; si = 1 + (1 if mv in ("ATTACK_HIGH", "FEINT_HIGH") else 0); t0, t1 = kt[si], kt[-1]
+                    qi = lambda tt, t=t, Q=Q: np.array([np.interp(tt, t, Q[:, k]) for k in range(6)])
+                    return {"Q0": Q[0], "t0": t0, "t1": t1, "qi": qi}
+                P = {x.name: prep(x, mv) for x, mv in ((A, mA), (B, mB))}
+                def to_start(x): x.ease_to(P[x.name]["Q0"]); x.ease_to(P[x.name]["qi"](P[x.name]["t0"]))
+                th = [threading.Thread(target=to_start, args=(x,)) for x in (A, B)]; [t.start() for t in th]; [t.join() for t in th]
+                A.last = B.last = "both creeping through their strikes: press STOP when the blades meet"; state["calibrating"] = True
+                A.abort = B.abort = False; T = max(P[n]["t1"] - P[n]["t0"] for n in P) / speed; ts = time.perf_counter(); frac = 0.0; aborted = False
+                while True:
+                    now = time.perf_counter() - ts; frac = min(now / T, 1.0)
+                    if A.abort or B.abort: aborted = True; break
+                    for x in (A, B): pp = P[x.name]; x.send(pp["qi"](pp["t0"] + frac * (pp["t1"] - pp["t0"])))
+                    if now >= T: break
+                    time.sleep(1 / RATE)
+                state["calibrating"] = False
+                stop_frac = max(0.0, frac - backoff) if aborted else 1.0
+                poses = {n: P[n]["qi"](P[n]["t0"] + stop_frac * (P[n]["t1"] - P[n]["t0"])) for n in P}
+                if aborted:
+                    th = [threading.Thread(target=x.ease_to, args=(poses[x.name],), kwargs={"max_speed": 20.0}) for x in (A, B)]; [t.start() for t in th]; [t.join() for t in th]
+                rec = {"mode": "clash", "attacker": "A", "attack": mA, "defender": "B", "defender_move": mB, "stopped": aborted, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": backoff,
+                       "stop_pose_real": [round(float(x), 1) for x in poses["A"]], "stop_pose_real_B": [round(float(x), 1) for x in poses["B"]], "speed": speed, "when": time.strftime("%Y-%m-%d %H:%M")}
+                path = os.path.join(os.path.dirname(HERE), "sim", "contact_stops.json"); S = json.load(open(path)) if os.path.exists(path) else {}
+                S[f"A:{mA}|B:{mB}"] = rec; json.dump(S, open(path, "w"), indent=1)
+                A.last = B.last = f"clash {mA} vs {mB}: stop at {stop_frac:.2f} of the strikes" if aborted else f"clash {mA} vs {mB}: full strikes, no stop pressed"
+                self._json({"ok": True, "record": rec})
+            except Exception as e:
+                state["calibrating"] = False; A.last = B.last = f"error: {e}"; self._json({"error": str(e)}, 500)
+            finally: A.busy.release(); B.busy.release()
+            return
         if self.path == "/calibrate_retreat":   # both arms slowly back to rest after a calibration
             for x in arms.values():
                 if x.busy.acquire(timeout=30):          # wait for a calibration back-off to finish rather than skipping the arm

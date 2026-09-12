@@ -145,7 +145,9 @@ def pair_stops(ours, theirs):
     if not os.path.exists(STOPS_FILE): return {}, {}
     S = json.load(open(STOPS_FILE)); arms_cfg = json.load(open(os.path.join(HERE, "..", "arm", "arms.json"))); sa, sb = {}, {}
     for i, (a, b) in enumerate(zip(ours, theirs)):
-        if f"A:{a}|B:{b}" in S: q = np.array(S[f"A:{a}|B:{b}"]["stop_pose_real"], float); q[4] -= arms_cfg["A"]["roll_offset"]; sa[i] = q
+        if f"A:{a}|B:{b}" in S:
+            r = S[f"A:{a}|B:{b}"]; q = np.array(r["stop_pose_real"], float); q[4] -= arms_cfg["A"]["roll_offset"]; sa[i] = q
+            if "stop_pose_real_B" in r: q = np.array(r["stop_pose_real_B"], float); q[4] -= arms_cfg["B"]["roll_offset"]; sb[i] = q   # clash: both strikes truncated
         if f"B:{b}|A:{a}" in S: q = np.array(S[f"B:{b}|A:{a}"]["stop_pose_real"], float); q[4] -= arms_cfg["B"]["roll_offset"]; sb[i] = q
     return sa, sb
 

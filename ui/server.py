@@ -12,6 +12,22 @@ jobs = {}; jobs_lock = threading.Lock(); arm_lock = threading.Lock(); gen_lock =
 
 import urllib.request
 ARM_PY = os.path.expanduser("~/so-arm/.venv/bin/python"); daemon_proc = None
+def strike_segment(arm, move):
+    """That arm's real-coordinate trajectory for `move` and its strike segment (START key -> last key), as (t, Q, t0, t1)."""
+    import numpy as np
+    T = json.load(open(os.path.join(ARM, "motions_tuned.json"))); M = T.get(f"{move}@{arm}") or T[move]
+    t = np.array(M["t"]); Q = np.array(M["q"]); kt = M["key_times"]; si = 1 + (1 if move in ("ATTACK_HIGH", "FEINT_HIGH") else 0)
+    if M.get("arm", "A") != arm:
+        c = json.load(open(os.path.join(ARM, "arms.json"))); Q = Q.copy(); Q[:, 4] = Q[:, 4] - c["A"]["roll_offset"] + c[arm]["roll_offset"]
+    return t, Q, kt[si], kt[-1]
+def strike_pose(arm, move, frac):
+    import numpy as np
+    t, Q, t0, t1 = strike_segment(arm, move); tt = t0 + frac * (t1 - t0); return [round(float(np.interp(tt, t, Q[:, k])), 1) for k in range(6)]
+def strike_frac(arm, move, pose):
+    """Fraction along the strike segment whose pose is nearest (first five joints) to a live pose."""
+    import numpy as np
+    t, Q, t0, t1 = strike_segment(arm, move); fr = np.linspace(0, 1, 201); p = np.array(pose[:5])
+    d = [np.linalg.norm(np.array([np.interp(t0 + f * (t1 - t0), t, Q[:, k]) for k in range(5)]) - p) for f in fr]; return float(fr[int(np.argmin(d))])
 def daemon(path, body, timeout=10):
     req = urllib.request.Request("http://127.0.0.1:8766" + path, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
     return json.load(urllib.request.urlopen(req, timeout=timeout))
@@ -190,16 +206,29 @@ def api(handler, path, body):
         return daemon("/goto", {"arm": arm, "q": q, "speed": 80}, timeout=60)
     if path == "/api/calib_delete":
         f = os.path.join(SIM, "contact_stops.json"); S = json.load(open(f)); S.pop(body["key"], None); json.dump(S, open(f, "w"), indent=1); return {"ok": True}
-    if path == "/api/calib_backoff":   # change a pair's back-off: recompute the stop pose from the press point on the attacker's trajectory
-        import numpy as np
+    if path == "/api/calib_backoff":   # change a pair's back-off: recompute the stop pose(s) from the press point on the strike
         f = os.path.join(SIM, "contact_stops.json"); S = json.load(open(f)); r = S[body["key"]]; nb = float(body["backoff"])
         press = r.get("press_frac", r["stop_frac"] + r.get("backoff", 0.03)); stop = max(0.0, press - nb)
-        T = json.load(open(os.path.join(ARM, "motions_tuned.json"))); M = T.get(f"{r['attack']}@{r['attacker']}") or T[r["attack"]]
-        t = np.array(M["t"]); Q = np.array(M["q"]); kt = M["key_times"]; si = 1 + (1 if r["attack"] in ("ATTACK_HIGH", "FEINT_HIGH") else 0); t0, t1 = kt[si], kt[-1]
-        if M.get("arm", "A") != r["attacker"]:
-            c = json.load(open(os.path.join(ARM, "arms.json"))); Q = Q.copy(); Q[:, 4] = Q[:, 4] - c["A"]["roll_offset"] + c[r["attacker"]]["roll_offset"]
-        tt = t0 + stop * (t1 - t0); pose = [float(np.interp(tt, t, Q[:, k])) for k in range(6)]
-        r.update({"press_frac": round(press, 3), "backoff": nb, "stop_frac": round(stop, 3), "stop_pose_real": [round(x, 1) for x in pose]}); json.dump(S, open(f, "w"), indent=1); return {"ok": True, "record": r}
+        r.update({"press_frac": round(press, 3), "backoff": nb, "stop_frac": round(stop, 3), "stop_pose_real": strike_pose(r["attacker"], r["attack"], stop)})
+        if r.get("mode") == "clash": r["stop_pose_real_B"] = strike_pose("B", r["defender_move"], stop)
+        json.dump(S, open(f, "w"), indent=1); return {"ok": True, "record": r}
+    if path == "/api/calibrate_clash":   # both arms creep together; STOP freezes both
+        ensure_daemon()
+        def go():
+            j = start_job("arm", f"CLASH A:{body['moveA']} vs B:{body['moveB']} at {body.get('speed', 0.12)}", ["true"], ARM)
+            try:
+                r = daemon("/calibrate_clash", body, timeout=900); open(j["log"], "a").write(json.dumps(r) + "\n"); j["status"] = "done" if r.get("ok") else "failed"
+            except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/calib_capture_clash":   # the clash keyframe as posed by hand: both arms' live poses become the stop poses
+        ensure_daemon(); st = daemon_status().get("arms", {}); pa, pb = st.get("A", {}).get("pose"), st.get("B", {}).get("pose")
+        if not (pa and pb): return {"error": "need live poses from both arms"}
+        fa, fb = strike_frac("A", body["moveA"], pa), strike_frac("B", body["moveB"], pb); stop = round((fa + fb) / 2, 3)
+        f = os.path.join(SIM, "contact_stops.json"); S = json.load(open(f)) if os.path.exists(f) else {}
+        S[f"A:{body['moveA']}|B:{body['moveB']}"] = {"mode": "clash", "source": "hand-posed", "attacker": "A", "attack": body["moveA"], "defender": "B", "defender_move": body["moveB"], "stopped": True,
+            "stop_frac": stop, "press_frac": stop, "backoff": 0.0, "frac_A": round(fa, 3), "frac_B": round(fb, 3), "stop_pose_real": [round(x, 1) for x in pa], "stop_pose_real_B": [round(x, 1) for x in pb], "when": time.strftime("%Y-%m-%d %H:%M")}
+        json.dump(S, open(f, "w"), indent=1); return {"ok": True, "frac_A": fa, "frac_B": fb}
     if path == "/api/calib_test":      # compile the 1-beat pair with the stop applied and play both arms
         ensure_daemon(); r = json.load(open(os.path.join(SIM, "contact_stops.json")))[body["key"]]
         ours, theirs = ([r["attack"]], [r["defender_move"]]) if r["attacker"] == "A" else ([r["defender_move"]], [r["attack"]])
