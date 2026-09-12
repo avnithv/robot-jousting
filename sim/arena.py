@@ -19,7 +19,20 @@ BLADE_STYLE = {"A": os.environ.get("JOUST_BLADE_A") or os.environ.get("JOUST_BLA
                "B": os.environ.get("JOUST_BLADE_B") or os.environ.get("JOUST_BLADE", "8in_fang")}   # "none" = the old capsule baton
 SWORD_ON_JAW = True  # sword on the moving finger; False = fixed along the gripper
 SHIELD = False       # no shield in v1
-BASE_GAP = 0.61    # metres between the two shoulder_pan axes at the clash (2 ft gantry stop)
+BASE_GAP = 0.61    # metres between the two shoulder_pan axes at the clash (2 ft gantry stop); the default build() spacing
+# ---- the stepper gantry (gantry/README.md, arm/arms.json "gantry") -----------------------------------------
+# Each arm sits on a GRBL-driven carriage: X carries A, Y carries B, work coordinate 0..200 mm, 0 = fully charged in.
+# PLATE_FRONT measured off the base meshes in this model (max +x extent of A_base / -x of B's base over the plate
+# band z = -5..20 mm, relative to that arm's shoulder_pan axis): 25.80 mm on both arms.
+PLATE_FRONT = 0.0258          # m from the pan axis to the base plate tip, each arm
+CHARGE_TIP_GAP = 0.4953       # m (19.5 in, measured on the real rig): plate tip to plate tip, fully charged in
+CHARGED_GAP = CHARGE_TIP_GAP + 2 * PLATE_FRONT       # 0.5469 m between the pan axes at the charge-in stop = the MINIMUM
+GANTRY_TRAVEL = 0.200         # m of travel per carriage (GRBL 0..200 mm; arms.json apart = X200 Y200)
+GANTRY_MAX_MPS = 24000 / 60 / 1000.0                 # 0.4 m/s from the 24000 mm/min feed ceiling
+GANTRY_APART = CHARGED_GAP + 2 * GANTRY_TRAVEL       # 0.9469 m: both carriages at the daemon's "apart"
+def gantry_gap(gA=0.0, gB=0.0):
+    """Pan-axis spacing (m) for carriage retractions gA, gB (m from the charge-in stop, 0 .. GANTRY_TRAVEL)."""
+    return CHARGED_GAP + float(gA) + float(gB)
 B_OFFSET_DEG = np.array([0.0, 102.77, -90.0, -31.94, 0.0, 0.0])
 B_SIGN = np.array([-1.0, 1.0, 1.0, 1.0, 1.0, 1.0])   # pan: +ve = each arm's OWN right (B mirrors A)
 
@@ -138,8 +151,27 @@ def _arm_with_sword(path, q_zero_rad, forward_in_arm_frame, hilt_dist_from_pan, 
                       rgba=[0.15, 0.15, 0.15, 1], contype=1, conaffinity=1)
     return child
 
-def build(base_gap=BASE_GAP, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None):
-    """blades: {"A": style, "B": style} of assets/blades/Sword_Blade_<style>.stl (default BLADE_STYLE; "none" = capsule baton)."""
+def _add_carriage(spec, name, x0, quat, gap_for_rail):
+    """A gantry carriage body at x0 with a slide joint `<name>_gantry` along the arena x axis. The joint reads the
+    GRBL work coordinate of that axis: 0 = charged in (the hard stop), +GANTRY_TRAVEL = apart, so the axis points
+    away from the opponent. Returns the frame to attach the arm to."""
+    sgn = -1.0 if name == "A" else 1.0          # +q must move the arm AWAY from the opponent
+    car = spec.worldbody.add_body(name=f"{name}_carriage", pos=[x0, 0, 0])
+    j = car.add_joint(name=f"{name}_gantry", type=mujoco.mjtJoint.mjJNT_SLIDE, axis=[sgn, 0, 0], range=[0, GANTRY_TRAVEL])
+    j.limited = mujoco.mjtLimited.mjLIMITED_TRUE; j.damping = [60.0, 0, 0]; j.armature = 2.0
+    rgba = [0.62, 0.64, 0.68, 1]
+    for s in (-1, 1):                            # two blocks riding the rails, flanking the base plate
+        car.add_geom(name=f"{name}_carriage_{'lr'[s > 0]}", type=mujoco.mjtGeom.mjGEOM_BOX, size=[0.055, 0.016, 0.011],
+                     pos=[0.0388353 if name == "A" else -0.0388353, s * 0.078, 0.011], rgba=rgba, mass=0.3, contype=0, conaffinity=0)
+    return car.add_frame(pos=[0, 0, 0], quat=quat)
+
+def build(base_gap=None, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None, gantry=False):
+    """blades: {"A": style, "B": style} of assets/blades/Sword_Blade_<style>.stl (default BLADE_STYLE; "none" = capsule baton).
+    gantry=False (default): the arms are bolted to the world at `base_gap` (default BASE_GAP = 0.61 m) exactly as before.
+    gantry=True: each arm rides a carriage with a slide joint A_gantry / B_gantry, and `base_gap` defaults to CHARGED_GAP,
+    i.e. the carriages read 0 = the 19.5 in charge-in stop and drive out to GANTRY_TRAVEL. No actuators are added for
+    them (d.ctrl stays 12 long); drive them with set_pose(..., gA=, gB=) or set_gantry()."""
+    base_gap = (CHARGED_GAP if gantry else BASE_GAP) if base_gap is None else base_gap
     blades = {**BLADE_STYLE, **(blades or {})}
     spec = mujoco.MjSpec()
     spec.compiler.discardvisual = False
@@ -148,14 +180,25 @@ def build(base_gap=BASE_GAP, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None)
     spec.visual.global_.offheight = 720
     spec.worldbody.add_light(pos=[0, 0, 3], dir=[0, 0, -1], type=mujoco.mjtLightType.mjLIGHT_DIRECTIONAL)
     spec.worldbody.add_light(pos=[base_gap / 2, -1.0, 1.2], dir=[0, 0.6, -0.8])
+    # Fill from the far side: arm B's meshes are near black and used to sink into the background on the iso
+    # camera, which made a fall or a collapse unreadable. Lighting only -- no geometry or joint change.
+    spec.worldbody.add_light(pos=[base_gap / 2, 1.1, 1.0], dir=[0, -0.6, -0.8], diffuse=[0.45, 0.45, 0.5])
     spec.worldbody.add_geom(name="floor", type=mujoco.mjtGeom.mjGEOM_PLANE, size=[2, 2, 0.05],
                             rgba=[0.25, 0.25, 0.28, 1], contype=0, conaffinity=0)
     # A: SO101, extends along +x in its own frame, pan axis at (0.0388, 0)
     a = _arm_with_sword(SO101, np.zeros(6), [1, 0, 0], hilt_reach, (0.0388353, 0), [0.9, 0.2, 0.2, 1], sword_len, blades["A"])
     # B: SO100 URDF, extends along -y in its own frame, pan axis at (0, -0.0452)
     b = _arm_with_sword(SO100, np.radians(B_OFFSET_DEG), [0, -1, 0], hilt_reach, (0, -0.0452), [0.2, 0.4, 0.9, 1], sword_len, blades["B"])
-    fa = spec.worldbody.add_frame(pos=[-0.0388353, 0, 0], quat=[1, 0, 0, 0])
-    fb = spec.worldbody.add_frame(pos=[base_gap + 0.0452, 0, 0], quat=[0.7071068, 0, 0, -0.7071068])
+    if gantry:
+        lo, hi = -GANTRY_TRAVEL - 0.12, base_gap + GANTRY_TRAVEL + 0.12
+        for s in (-1, 1):   # the fixed rails the carriages ride on
+            spec.worldbody.add_geom(name=f"rail_{'lr'[s > 0]}", type=mujoco.mjtGeom.mjGEOM_BOX, size=[(hi - lo) / 2, 0.013, 0.006],
+                                    pos=[(lo + hi) / 2, s * 0.078, 0.006], rgba=[0.16, 0.17, 0.19, 1], contype=0, conaffinity=0)
+        fa = _add_carriage(spec, "A", -0.0388353, [1, 0, 0, 0], base_gap)
+        fb = _add_carriage(spec, "B", base_gap + 0.0452, [0.7071068, 0, 0, -0.7071068], base_gap)
+    else:
+        fa = spec.worldbody.add_frame(pos=[-0.0388353, 0, 0], quat=[1, 0, 0, 0])
+        fb = spec.worldbody.add_frame(pos=[base_gap + 0.0452, 0, 0], quat=[0.7071068, 0, 0, -0.7071068])
     fa.attach_body(a.worldbody, "A_", "")
     fb.attach_body(b.worldbody, "B_", "")
     for j in JOINTS:  # B actuators (URDF has none): copy A's servo model
@@ -170,13 +213,38 @@ def build(base_gap=BASE_GAP, sword_len=SWORD_LEN, hilt_reach=0.353, blades=None)
         model.jnt_range[j] = [np.radians(-185), np.radians(185)]; model.actuator_ctrlrange[u] = [np.radians(-185), np.radians(185)]
     # URDF joints import with no damping/armature; give B the SO101 (STS3215) joint dynamics
     for j in range(model.njnt):
-        if mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j).startswith("B_"):
+        nm = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j)
+        if nm.startswith("B_") and not nm.endswith("_gantry"):
             a = model.jnt_dofadr[j]; model.dof_damping[a] = 0.60; model.dof_armature[a] = 0.028; model.dof_frictionloss[a] = 0.052
     return spec, model
 
-def set_pose(m, d, qA_deg, qB_deg):
-    d.qpos[:6] = q_to_model("A", qA_deg); d.qpos[6:12] = q_to_model("B", qB_deg)
-    d.ctrl[:6] = d.qpos[:6]; d.ctrl[6:12] = d.qpos[6:12]
+_ADR = {}
+def addr(m):
+    """Cached qpos/dof addresses by joint name: {"A": [6 qpos adr], "B": [...], "gA"/"gB": (qpos adr, dof adr) or None}.
+    Everything indexes by NAME so a model with the gantry carriages (which shift the qpos layout) works unchanged."""
+    key = id(m)
+    if key not in _ADR:
+        jid = lambda n: mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)
+        a = {arm: [m.jnt_qposadr[jid(f"{arm}_{j}")] for j in JOINTS] for arm in ("A", "B")}
+        for arm in ("A", "B"):
+            i = jid(f"{arm}_gantry"); a["g" + arm] = (m.jnt_qposadr[i], m.jnt_dofadr[i]) if i >= 0 else None
+        a["u"] = {arm: [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_ACTUATOR, f"{arm}_{j}") for j in JOINTS] for arm in ("A", "B")}
+        _ADR[key] = a
+    return _ADR[key]
+
+def set_gantry(m, d, gA=None, gB=None):
+    """Park the carriages at gA / gB metres of retraction from the charge-in stop (0 .. GANTRY_TRAVEL). Unactuated
+    slide joints: the position is written straight into qpos (and the velocity zeroed) the way a stepper holds."""
+    ad = addr(m)
+    for g, key in ((gA, "gA"), (gB, "gB")):
+        if g is None or ad[key] is None: continue
+        qa, da = ad[key]; d.qpos[qa] = float(np.clip(g, 0.0, GANTRY_TRAVEL)); d.qvel[da] = 0.0
+
+def set_pose(m, d, qA_deg, qB_deg, gA=None, gB=None):
+    ad = addr(m)
+    d.qpos[ad["A"]] = q_to_model("A", qA_deg); d.qpos[ad["B"]] = q_to_model("B", qB_deg)
+    d.ctrl[ad["u"]["A"]] = d.qpos[ad["A"]]; d.ctrl[ad["u"]["B"]] = d.qpos[ad["B"]]
+    set_gantry(m, d, gA, gB)
     mujoco.mj_forward(m, d)
 
 def make_camera(base_gap=BASE_GAP, view="side"):

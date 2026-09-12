@@ -5,11 +5,20 @@ Positive lift/elbow/wrist pitch the chain DOWN (lift -89 = leaning fully back, t
 roll 0 = sword on top (real +76); jaw 0 shut .. 100 open (opening cocks the blade up and back). Both arms use the same
 convention: a pose written for A reads identically on B (B mirrors A through the arena joint mapping)."""
 import json, os, numpy as np
-import tune, ik
+import tune, ik, arena
 from tune import REST, PARAMS, recipe, JOINTS
+GANTRY_TRAVEL, GANTRY_MAX_MPS, CHARGED_GAP = arena.GANTRY_TRAVEL, arena.GANTRY_MAX_MPS, arena.CHARGED_GAP
+APART = GANTRY_TRAVEL          # the daemon's "apart" stop: 200 mm back from charge-in
+def gantry_for_gap(gap):
+    """Symmetric carriage retraction (m, per arm) that puts the pan axes `gap` metres apart."""
+    return round(max(0.0, (float(gap) - CHARGED_GAP) / 2), 6)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}
+# The four hubs the emote scenes were written against (docs/transitions_and_flourishes.md); hubs.json has since moved on
+# to the transition library's MID / SALUTE / LOW_TIP states, so keep these as fallbacks when they are not in the file.
+for _k, _v in {"EN_GARDE": [0, -60, 30, 20, 0, 0], "READY_MID": [0, -50, 60, -20, 0, 0], "TUCK": [10, 20, -20, -90, 0, 0], "GATE": [20, 10, -95, -94, 0, 0]}.items():
+    HUBS.setdefault(_k, np.array(_v, float))
 EN_GARDE, READY_MID, TUCK, GATE = HUBS["EN_GARDE"], HUBS["READY_MID"], HUBS["TUCK"], HUBS["GATE"]
 J = {"pan": 0, "lift": 1, "elbow": 2, "wrist": 3, "roll": 4, "jaw": 5}
 LO, HI = ik.LO, ik.HI   # sim joint ranges (deg)
@@ -78,49 +87,71 @@ def move_pose(name, i=-1): return move_keys(name)[i][0].copy()   # e.g. move_pos
 class Track:
     """Keyframes for one arm. Every method appends keys and returns self, so scenes read as choreography:
         Track().to(EN_GARDE, 0.8, "en garde").hold(0.3).wag("pan", 10, n=2, period=0.5, note="looks left and right").rest(1.2)
-    Timing: `dt` is seconds from the previous key. `until(t)` holds until an absolute scene time (sync with the other arm)."""
-    def __init__(self, start=None):
-        self.keys = [((REST if start is None else np.asarray(start, float)).copy(), 0.0)]; self.notes = []
+    Timing: `dt` is seconds from the previous key. `until(t)` holds until an absolute scene time (sync with the other arm).
+    Gantry: every key carries a 7th channel `g` = that arm's carriage position in metres of retraction from the 19.5 in
+    charge-in stop (0 = charged in, the hard stop; APART = 0.200 m = the daemon's "apart"), which is exactly the GRBL
+    work coordinate of that arm's axis. It defaults to 0 and is inherited from the previous key, so every method takes
+    an optional g= and a scene that never mentions the gantry is a charged-in scene, as before."""
+    def __init__(self, start=None, g=0.0):
+        q = (REST if start is None else np.asarray(start, float)).copy()
+        self.keys = [(self._key(q, g), 0.0)]; self.notes = []
+    @staticmethod
+    def _key(q, g):
+        q = np.asarray(q, float)
+        return np.concatenate([q[:6], [float(g)]]) if len(q) < 7 else np.concatenate([q[:6], [float(g if g is not None else q[6])]])
     @property
     def t(self): return float(sum(dt for _, dt in self.keys))
     @property
-    def q(self): return self.keys[-1][0].copy()
+    def q(self): return self.keys[-1][0][:6].copy()
+    @property
+    def g(self): return float(self.keys[-1][0][6])
     def note(self, text, t=None): self.notes.append((round(self.t if t is None else t, 2), text)); return self
-    def to(self, q, dt, note=None):
+    def to(self, q, dt, note=None, g=None):
         if note: self.note(note)
-        self.keys.append((np.asarray(q, float).copy(), max(float(dt), 0.02))); return self
-    def hold(self, dt, note=None): return self.to(self.q, dt, note)
-    def until(self, t_abs, note=None):
-        if t_abs > self.t + 0.02: self.hold(t_abs - self.t, note)
+        q = np.asarray(q, float)
+        gg = self.g if g is None else float(g)
+        if len(q) >= 7 and g is None: gg = float(q[6])
+        self.keys.append((self._key(q, gg), max(float(dt), 0.02))); return self
+    def hold(self, dt, note=None, g=None): return self.to(self.q, dt, note, g=g)
+    def until(self, t_abs, note=None, g=None):
+        if t_abs > self.t + 0.02: self.hold(t_abs - self.t, note, g=g)
         return self
-    def set(self, dt, note=None, **dj): return self.to(pose(self.q, **dj), dt, note)           # absolute joint values
-    def nudge(self, dt, note=None, **dj):                                                       # relative offsets
+    def gantry(self, g, dt, note=None):
+        """Drive this arm's carriage to g metres from the charge-in stop while the pose holds."""
+        return self.to(self.q, dt, note, g=g)
+    def charge(self, dt, note=None): return self.gantry(0.0, dt, note)      # all the way in to the 19.5 in stop
+    def set(self, dt, note=None, g=None, **dj): return self.to(pose(self.q, **dj), dt, note, g=g)   # absolute joint values
+    def nudge(self, dt, note=None, g=None, **dj):                                                   # relative offsets
         q = self.q
         for k, v in dj.items(): q[J[k]] += v
-        return self.to(q, dt, note)
-    def osc(self, n=3, period=0.3, note=None, **amps):
+        return self.to(q, dt, note, g=g)
+    def osc(self, n=3, period=0.3, note=None, g=None, **amps):
         """One-sided oscillation: base -> base+amp -> base, n times (jaw chatter, shoulder bob, laugh)."""
         base = self.q; up = base.copy()
         for k, v in amps.items(): up[J[k]] += v
         if note: self.note(note)
-        for _ in range(n): self.to(up, period / 2).to(base, period / 2)
+        for _ in range(n): self.to(up, period / 2, g=g).to(base, period / 2, g=g)
         return self
-    def wag(self, n=2, period=0.5, note=None, **amps):
+    def wag(self, n=2, period=0.5, note=None, g=None, **amps):
         """Symmetric oscillation: base -> +amp -> -amp -> base (head shake, finger wag, pan wander)."""
         base = self.q; up = base.copy(); dn = base.copy()
         for k, v in amps.items(): up[J[k]] += v; dn[J[k]] -= v
         if note: self.note(note)
-        for _ in range(n): self.to(up, period / 4).to(dn, period / 2).to(base, period / 4)
+        for _ in range(n): self.to(up, period / 4, g=g).to(dn, period / 2, g=g).to(base, period / 4, g=g)
         return self
-    def move(self, name, note=None, scale=1.0):
+    def move(self, name, note=None, scale=1.0, g=None):
         """Play a tuned move's keys (windup + strike / guard). scale > 1 = slower."""
         if note: self.note(note)
-        for q, dt in move_keys(name): self.to(q, dt * scale)
+        for q, dt in move_keys(name): self.to(q, dt * scale, g=g)
         return self
-    def rest(self, dt=1.2, note=None): return self.to(REST, dt, note)
+    def rest(self, dt=1.2, note=None, g=None): return self.to(REST, dt, note, g=g)
 
-def scene(A, B, title, family, moods, blurb, camera="side", allow_table=False, allow_touch=False, tags=()):
-    """A, B: Tracks. moods: {"A": "gloating", "B": "hurt"}. allow_table: blade tips may touch the table (taps).
-    allow_touch: blade-on-blade contact is intended (a glove-touch). Body contact between the arms is never allowed."""
+def scene(A, B, title, family, moods, blurb, camera="side", allow_table=False, allow_touch=False, tags=(), swap=True, cam=None):
+    """A, B: Tracks. moods: {"A": "gloating", "B": "hurt"}. allow_table: blade tips may touch the table (taps); either a
+    bool for both arms or {"A": False, "B": True} to let only the arm that falls reach the table.
+    allow_touch: blade-on-blade contact is intended (a glove-touch, or a flurry that is meant to land).
+    swap: the two roles may be exchanged (play the A track on arm B and vice versa) -- true for anything symmetric
+    in staging, which is every scene whose poses are written in the shared convention."""
     return {"A": A, "B": B, "title": title, "family": family, "moods": moods, "blurb": blurb, "camera": camera,
-            "allow_table": allow_table, "allow_touch": allow_touch, "tags": list(tags)}
+            "allow_table": allow_table, "allow_touch": allow_touch, "tags": list(tags), "swap": bool(swap),
+            "cam": dict(cam) if cam else None}   # cam: optional {"azimuth","elevation","distance"} override

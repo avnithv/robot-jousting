@@ -1,0 +1,43 @@
+{
+ "joints": [
+  "shoulder_pan",
+  "shoulder_lift",
+  "elbow_flex",
+  "wrist_flex",
+  "wrist_roll",
+  "gripper"
+ ],
+ "peak_dps": [
+  146.2,
+  192.3,
+  165.0,
+  347.7,
+  318.0,
+  301.2
+ ],
+ "set_by": [
+  "ATTACK_LOW_RL",
+  "BLOCK_LEFT@B",
+  "BLOCK_LEFT@B",
+  "ATTACK_HIGH",
+  "BLOCK_RIGHT@B",
+  "ATTACK_HIGH"
+ ],
+ "moves": [
+  "ATTACK_HIGH",
+  "ATTACK_LOW_LR",
+  "ATTACK_LOW_RL",
+  "BLOCK_HIGH",
+  "BLOCK_HIGH@B",
+  "BLOCK_LEFT",
+  "BLOCK_LEFT@B",
+  "BLOCK_MIDDLE",
+  "BLOCK_MIDDLE@B",
+  "BLOCK_RIGHT",
+  "BLOCK_RIGHT@B",
+  "FEINT_HIGH",
+  "FEINT_LEFT",
+  "FEINT_RIGHT",
+  "REST"
+ ]
+}
