@@ -96,8 +96,16 @@ class Gantry:
         if self.cnc: return
         conn = serial.Serial(self.cfg["port"], 115200, timeout=0.2, write_timeout=2); time.sleep(2); conn.reset_input_buffer()
         self.cnc = XYController(conn); self.cnc.preflight(); self.last = "connected (not referenced)"
+    def reconnect(self):
+        """Close and reopen the serial port (resets GRBL, clears a jammed alarm state); reference is lost until home()."""
+        try:
+            if self.cnc: self.cnc.port.close()
+        except Exception: pass
+        self.cnc = None; self.homed = False; self.connect(); self.last = "reconnected (not referenced)"
     def home(self):
-        self.connect(); state, pins, _ = self.cnc.status()
+        self.connect()
+        try: state, pins, _ = self.cnc.status()
+        except Exception: self.reconnect(); state, pins, _ = self.cnc.status()   # jammed after an alarm: fresh connection
         if state == "Alarm":                     # clear a previous hard-limit alarm before referencing again
             self.cnc.reset(); self.cnc.send("$X"); state, pins, _ = self.cnc.status()
         if pins in (1, 2): self.cnc.release_axis("X" if pins == 1 else "Y")   # a carriage parked on its switch
@@ -235,6 +243,7 @@ class H(BaseHTTPRequestHandler):
                 if not gantry.lock.acquire(blocking=False): return self._json({"error": "gantry busy"}, 409)
                 try:
                     if op == "home": gantry.home()
+                    elif op == "reconnect": gantry.reconnect()
                     elif op == "move": gantry.move(body.get("x"), body.get("y"), body.get("feed"))
                     elif op == "together": gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], body.get("feed"))
                     elif op == "apart": gantry.move(gantry.cfg["apart"]["X"], gantry.cfg["apart"]["Y"], body.get("feed"))
