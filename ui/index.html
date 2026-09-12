@@ -18,7 +18,17 @@
  #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
  body.A #main{box-shadow:inset 6px 0 0 #d4a800} body.B #main{box-shadow:inset 6px 0 0 #2b5bd7}
 </style></head><body>
-<div id="moves"><div class="bar" style="margin:0 0 8px"><button id="tabMoves" class="primary" onclick="tab('moves')">Moves</button><button id="tabChain" onclick="tab('chain')">Chain</button></div><div id="movelist"></div></div>
+<div id="moves"><div class="bar" style="margin:0 0 8px"><button id="tabMoves" class="primary" onclick="tab('moves')">Moves</button><button id="tabChain" onclick="tab('chain')">Chain</button><button id="tabCal" onclick="tab('cal')">Calibrate</button></div><div id="movelist"></div></div>
+<div id="calview" hidden style="padding:12px 16px;overflow:auto">
+ <h2>Collision calibration</h2><small>Pick the attacker arm, its attack, and the other arm's move. Start parks the defender at its end pose, brings the attacker to its strike start (normal speed), then creeps through the strike at the calibration speed. Press STOP the moment the blades meet; the stop point (backed off 3%) is saved for that pair and the attacker holds there. Retreat brings both arms back to rest slowly.</small>
+ <div class="bar" style="margin-top:10px"><label>attacker <select id="calAtt"><option value="A">ARM A (SO-100)</option><option value="B">ARM B (SO-101)</option></select></label>
+  <label>attack <select id="calAttack"><option>ATTACK_HIGH</option><option>ATTACK_LOW_LR</option><option>ATTACK_LOW_RL</option></select></label>
+  <label>defender move <select id="calDef"></select></label> <label>speed <input id="calSpeed" type="number" value="0.12" step="0.02" min="0.05" max="0.5"></label>
+  <button class="primary" onclick="calStart()">Start</button> <button onclick="calRetreat()">Retreat to rest</button></div>
+ <button id="bigstop" onclick="calStop()" style="width:100%;max-width:760px;height:120px;font-size:44px;font-weight:700;background:#c00;color:#fff;border:0;border-radius:12px;margin:12px 0;letter-spacing:2px">STOP HERE</button>
+ <div id="calst" class="arm" style="font-size:14px;margin-bottom:8px"></div>
+ <table id="caltable"></table>
+</div>
 <div id="chainview" hidden style="padding:12px 16px;overflow:auto">
  <h2 id="ctitle">Chain</h2><small>Build a sequence step by step for the selected arm. Each step is a move or a state; the dropdown shows how the handoff from the last step reads (direct blend time, or a route via a hub). Preview compiles it and shows the sim; Run plays it on the arm.</small>
  <div class="bar" style="margin-top:10px"><b>Sequence:</b> <span id="seq">(starts at REST)</span> <button onclick="chainPop()">Remove last</button> <button onclick="chainClear()">Clear</button></div>
@@ -33,7 +43,7 @@
  <div class="bar"><label>show: <select id="opp" onchange="oppChanged()"><option value="">this move alone</option></select></label>
   <span style="flex:1"></span>
   <label>speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
-  <button class="primary" id="runbtn" onclick="runArm()">Run on arm A</button> <button class="abort" onclick="abortArm()">ABORT</button></div>
+  <button class="primary" id="runbtn" onclick="runArm()">Run on arm A</button> <button onclick="holdPose('start')" title="ease to the strike-ready pose (cocked / windup / guard) and hold">Hold START</button> <button onclick="holdPose('end')" title="ease to the move's final pose and hold">Hold END</button> <button class="abort" onclick="abortArm()">ABORT</button></div>
  <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Power off arm (move by hand)</button> <span class="arm" id="live"></span>
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
  <div class="bar" id="bothbar"><b>Both arms</b> <label>A <select id="moveA"></select></label> <label>B <select id="moveB"></select></label>
@@ -56,13 +66,23 @@
 <script>
 let MOVES={}, cur=null, SEQ=[], FEAS={};
 const STATES=['MID','SALUTE','LOW_TIP'];
-function tab(t){document.getElementById('chainview').hidden=(t!=='chain');document.getElementById('main').hidden=(t==='chain');document.getElementById('tabMoves').className=t==='moves'?'primary':'';document.getElementById('tabChain').className=t==='chain'?'primary':'';if(t==='chain')chainRefresh()}
+function tab(t){document.getElementById('chainview').hidden=(t!=='chain');document.getElementById('calview').hidden=(t!=='cal');document.getElementById('main').hidden=(t!=='moves');document.getElementById('tabMoves').className=t==='moves'?'primary':'';document.getElementById('tabChain').className=t==='chain'?'primary':'';document.getElementById('tabCal').className=t==='cal'?'primary':'';if(t==='chain')chainRefresh();if(t==='cal')calRefresh()}
 async function chainRefresh(){FEAS=await api('/api/feasible',{arm:arm()});document.getElementById('ctitle').textContent='Chain for arm '+arm();
  const last=SEQ.length?SEQ[SEQ.length-1]:'REST';const sel=document.getElementById('nextstep');sel.innerHTML='';
  const opts=Object.keys(MOVES).filter(n=>!n.startsWith('CHAIN')&&n!=='REST').concat(STATES.filter(s=>!(s in MOVES)));
  for(const n of opts){const f=(FEAS[last]||{})[n];const o=document.createElement('option');o.value=n;o.textContent=n+(f?(f.ok?(f.via?`  (via ${f.via}, ${f.s}s)`:`  (direct ${f.s}s)`):'  (no safe route)'):'');if(f&&!f.ok)o.disabled=true;sel.appendChild(o)}
  document.getElementById('seq').textContent=SEQ.length?'REST > '+SEQ.join(' > '):'(starts at REST)';
  const M=MOVES['CHAIN_'+arm()];const v=document.getElementById('cvid');const src=M&&M.video?M.video:null;if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}}
+const DEFMOVES=['BLOCK_HIGH','BLOCK_LEFT','BLOCK_RIGHT','BLOCK_MIDDLE','FEINT_HIGH','FEINT_LEFT','FEINT_RIGHT','ATTACK_HIGH','ATTACK_LOW_LR','ATTACK_LOW_RL'];
+async function calRefresh(){const sel=document.getElementById('calDef');if(!sel.options.length)for(const m of DEFMOVES){const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o)}
+ const st=await api('/api/calib_status');const t=document.getElementById('caltable');t.innerHTML='<tr><td class="k">A move</td><td class="k">B move</td><td>intended</td><td>calibrated</td></tr>';
+ for(const p of st.pairs){const attA=p.A.startsWith('ATTACK'),attB=p.B.startsWith('ATTACK');const keys=[];if(attA)keys.push('A:'+p.A+'|B:'+p.B);if(attB)keys.push('B:'+p.B+'|A:'+p.A);
+  const done=keys.map(k=>st.stops[k]?(k.split(':')[0]+' stop '+st.stops[k].stop_frac):null).filter(Boolean);
+  const tr=document.createElement('tr');tr.innerHTML=`<td class="k">${p.A}</td><td class="k">${p.B}</td><td class="h">${p.outcome}: ${p.touch||''}</td><td>${done.length?'<b style="color:#1a7f37">'+done.join(', ')+'</b>':'<span style="color:#b26a00">not yet</span>'}</td>`;t.appendChild(tr)}}
+async function calStart(){const att=document.getElementById('calAtt').value;document.getElementById('calst').textContent='running: defender parks, attacker to strike start, then creeping... press STOP HERE when the blades meet';
+ await api('/api/calibrate',{attacker:att,attack:document.getElementById('calAttack').value,defender_move:document.getElementById('calDef').value,speed:parseFloat(document.getElementById('calSpeed').value)});poll()}
+async function calStop(){await api('/api/abort',{arm:document.getElementById('calAtt').value});document.getElementById('calst').textContent='stopped; saving the stop point and backing off 3%';setTimeout(calRefresh,2500)}
+async function calRetreat(){await api('/api/calibrate_retreat',{});document.getElementById('calst').textContent='retreating to rest';poll()}
 function chainAdd(){SEQ.push(document.getElementById('nextstep').value);chainRefresh()}
 function chainPop(){SEQ.pop();chainRefresh()} function chainClear(){SEQ=[];chainRefresh()}
 async function chainPreview(){if(!SEQ.length)return;document.getElementById('chainst').textContent='compiling...';await api('/api/chain2',{arm:arm(),steps:SEQ,seed:parseInt(document.getElementById('seed').value)});poll()}
@@ -100,6 +120,7 @@ async function runBoth(){await api('/api/run_both',{moveA:document.getElementByI
 async function abortBoth(){await api('/api/abort',{arm:'both'});poll()}
 async function gantry(op){const f=parseFloat(document.getElementById('gfeed').value);await api('/api/gantry',{op,feed:f});poll()}
 async function abortArm(){await api('/api/abort',{arm:arm()});poll()}
+async function holdPose(which){await api('/api/hold_pose',{arm:arm(),move:cur,which});poll()}
 async function runArm(){await api('/api/run',{move:cur,arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
 async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;

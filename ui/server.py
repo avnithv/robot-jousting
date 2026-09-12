@@ -171,6 +171,29 @@ def api(handler, path, body):
             except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/calibrate":
+        ensure_daemon()
+        def go():
+            j = start_job("arm", f"CALIBRATE {body['attacker']}:{body['attack']} vs {body['defender_move']} at {body.get('speed', 0.12)}", ["true"], ARM)
+            try:
+                r = daemon("/calibrate", body, timeout=900); open(j["log"], "a").write(json.dumps(r) + "\n"); j["status"] = "done" if r.get("ok") else "failed"
+            except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/hold_pose":   # ease the arm to a move's START (strike-ready) or END pose and hold it there
+        ensure_daemon(); arm, move, which = body.get("arm", "A"), body["move"], body.get("which", "end")
+        T = json.load(open(os.path.join(ARM, "motions_tuned.json"))); M = T.get(f"{move}@{arm}") or T[move]
+        i = (1 + (1 if move in ("ATTACK_HIGH", "FEINT_HIGH") else 0)) if which == "start" else -1
+        q = M["keys"][i]
+        if M.get("arm", "A") != arm:   # entry is in arm A's coordinates: re-base the roll to this arm
+            c = json.load(open(os.path.join(ARM, "arms.json"))); q = list(q); q[4] = q[4] - c["A"]["roll_offset"] + c[arm]["roll_offset"]
+        return daemon("/goto", {"arm": arm, "q": q, "speed": 80}, timeout=60)
+    if path == "/api/calibrate_retreat": ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)
+    if path == "/api/calib_status":
+        stops = json.load(open(os.path.join(SIM, "contact_stops.json"))) if os.path.exists(os.path.join(SIM, "contact_stops.json")) else {}
+        intent = json.load(open(os.path.join(SIM, "collision_intent.json")))
+        pairs = [{"A": k.split("|")[0], "B": k.split("|")[1], "outcome": v["outcome"], "touch": v.get("touch")} for k, v in intent.items() if not k.startswith("_") and v["outcome"] != "miss"]
+        return {"stops": stops, "pairs": pairs}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)

@@ -63,6 +63,21 @@ class Arm:
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
         self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         return t, Q, rest
+    def trajectory(self, move):
+        T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; self._entry_arm = M.get("arm", "A")
+        return M, np.array(M["t"]), self.rebase(M["q"])
+    def play_segment(self, move, t0, t1, scale):
+        """Play the part of `move` between trajectory times t0..t1 at `scale` speed, stopping if abort is pressed.
+        Returns (aborted, fraction_of_segment_reached, pose_at_stop)."""
+        M, t, Q = self.trajectory(move); self.abort = False
+        qi = lambda tt: np.array([np.interp(tt, t, Q[:, k]) for k in range(6)])
+        T = (t1 - t0) / scale; t_start = time.perf_counter(); frac = 0.0
+        while True:
+            now = time.perf_counter() - t_start; frac = min(now / T, 1.0)
+            if self.abort: q = np.array(self.pose()); self.send(q); return True, frac, q
+            if now >= T: self.send(qi(t1)); return False, 1.0, qi(t1)
+            self.send(qi(t0 + frac * (t1 - t0))); time.sleep(1 / RATE)
+
     def play(self, move, scale, repeat, barrier=None):
         t, Q, rest = self.prepare(move)
         # ADDITIVE: if this motion carries a gantry channel (the emote scenes do), park the carriage where the
@@ -216,6 +231,7 @@ class GantryStream:
 
 gantry = Gantry()
 gstream = GantryStream(gantry)
+state = {"calibrating": False}
 arms = {n: Arm(n) for n in ARMS}
 arms = {n: a for n, a in arms.items() if a.robot}
 
@@ -256,6 +272,37 @@ class H(BaseHTTPRequestHandler):
         if a is None: return self._json({"error": f"arm {name} not connected"}, 404)
         if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm (or both)
             for x in (arms.values() if name == "both" else [a]): x.abort = True
+            return self._json({"ok": True})
+        if self.path == "/calibrate":   # collision calibration: defender parks, attacker creeps through its strike until STOP
+            att = arms.get(body["attacker"]); dfn = arms.get("B" if body["attacker"] == "A" else "A")
+            if not (att and dfn): return self._json({"error": "both arms must be connected"}, 404)
+            if not att.busy.acquire(blocking=False): return self._json({"error": "attacker busy"}, 409)
+            if not dfn.busy.acquire(blocking=False): att.busy.release(); return self._json({"error": "defender busy"}, 409)
+            try:
+                attack, dmove, speed = body["attack"], body["defender_move"], float(body.get("speed", 0.12))
+                Ma, ta, Qa = att.trajectory(attack); Md, td, Qd = dfn.trajectory(dmove)
+                kt = Ma["key_times"]; si = 1 + (1 if attack in ("ATTACK_HIGH", "FEINT_HIGH") else 0); t0, t1 = kt[si], kt[-1]   # strike segment: START key -> END key
+                dfn.ease_to(Qd[-1]); att.ease_to(Qa[0]); att.ease_to(Qa[np.searchsorted(ta, t0)])   # defender to its end pose, attacker to its strike START
+                att.last = "creeping through the strike: press STOP when the blades meet"; state["calibrating"] = True
+                aborted, frac, q = att.play_segment(attack, t0, t1, speed); state["calibrating"] = False
+                stop_frac = max(0.0, frac - float(body.get("backoff", 0.03))) if aborted else 1.0
+                qi = lambda tt: np.array([np.interp(tt, ta, Qa[:, k]) for k in range(6)]); stop_pose = qi(t0 + stop_frac * (t1 - t0))
+                if aborted: att.ease_to(stop_pose, max_speed=20.0)                                                    # back off to the saved point
+                rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stop_frac": round(stop_frac, 3),
+                       "stop_pose_real": [round(float(x), 1) for x in stop_pose], "speed": speed, "when": time.strftime("%Y-%m-%d %H:%M")}
+                path = os.path.join(os.path.dirname(HERE), "sim", "contact_stops.json"); S = json.load(open(path)) if os.path.exists(path) else {}
+                S[f"{att.name}:{attack}|{dfn.name}:{dmove}"] = rec; json.dump(S, open(path, "w"), indent=1)
+                att.last = f"calibrated {attack} vs {dmove}: stop at {stop_frac:.2f} of the strike" if aborted else f"{attack} vs {dmove}: full strike, no stop pressed"
+                self._json({"ok": True, "record": rec})
+            except Exception as e:
+                state["calibrating"] = False; att.last = f"error: {e}"; self._json({"error": str(e)}, 500)
+            finally: att.busy.release(); dfn.busy.release()
+            return
+        if self.path == "/calibrate_retreat":   # both arms slowly back to rest after a calibration
+            for x in arms.values():
+                if x.busy.acquire(blocking=False):
+                    try: x.ease_to(x.rest_pose(), max_speed=40.0); x.last = "at rest"
+                    finally: x.busy.release()
             return self._json({"ok": True})
         if self.path == "/turn":   # a full turn: (move apart if needed) -> charge in -> both salute -> both play their chains -> (apart)
             A, B = arms.get("A"), arms.get("B")
