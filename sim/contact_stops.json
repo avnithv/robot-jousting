@@ -1,0 +1,20 @@
+{
+ "A:ATTACK_HIGH|B:BLOCK_HIGH": {
+  "attacker": "A",
+  "attack": "ATTACK_HIGH",
+  "defender": "B",
+  "defender_move": "BLOCK_HIGH",
+  "stopped": true,
+  "stop_frac": 0.795,
+  "stop_pose_real": [
+   0.0,
+   -8.8,
+   -32.0,
+   66.6,
+   76.0,
+   5.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 14:41"
+ }
+}

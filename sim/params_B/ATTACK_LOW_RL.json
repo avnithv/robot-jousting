@@ -11,10 +11,29 @@
   "jaw_open": "how wide the sword cocks before the sweep (0..100): 42 = as the user posed it",
   "t_windup": "seconds: rest -> the posed windup on the right",
   "t_slash": "seconds: the half sweep (0.25 keeps roughly the full slash's pan speed: 40 deg in 0.4 s)",
-  "captured.start": "the windup pose in REAL arm degrees [pan, lift, elbow, wrist, roll, jaw], posed by hand on the arm; overrides start.*"
+  "captured.start": "the windup pose in REAL arm degrees [pan, lift, elbow, wrist, roll, jaw], posed by hand on the arm; overrides start.*",
+  "captured.end": "pose captured from arm B (real degrees). Delete the entry to go back to the computed pose.",
+  "t_pause": "seconds held at the strike-ready pose before the strike (a beat of stillness)",
+  "retract": "after the strike, back out this fraction of the way toward the strike-ready pose so the blade comes off the other arm before the next transition (0 = none)",
+  "t_retract": "seconds for the retract"
  },
  "captured": {
-  "start": [18.2, 42.9, 30.9, -66.8, -174.5, 42.0]
+  "start": [
+   18.2,
+   42.9,
+   30.9,
+   -66.8,
+   -174.5,
+   42.0
+  ],
+  "end": [
+   -5.6,
+   51.0,
+   2.5,
+   -58.5,
+   -174.8,
+   21.0
+  ]
  },
  "end": {
   "x": 0.27,
@@ -29,5 +48,8 @@
  "roll": -90,
  "jaw_open": 42,
  "t_windup": 0.85,
- "t_slash": 0.25
+ "t_slash": 0.25,
+ "t_pause": 0.15,
+ "retract": 0.2,
+ "t_retract": 0.3
 }

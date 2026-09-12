@@ -24,6 +24,12 @@
   "jaw_open": "how far the sword cocks up before the slam (0 shut .. 100 fully open)",
   "t_raise": "seconds: rest -> raised and reached forward",
   "t_cock": "seconds: roll and cock the sword up",
-  "t_slam": "seconds: the slam (shorter = harder)"
- }
+  "t_slam": "seconds: the slam (shorter = harder)",
+  "t_pause": "seconds held at the strike-ready pose before the strike (a beat of stillness)",
+  "retract": "after the strike, back out this fraction of the way toward the strike-ready pose so the blade comes off the other arm before the next transition (0 = none)",
+  "t_retract": "seconds for the retract"
+ },
+ "t_pause": 0.15,
+ "retract": 0.2,
+ "t_retract": 0.3
 }

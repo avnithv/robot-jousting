@@ -10,7 +10,7 @@ import arena, ik, tune
 from tune import JOINTS, OUT, catmull_rom, recipe
 BEAT, IMPACT, GUARD = 1.4, 1.0, 0.55
 TIP_MIN = -0.08             # blade tip floor (m). The real board sits below the sim base plane; the captured left guard reaches -0.07 without touching.
-REACH_MAX = 0.32            # hand reach allowed in transit (m); the pair collision matrix is the real check
+REACH_MAX = 0.40            # hand reach allowed in transit (m): the extended low slashes reach 0.38; contact safety comes from the calibrated stops
 BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}

@@ -3,7 +3,7 @@
  "end": {
   "x": 0.27,
   "z": 0.08,
-  "pan": 20
+  "pan": 1
  },
  "start": {
   "dx": -0.05,
@@ -13,7 +13,7 @@
  "roll": 90,
  "jaw_open": 55,
  "t_windup": 0.7,
- "t_slash": 0.4,
+ "t_slash": 0.25,
  "_help": {
   "end.x": "hand distance forward at the end of the slash (m, keep <= 0.27)",
   "end.z": "height of the low line (m above the base plane)",
@@ -24,6 +24,32 @@
   "roll": "wrist roll: 90 = jaw swings sideways (keep 90)",
   "jaw_open": "how wide the sword cocks before the sweep (0..100): smaller = comes from less wide",
   "t_windup": "seconds: rest -> cocked low on the start side",
-  "t_slash": "seconds: the sweep (base pan speed)"
- }
+  "t_slash": "seconds: the sweep (base pan speed)",
+  "captured.start": "windup pose (real degrees), extrapolated from arm B's posed ATTACK_LOW_RL (mirrored for LR); overrides start.*",
+  "captured.end": "end pose (real degrees), extrapolated from arm B's posed ATTACK_LOW_RL: sweep to the centre with the arm extended so the blade reaches",
+  "t_pause": "seconds held at the strike-ready pose before the strike (a beat of stillness)",
+  "retract": "after the strike, back out this fraction of the way toward the strike-ready pose so the blade comes off the other arm before the next transition (0 = none)",
+  "t_retract": "seconds for the retract"
+ },
+ "captured": {
+  "start": [
+   -18.2,
+   42.9,
+   30.9,
+   -66.8,
+   161.6,
+   55.0
+  ],
+  "end": [
+   5.6,
+   51.0,
+   2.5,
+   -58.5,
+   161.9,
+   5.0
+  ]
+ },
+ "t_pause": 0.15,
+ "retract": 0.2,
+ "t_retract": 0.3
 }

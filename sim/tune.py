@@ -91,7 +91,11 @@ def attack_high(P):
     k2 = k3.copy(); k2[1] -= P["cock"]["lift_back"]; k2[3] -= P["cock"]["wrist_up"]; k2[5] = P["jaw_open"]
     if cap(P, "start") is not None: k2 = cap(P, "start", jaw=P["jaw_open"])
     k1 = k2.copy(); k1[5] = 5
-    return [(REST, 0), (k1, P["t_raise"]), (k2, P["t_cock"]), (k3, P["t_slam"])]
+    rec = [(REST, 0), (k1, P["t_raise"]), (k2, P["t_cock"])]
+    if P.get("t_pause", 0) > 0: rec.append((k2.copy(), P["t_pause"]))          # a beat of stillness before the strike
+    rec.append((k3, P["t_slam"]))
+    if P.get("retract", 0) > 0: rec.append((k3 + P["retract"] * (k2 - k3), P.get("t_retract", 0.3)))   # back the blade out of the other arm
+    return rec
 
 def attack_low(P, mirror=False):
     e, s = P["end"], P["start"]; sgn = -1 if mirror else 1
@@ -111,8 +115,12 @@ def attack_low(P, mirror=False):
                         if best is None or cost < best[0]: best = (cost, q)
             k[:] = best[1]
     if cap(P, "start") is not None: k1 = cap(P, "start", jaw=P["jaw_open"])
-    if cap(P, "end") is not None: k2 = cap(P, "end", jaw=JAW_SHUT)
-    return [(REST, 0), (k1, P["t_windup"] + (0.15 if mirror else 0)), (k2, P["t_slash"])]
+    if cap(P, "end") is not None: k2 = cap(P, "end")
+    rec = [(REST, 0), (k1, P["t_windup"] + (0.15 if mirror else 0))]
+    if P.get("t_pause", 0) > 0: rec.append((k1.copy(), P["t_pause"]))
+    rec.append((k2, P["t_slash"]))
+    if P.get("retract", 0) > 0: rec.append((k2 + P["retract"] * (k1 - k2), P.get("t_retract", 0.3)))
+    return rec
 
 def block(P):
     if "joints" in P:   # explicit joint angles (sideways bar)
@@ -127,10 +135,12 @@ def feint(P):
     to its end pose, then a smooth retreat (two eased keys) back to the cocked/windup pose pulled back by `pull_back` offsets."""
     like = P["like"]; base = PARAMS[like]; swing = float(P.get("swing", 0.5)); t_back = float(P.get("t_back", 0.5))
     if like.startswith("ATTACK_HIGH"):
-        rec = attack_high(base); cocked, end = rec[2][0], rec[3][0]; t_strike = rec[3][1]; head = rec[:3]
+        rec = attack_high(base); n = -2 if base.get("retract", 0) > 0 else -1
+        cocked, end = rec[2][0], rec[n][0]; t_strike = rec[n][1]; head = rec[:3]     # end = the slam key (before any retract)
     else:
         mirror = "mirror_of" in base; src = PARAMS[base["mirror_of"]] if mirror else base
-        rec = attack_low(src, mirror=mirror); cocked, end = rec[1][0], rec[2][0]; t_strike = rec[2][1]; head = rec[:2]
+        rec = attack_low(src, mirror=mirror); n = -2 if src.get("retract", 0) > 0 else -1
+        cocked, end = rec[1][0], rec[n][0]; t_strike = rec[n][1]; head = rec[:2]      # end = the sweep key (before any retract)
     if cap(P, "start") is not None: cocked = cap(P, "start", jaw=cocked[5]); head[-1] = (cocked, head[-1][1])
     mid = cocked + swing * (end - cocked)                                   # stop part-way through the strike
     back = cocked.copy(); back[1] += P["pull_back"].get("lift", 0); back[3] += P["pull_back"].get("wrist", 0); back[5] = P["jaw_after"]

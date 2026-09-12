@@ -300,9 +300,10 @@ class H(BaseHTTPRequestHandler):
             return
         if self.path == "/calibrate_retreat":   # both arms slowly back to rest after a calibration
             for x in arms.values():
-                if x.busy.acquire(blocking=False):
+                if x.busy.acquire(timeout=30):          # wait for a calibration back-off to finish rather than skipping the arm
                     try: x.ease_to(x.rest_pose(), max_speed=40.0); x.last = "at rest"
                     finally: x.busy.release()
+                else: x.last = "retreat skipped: arm busy"
             return self._json({"ok": True})
         if self.path == "/turn":   # a full turn: (move apart if needed) -> charge in -> both salute -> both play their chains -> (apart)
             A, B = arms.get("A"), arms.get("B")
