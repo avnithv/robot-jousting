@@ -6,12 +6,16 @@
   "wrist": -10
  },
  "jaw_after": 20,
- "t_back": 0.3,
+ "t_back": 0.4,
+ "captured": {
+  "end": [-5.8, 3.3, -15.4, -75.9, 75.9, 8.2]
+ },
  "_help": {
   "like": "uses this attack's raise and cock, then snaps back",
   "pull_back.lift": "shoulder offset from the raised pose for the snap back (deg; negative = pulls back/up)",
   "pull_back.wrist": "wrist offset for the snap back (deg)",
   "jaw_after": "jaw after the snap (0..100)",
-  "t_back": "seconds: the snap back"
+  "t_back": "seconds: the snap back",
+  "captured.end": "end pose captured from the arm (real degrees): dips forward/down with the wrist snapped up. Overrides pull_back. Delete the entry to go back to the computed pose."
  }
 }

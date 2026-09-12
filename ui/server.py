@@ -40,20 +40,41 @@ def moves():
                   "video": f"/video/tuned_{n}.mp4?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None}
     return out
 
-def start_job(kind, label, cmd, cwd, lock=None, env=None, jid=None):
+def start_job(kind, label, cmd, cwd, lock=None, env=None, jid=None, stream=False):
     jid = jid or uuid.uuid4().hex[:8]; log = os.path.join(JOBS, f"{jid}.log")
-    job = {"id": jid, "kind": kind, "label": label, "status": "queued", "started": time.time(), "log": log, "result": None}
+    job = {"id": jid, "kind": kind, "label": label, "status": "queued", "started": time.time(), "log": log, "result": None, "progress": []}
     with jobs_lock: jobs[jid] = job
     def run():
         with (lock or threading.Lock()):
             job["status"] = "running"
             with open(log, "w") as lf:
-                lf.write("$ " + " ".join(cmd if isinstance(cmd, list) else [cmd]) + "\n"); lf.flush()
-                r = subprocess.run(cmd, cwd=cwd, stdout=lf, stderr=subprocess.STDOUT, env=env, shell=isinstance(cmd, str), stdin=subprocess.DEVNULL)
-            job["status"] = "done" if r.returncode == 0 else "failed"; job["ended"] = time.time()
+                lf.write("$ " + " ".join(cmd if isinstance(cmd, list) else [cmd])[:3000] + "\n\n"); lf.flush()
+                p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, shell=isinstance(cmd, str), stdin=subprocess.DEVNULL, text=True)
+                job["proc"] = p
+                for line in p.stdout:
+                    if stream: progress_from_stream(job, line, lf)
+                    else: lf.write(line); lf.flush()
+                p.wait(); rc = p.returncode
+            job["status"] = "stopped" if job.get("stopped") else ("done" if rc == 0 else "failed"); job["ended"] = time.time(); job.pop("proc", None)
             res = log.replace(".log", ".result.md")
             if os.path.exists(res): job["result"] = open(res).read()
     threading.Thread(target=run, daemon=True).start(); return job
+
+def progress_from_stream(job, line, lf):
+    """Parse one line of `claude -p --output-format stream-json` into a short progress entry."""
+    try: ev = json.loads(line)
+    except Exception: lf.write(line); lf.flush(); return
+    t = ev.get("type"); note = None
+    if t == "assistant":
+        for c in ev.get("message", {}).get("content", []):
+            if c.get("type") == "text" and c.get("text", "").strip(): note = "💬 " + c["text"].strip().replace("\n", " ")[:220]
+            elif c.get("type") == "tool_use":
+                i = c.get("input", {}); arg = i.get("command") or i.get("file_path") or i.get("pattern") or i.get("description") or ""
+                note = f"🔧 {c.get('name')}: {str(arg)[:160]}"
+            if note: job["progress"].append(note); lf.write(note + "\n")
+    elif t == "result":
+        note = "✅ finished: " + str(ev.get("result", ""))[:300].replace("\n", " "); job["progress"].append(note); lf.write(note + "\n")
+    lf.flush()
 
 def agent_prompt(move, feedback, jid):
     return f"""You are tuning moves of a robot-arm sword game in simulation. Work in this directory (~/game/sim).
@@ -84,7 +105,7 @@ def api(handler, path, body):
             tail = ""
             try: tail = open(j["log"]).read()[-4000:]
             except Exception: pass
-            outl.append({k: v for k, v in j.items() if k != "log"} | {"tail": tail})
+            outl.append({k: v for k, v in j.items() if k not in ("log", "proc")} | {"tail": tail})
         return outl
     if path == "/api/params":     # save params then regenerate
         move, params = body["move"], body["params"]
@@ -107,6 +128,10 @@ def api(handler, path, body):
         ours = [m.strip() for m in body["ours"].replace(",", " ").split() if m.strip()]; theirs = [m.strip() for m in body.get("theirs", "").replace(",", " ").split() if m.strip()]
         cmd = [PY, "chain.py", "pair", *ours, "--", *theirs] if theirs else [PY, "chain.py", "CHAIN_A", *ours]
         return start_job("chain", f"chain {' '.join(ours)}" + (f"  vs  {' '.join(theirs)}" if theirs else ""), cmd, SIM, lock=gen_lock)
+    if path == "/api/stop":
+        j = jobs.get(body["id"]); p = j and j.get("proc")
+        if p: j["stopped"] = True; p.terminate(); return {"ok": True}
+        return {"error": "not running"}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {}, timeout=30)
     if path == "/api/capture":
@@ -129,8 +154,8 @@ def api(handler, path, body):
                          f"feedback refers to (usually the desired END pose of the move, or the START if the text says so). The cleanest way to use it is to set "
                          f"\"captured\": {{\"end\": {pose}}} (real degrees) in the move's params file, which overrides the computed pose; then regenerate and check the filmstrip.")
         prompt = agent_prompt(body["move"], text, jid)
-        cmd = [CLAUDE, "-p", prompt, "--allowedTools", "Read,Edit,Write,Bash", "--max-turns", "60"]
-        return start_job("agent", f"agent: {body['move']}: {body['text'][:60]}", cmd, SIM, jid=jid)
+        cmd = [CLAUDE, "-p", prompt, "--allowedTools", "Read,Edit,Write,Bash", "--max-turns", "60", "--output-format", "stream-json", "--verbose"]
+        return start_job("agent", f"agent: {body['move']}: {body['text'][:60]}", cmd, SIM, jid=jid, stream=True)
     return {"error": "unknown"}
 
 class H(BaseHTTPRequestHandler):

@@ -14,6 +14,17 @@
   "pitch": "sword angle (deg; negative = pointing down): -45 = hanging guard",
   "tol": "allowed deviation from pitch in the pose search (deg)",
   "t_move": "seconds: rest -> guard",
-  "t_hold": "seconds: hold"
+  "t_hold": "seconds: hold",
+  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
+ },
+ "captured": {
+  "end": [
+   -6.4,
+   -42.1,
+   45.2,
+   2.7,
+   -101.0,
+   73.3
+  ]
  }
 }

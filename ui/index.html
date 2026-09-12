@@ -7,6 +7,7 @@
  video{width:100%;max-width:760px;background:#000;border-radius:6px} textarea{width:100%;box-sizing:border-box;font:13px system-ui}
  button{padding:7px 14px;cursor:pointer;border-radius:6px;border:1px solid #bbb;background:#fff} button.primary{background:#2b5bd7;color:#fff;border-color:#2b5bd7}
  .bar{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap} .job{border:1px solid #ddd;border-radius:6px;padding:6px;margin:6px 0;background:#fff;font-size:13px}
+ .prog{font-size:11px;color:#444;margin:2px 0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .st-stopped{color:#888}
  .job pre{max-height:160px;overflow:auto;font-size:11px;background:#f4f4f4;padding:4px;margin:4px 0;white-space:pre-wrap} .st-running,.st-queued{color:#b26a00} .st-done{color:#1a7f37} .st-failed{color:#c00}
  h2{margin:0 0 4px} small{color:#666} table{border-collapse:collapse;width:100%;max-width:760px} td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top} td.k{font-family:ui-monospace,monospace;white-space:nowrap;width:1%} td.h{color:#666;font-size:12px}
  input[type=number]{width:70px} .arm{font-size:12px;color:#666}
@@ -57,13 +58,15 @@ async function buildChain(){await api('/api/chain',{ours:document.getElementById
 async function runArm(){await api('/api/run',{move:cur,scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
 async function poll(){const js=await api('/api/jobs');const l=document.getElementById('joblist');l.innerHTML='';let anyRun=false;
- for(const j of js.slice(0,30)){if(j.status==='running'||j.status==='queued')anyRun=true;const d=document.createElement('div');d.className='job';
-  const dur=j.ended?((j.ended-j.started)|0)+'s':'';d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${j.label} <small>${dur}</small>`+
-   (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
+ for(const j of js.slice(0,30)){const run=(j.status==='running'||j.status==='queued');if(run)anyRun=true;const d=document.createElement('div');d.className='job';
+  const el=((j.ended||Date.now()/1000)-j.started)|0;const prog=(j.progress||[]).slice(-3).map(p=>`<div class="prog">${esc(p)}</div>`).join('');
+  d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${esc(j.label)} <small>${el}s</small>`+(run&&j.kind==='agent'?` <a href="#" onclick="stopJob('${j.id}');return false">stop</a>`:'')+prog+
+   (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>full log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
  const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
  const a=await api('/api/arm');document.getElementById('armst').textContent=a.offline?'arm: idle (connects on first run)':(a.busy?'arm: moving':(a.torque?'arm: holding':'arm: limp, move it by hand'));
  document.getElementById('live').textContent=a.pose?'live '+JSON.stringify(a.pose):'';
  setTimeout(poll,anyRun?1500:4000)}
+async function stopJob(id){await api('/api/stop',{id});poll()}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 load();poll();
 </script></body></html>
