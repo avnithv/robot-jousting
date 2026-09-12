@@ -877,7 +877,7 @@ class H(SimpleHTTPRequestHandler):
     def __init__(self, *a, **k): super().__init__(*a, directory=HERE, **k)
     def log_message(self, *a): pass
     def end_headers(self):
-        self.send_header("Cache-Control", "no-store"); super().end_headers()
+        self.send_header("Cache-Control", "no-store"); self.send_header("Accept-Ranges", "bytes"); super().end_headers()
     def _json(self, obj, status=200):
         b = json.dumps(obj, default=str).encode(); self.send_response(status); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
     def _send(self, body, ctype, status=200):
@@ -901,7 +901,32 @@ class H(SimpleHTTPRequestHandler):
                 if self._mp("GET", u, {}): return
             except (BrokenPipeError, ConnectionResetError): return   # a phone walked away mid long-poll
         if u.path.startswith("/api/"): return self._json(api(u.path, {}, parse_qs(u.query)))
+        if self.headers.get("Range") and self._range(u): return   # media: the soundtrack is 82 MB and <audio> streams it in ranges
         return super().do_GET()
+    def _range(self, u):
+        """HTTP byte ranges (206) for static files. Without this a browser asking for `Range: bytes=0-` gets the whole
+        file as a 200, cannot seek, and on a long track may give up part-way and loop early. Returns False when the
+        request is not for a plain file, so the normal handler answers."""
+        path = self.translate_path(u.path)
+        if not os.path.isfile(path): return False
+        m = re.match(r"bytes=(\d*)-(\d*)$", self.headers.get("Range", "").strip())
+        if not m: return False
+        size = os.path.getsize(path); start = int(m.group(1)) if m.group(1) else max(0, size - int(m.group(2) or 0)); end = int(m.group(2)) if (m.group(1) and m.group(2)) else size - 1
+        end = min(end, size - 1)
+        if start > end or start >= size:
+            self.send_response(416); self.send_header("Content-Range", f"bytes */{size}"); self.end_headers(); return True
+        ctype = self.guess_type(path)
+        self.send_response(206); self.send_header("Content-Type", ctype); self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Range", f"bytes {start}-{end}/{size}"); self.send_header("Content-Length", str(end - start + 1)); self.end_headers()
+        try:
+            with open(path, "rb") as f:
+                f.seek(start); left = end - start + 1
+                while left > 0:
+                    chunk = f.read(min(1 << 20, left))
+                    if not chunk: break
+                    self.wfile.write(chunk); left -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError): pass
+        return True
     # Dev helper for tools/render_audio: POST /api/upload?name=<file> writes the raw request body under
     # video/audio/ (repo-relative, outside the served folder). Name is sanitised to [A-Za-z0-9._-] with at
     # most one subfolder ("stings/ko.webm"), the resolved path must stay inside video/audio/, 200 MB cap.
