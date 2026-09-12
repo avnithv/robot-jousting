@@ -4,7 +4,8 @@
   "model": "SO-100",
   "roll_offset": 76.0,
   "rest": null,
-  "lift_limit": -89.0
+  "lift_limit": -89.0,
+  "jaw_shut": 0.0
  },
  "B": {
   "model": "SO-101",
@@ -17,7 +18,8 @@
    -88.9,
    5.6
   ],
-  "lift_limit": -93.8
+  "lift_limit": -93.8,
+  "jaw_shut": 5.0
  },
  "gantry": {
   "port": "/dev/cu.usbserial-AL00JZ0H",

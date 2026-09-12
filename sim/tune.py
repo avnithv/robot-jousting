@@ -43,12 +43,13 @@ BEAT = 1.4            # seconds per beat (impact/guard pinned inside it by the c
 _r = PARAMS["REST"]["joints"]; REST = np.array([_r["pan"], _r["lift"], _r["elbow"], _r["wrist"], _r["roll"], _r["jaw"]], float); REST[4] -= ROLL_OFFSET   # params/REST.json is in real degrees (arm A)
 POSE_CACHE = "pose_cache.json"
 ARMS_CFG = json.load(open("../arm/arms.json")); CURRENT_ARM = "A"   # which arm is being generated: every parameter, pose and offset is per arm
+JAW_SHUT = 0.0   # per-arm "sword fully down" jaw value (0..100); arm B rests at ~5.6 after its finger recalibration
 def roll_offset(arm): return float(ARMS_CFG.get(arm, {}).get("roll_offset") or ROLL_OFFSET)
 def use_arm(arm):
     """Switch the generator to an arm: its parameter folder, its rest pose, its roll offset."""
-    global CURRENT_ARM, PARAMS, REST, ROLL_OFFSET
+    global CURRENT_ARM, PARAMS, REST, ROLL_OFFSET, JAW_SHUT
     global LIFT_MIN
-    CURRENT_ARM = arm; PARAMS = move_params.load(arm); ROLL_OFFSET = roll_offset(arm); LIFT_MIN = float(ARMS_CFG.get(arm, {}).get("lift_limit", -89.0))
+    CURRENT_ARM = arm; PARAMS = move_params.load(arm); ROLL_OFFSET = roll_offset(arm); JAW_SHUT = float(ARMS_CFG.get(arm, {}).get("jaw_shut", 0.0)); LIFT_MIN = float(ARMS_CFG.get(arm, {}).get("lift_limit", -89.0))
     r = PARAMS["REST"]["joints"]; REST = np.array([r["pan"], r["lift"], r["elbow"], r["wrist"], r["roll"], r["jaw"]], float); REST[4] -= ROLL_OFFSET
 
 def ik_pose(x, z, pitch, pan=0, roll=0, jaw=0):
@@ -85,7 +86,8 @@ def cap(P, which, jaw=None):
 # ---------------- recipes: list of (key pose, seconds to reach it) ----------------
 def attack_high(P):
     e = P["end"]; k3 = np.array([e["pan"], e["lift"], e["elbow"], e["wrist"], 0, 0], float)
-    if cap(P, "end") is not None: k3 = cap(P, "end", jaw=0)
+    k3[5] = JAW_SHUT
+    if cap(P, "end") is not None: k3 = cap(P, "end", jaw=JAW_SHUT)
     k2 = k3.copy(); k2[1] -= P["cock"]["lift_back"]; k2[3] -= P["cock"]["wrist_up"]; k2[5] = P["jaw_open"]
     if cap(P, "start") is not None: k2 = cap(P, "start", jaw=P["jaw_open"])
     k1 = k2.copy(); k1[5] = 5
@@ -94,7 +96,7 @@ def attack_high(P):
 def attack_low(P, mirror=False):
     e, s = P["end"], P["start"]; sgn = -1 if mirror else 1
     k1 = ik_pose(e["x"] + s["dx"], e["z"] + s["dz"], 0, pan=s["pan"], roll=P["roll"], jaw=P["jaw_open"])
-    k2 = ik_pose(e["x"], e["z"], 0, pan=e["pan"], roll=P["roll"], jaw=0)
+    k2 = ik_pose(e["x"], e["z"], 0, pan=e["pan"], roll=P["roll"], jaw=JAW_SHUT)
     if mirror:   # mirror the LEFT solution's arm shape (pan, roll negated), then nudge lift/elbow/wrist locally so the blade
                  # (which hangs off one side of the jaw) sits at the same hand height/pitch as on the left side
         for k, (x, z) in ((k1, (e["x"] + s["dx"], e["z"] + s["dz"])), (k2, (e["x"], e["z"]))):
@@ -109,7 +111,7 @@ def attack_low(P, mirror=False):
                         if best is None or cost < best[0]: best = (cost, q)
             k[:] = best[1]
     if cap(P, "start") is not None: k1 = cap(P, "start", jaw=P["jaw_open"])
-    if cap(P, "end") is not None: k2 = cap(P, "end", jaw=0)
+    if cap(P, "end") is not None: k2 = cap(P, "end", jaw=JAW_SHUT)
     return [(REST, 0), (k1, P["t_windup"] + (0.15 if mirror else 0)), (k2, P["t_slash"])]
 
 def block(P):
