@@ -21,6 +21,7 @@ small web UI ("move studio") to tweak parameters, preview, and run moves.
 | `arm/motions_real.json` | Hand-guided recordings (rough input to tuning) and the REST pose. |
 | `arm/motions_tuned.json` | Generated trajectories in real-arm degrees (what the arm plays). |
 | `ui/` | Move studio web UI. `./studio.sh` -> http://localhost:8765 |
+| [`gantry/`](gantry/README.md) | X/Y CNC xPRO V3 / GRBL 0.9j controller: switch referencing, position/feed console, Python API, and offline tests. |
 | `docs/` | Design notes and brainstorms (see below). |
 | `sim/legacy/` | Earlier experiments (probes, calibration mapping, first move sets). Not used by the current pipeline. |
 
