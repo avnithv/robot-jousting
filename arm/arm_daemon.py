@@ -282,11 +282,14 @@ class H(BaseHTTPRequestHandler):
                 attack, dmove, speed = body["attack"], body["defender_move"], float(body.get("speed", 0.12))
                 Ma, ta, Qa = att.trajectory(attack); Md, td, Qd = dfn.trajectory(dmove)
                 kt = Ma["key_times"]; si = 1 + (1 if attack in ("ATTACK_HIGH", "FEINT_HIGH") else 0); t0, t1 = kt[si], kt[-1]   # strike segment: START key -> END key
+                att.abort = dfn.abort = False
                 dfn.ease_to(Qd[-1]); att.ease_to(Qa[0]); att.ease_to(Qa[np.searchsorted(ta, t0)])   # defender to its end pose, attacker to its strike START
+                if att.abort or dfn.abort: raise RuntimeError("STOP pressed before the creep started: nothing saved (press Retreat, then start again)")
                 att.last = "creeping through the strike: press STOP when the blades meet"; state["calibrating"] = True
                 aborted, frac, q = att.play_segment(attack, t0, t1, speed); state["calibrating"] = False
                 stop_frac = max(0.0, frac - float(body.get("backoff", 0.03))) if aborted else 1.0
                 qi = lambda tt: np.array([np.interp(tt, ta, Qa[:, k]) for k in range(6)]); stop_pose = qi(t0 + stop_frac * (t1 - t0))
+                att.abort = False
                 if aborted: att.ease_to(stop_pose, max_speed=20.0)                                                    # back off to the saved point
                 rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": float(body.get("backoff", 0.03)),
                        "stop_pose_real": [round(float(x), 1) for x in stop_pose], "speed": speed, "when": time.strftime("%Y-%m-%d %H:%M")}
@@ -311,7 +314,9 @@ class H(BaseHTTPRequestHandler):
                     return {"Q0": Q[0], "t0": t0, "t1": t1, "qi": qi}
                 P = {x.name: prep(x, mv) for x, mv in ((A, mA), (B, mB))}
                 def to_start(x): x.ease_to(P[x.name]["Q0"]); x.ease_to(P[x.name]["qi"](P[x.name]["t0"]))
+                A.abort = B.abort = False
                 th = [threading.Thread(target=to_start, args=(x,)) for x in (A, B)]; [t.start() for t in th]; [t.join() for t in th]
+                if A.abort or B.abort: raise RuntimeError("STOP pressed before the creep started: nothing saved (press Retreat, then start again)")
                 A.last = B.last = "both creeping through their strikes: press STOP when the blades meet"; state["calibrating"] = True
                 A.abort = B.abort = False; T = max(P[n]["t1"] - P[n]["t0"] for n in P) / speed; ts = time.perf_counter(); frac = 0.0; aborted = False
                 while True:
@@ -323,6 +328,7 @@ class H(BaseHTTPRequestHandler):
                 state["calibrating"] = False
                 stop_frac = max(0.0, frac - backoff) if aborted else 1.0
                 poses = {n: P[n]["qi"](P[n]["t0"] + stop_frac * (P[n]["t1"] - P[n]["t0"])) for n in P}
+                A.abort = B.abort = False
                 if aborted:
                     th = [threading.Thread(target=x.ease_to, args=(poses[x.name],), kwargs={"max_speed": 20.0}) for x in (A, B)]; [t.start() for t in th]; [t.join() for t in th]
                 rec = {"mode": "clash", "attacker": "A", "attack": mA, "defender": "B", "defender_move": mB, "stopped": aborted, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": backoff,
@@ -338,7 +344,7 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/calibrate_retreat":   # both arms slowly back to rest after a calibration
             for x in arms.values():
                 if x.busy.acquire(timeout=30):          # wait for a calibration back-off to finish rather than skipping the arm
-                    try: x.ease_to(x.rest_pose(), max_speed=40.0); x.last = "at rest"
+                    try: x.abort = False; x.ease_to(x.rest_pose(), max_speed=40.0); x.last = "at rest"
                     finally: x.busy.release()
                 else: x.last = "retreat skipped: arm busy"
             return self._json({"ok": True})
@@ -357,7 +363,7 @@ class H(BaseHTTPRequestHandler):
                         except Exception as e: arm.last = f"error: {e}"; errs[arm.name] = str(e)
                     ta = threading.Thread(target=run, args=(A, mA)); tb = threading.Thread(target=run, args=(B, mB)); ta.start(); tb.start(); ta.join(); tb.join()
                     if errs: raise RuntimeError(str(errs))
-                for x in (A, B): x.ease_to(x.rest_pose())                       # arms at rest for the ride
+                for x in (A, B): x.abort = False; x.ease_to(x.rest_pose())       # arms at rest for the ride
                 with gantry.lock:
                     st = gantry.status(); apart = gantry.cfg["apart"]
                     if abs(st.get("x", 0) - apart["X"]) > 2 or abs(st.get("y", 0) - apart["Y"]) > 2:
@@ -398,6 +404,7 @@ class H(BaseHTTPRequestHandler):
             finally: A.busy.release(); B.busy.release()
             return
         if not a.busy.acquire(blocking=False): return self._json({"error": "busy"}, 409)
+        a.abort = False   # a stale STOP/ABORT must not cancel the next commanded motion
         try:
             if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)))
             elif self.path == "/rest": a.ease_to(a.rest_pose()); a.last = "at rest"
