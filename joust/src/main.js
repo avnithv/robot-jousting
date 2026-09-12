@@ -80,6 +80,18 @@ async function main() {
     onPref: (name, on) => applyPref(name, on),
   });
   document.getElementById('hostbtn').onclick = () => panel.toggle();
+  // STOP GAME: the same immediate abort as the host drawer's, plus the fight is ended and the screen returns to the
+  // title. One press, no confirm -- it is the button for metal about to meet metal. The gantry loses its reference on
+  // the abort, so Prepare has to run before the next fight.
+  document.getElementById('stopbtn').onclick = async () => {
+    const b = document.getElementById('stopbtn'); b.textContent = '■ STOPPING'; b.disabled = true;
+    const bridge = session.bridge;
+    try { await (bridge?.abort ? bridge.abort() : fetch('/api/abort', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })); }
+    catch (e) { console.warn('stop game: abort', e); }
+    try { if (session.match && !session.match.over) session.match.finishNow('quit'); else session.onTitle?.(); }
+    catch (e) { console.warn('stop game: end fight', e); }
+    setTimeout(() => { b.textContent = '■ STOP GAME'; b.disabled = false; }, 1500);
+  };
   control.on(c => { safe(() => battle.setPaused(c.paused)); });
   // Back to title with no fight on the stage (the versus splash, a result screen, the lobby): there is no
   // loop to interrupt, so close the room, drop the snapshot and reload into a clean title.
