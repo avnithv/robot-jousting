@@ -6,7 +6,7 @@
   "elbow": 44.2,
   "wrist": 1.2,
   "roll": -88.9,
-  "jaw": 5.6
+  "jaw": 16.3
  },
  "_help": {
   "joints.pan": "base rotation (deg)",

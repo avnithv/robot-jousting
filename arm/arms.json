@@ -16,10 +16,10 @@
    44.2,
    1.2,
    -88.9,
-   5.6
+   16.3
   ],
   "lift_limit": -93.8,
-  "jaw_shut": 5.0
+  "jaw_shut": 16.3
  },
  "gantry": {
   "port": "/dev/cu.usbserial-AL00JZ0H",
