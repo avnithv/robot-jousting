@@ -266,6 +266,20 @@ def api(handler, path, body):
         return {"stops": stops, "pairs": pairs}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
+    # ---- keyframe motions (Keyframes tab): sim/keyframes/<name>.json -> KF_<name> / KF_<name>@B via sim/keyframes.py ----
+    if path == "/api/kf_list":
+        d = os.path.join(SIM, "keyframes"); return {"names": sorted(f[:-5] for f in os.listdir(d) if f.endswith(".json"))} if os.path.isdir(d) else {"names": []}
+    if path == "/api/kf_load":
+        f = os.path.join(SIM, "keyframes", body["name"] + ".json"); return json.load(open(f)) if os.path.exists(f) else {"A": [], "B": []}
+    if path == "/api/kf_save":
+        name = "".join(c for c in body["name"] if c.isalnum() or c in "_-")
+        if not name: return {"error": "give the keyframe motion a name"}
+        os.makedirs(os.path.join(SIM, "keyframes"), exist_ok=True)
+        json.dump({"A": body.get("A", []), "B": body.get("B", []), "_doc": "keyframes in each arm's REAL degrees; built into KF_<name> / KF_<name>@B by sim/keyframes.py"},
+                  open(os.path.join(SIM, "keyframes", name + ".json"), "w"), indent=1)
+        r = subprocess.run([PY, "keyframes.py", name], cwd=SIM, capture_output=True, text=True)
+        return {"ok": r.returncode == 0, "name": name, "out": r.stdout.strip(), "err": r.stderr[-400:]}
+    if path == "/api/kf_goto": ensure_daemon(); return daemon("/goto", {"arm": body["arm"], "q": body["q"], "speed": body.get("speed", 60)}, timeout=60)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)
     if path == "/api/capture":
         ensure_daemon(); arm = body.get("arm", "A"); st = daemon_status().get("arms", {}).get(arm, {}); pose = st.get("pose")
