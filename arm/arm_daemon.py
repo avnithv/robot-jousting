@@ -17,7 +17,7 @@ CFG = os.path.join(HERE, "arms.json"); TUNED = os.path.join(HERE, "motions_tuned
 
 class Arm:
     def __init__(self, name):
-        self.name = name; self.io = threading.Lock(); self.busy = threading.Lock(); self.last = ""; self.torque = True
+        self.name = name; self.io = threading.Lock(); self.busy = threading.Lock(); self.last = ""; self.torque = True; self.abort = False
         self.robot = None
         for attempt in range(3):
             try: self.robot = connect(arm=name, hold_on_disconnect=True); break
@@ -36,6 +36,7 @@ class Arm:
         if not self.torque: self.set_torque(True)
         cur = np.array(self.pose()); tgt = np.array(target, float); T = max(float(np.max(np.abs(tgt[:5] - cur[:5])) / max_speed), min_t); n = max(int(T * RATE), 1)
         for i in range(1, n + 1):
+            if self.abort: return
             a = 0.5 - 0.5 * np.cos(np.pi * i / n); self.send(cur + a * (tgt - cur)); time.sleep(1 / RATE)
     def rest_pose(self):
         r = self.cfg().get("rest")
@@ -49,15 +50,19 @@ class Arm:
         return Q
     def play(self, move, scale, repeat):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
+        self.abort = False
         self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         for i in range(repeat):
+            if self.abort: break
             if i: self.ease_to(Q[0]); time.sleep(0.1)
             T = t[-1] / scale; t0 = time.perf_counter()
-            while True:
+            while not self.abort:
                 now = time.perf_counter() - t0
                 if now > T: self.send(Q[-1]); break
                 self.send(np.array([np.interp(now * scale, t, Q[:, k]) for k in range(6)])); time.sleep(1 / RATE)
             time.sleep(HOLD_END)
+        if self.abort:
+            self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
         self.ease_to(rest, max_speed=RETURN_SPEED)
         self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg"
 
@@ -78,6 +83,8 @@ class H(BaseHTTPRequestHandler):
         n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}"); name = body.get("arm", "A")
         a = arms.get(name)
         if a is None: return self._json({"error": f"arm {name} not connected"}, 404)
+        if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm
+            a.abort = True; return self._json({"ok": True})
         if not a.busy.acquire(blocking=False): return self._json({"error": "busy"}, 409)
         try:
             if self.path == "/play": a.play(body["move"], float(body.get("scale", 1.0)), int(body.get("repeat", 1)))

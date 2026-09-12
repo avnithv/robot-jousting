@@ -134,6 +134,7 @@ def api(handler, path, body):
         j = jobs.get(body["id"]); p = j and j.get("proc")
         if p: j["stopped"] = True; p.terminate(); return {"ok": True}
         return {"error": "not running"}
+    if path == "/api/abort": return daemon("/abort", {"arm": body.get("arm", "A")}, timeout=5)
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)
