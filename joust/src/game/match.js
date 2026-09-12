@@ -548,10 +548,10 @@ export class Match {
         const who = limp.map(l => `arm ${l.arm}`).join(' and ');
         this.music.setMood('town'); this.energy(0.2);
         stage.stamp('HOLD', 'small');
-        await this.g(this.dialogue.say(`${who.toUpperCase()} HIT SOMETHING AND WENT LIMP (load ${limp.map(l => l.load).join(' / ')}). Free the blade, put the arm roughly back, then click here to continue.`, { modal: true }));
+        await this.g(this.dialogue.say([{ pose: 'worried', text: `${who} hit something and went limp (load ${limp.map(l => l.load).join(' / ')}). Free the blade, put the arm roughly back, then click here to continue.` }], { modal: true }));
         await this.g(bridge.recover());
         const still = bridge.limpArms ? await this.g(bridge.limpArms()) : [];
-        if (still.length) { await this.g(this.dialogue.say('Still limp. Check the arm and click again.', { modal: true })); await this.g(bridge.recover()); }
+        if (still.length) { await this.g(this.dialogue.say([{ pose: 'worried', text: 'Still limp. Check the arm and click again.' }], { modal: true })); await this.g(bridge.recover()); }
         this.music.setMood('duel');
       }
     }

@@ -67,7 +67,9 @@ class Arm:
         if lim <= 0: return False
         try: L = self.loads()
         except Exception: return False
-        mx = max((abs(L.get(j, 0)) for j in P.get("force_joints") or L), default=0); state["load"] = mx
+        js = P.get("force_joints") or list(L); mx = max((abs(L.get(j, 0)) for j in js), default=0); state["load"] = mx
+        pk = state.setdefault("peaks", {})
+        for j in js: pk[j] = max(pk.get(j, 0), abs(L.get(j, 0)))   # per-joint peaks, reported after the play
         state["over"] = state.get("over", 0) + 1 if mx >= lim else 0
         return state["over"] >= int(P.get("force_ticks", 2))
     def send(self, q):
@@ -135,7 +137,7 @@ class Arm:
             # start to the instant the blow is pinned), the servos' loads are read every tick; if a watched joint pushes
             # back over the limit, the forward sequence ends where it is and the clock jumps to the point of the backward
             # sequence (retract, return) nearest the current pose, so the arm reverses out from where it met resistance.
-            fw = self.forward_windows(move); fs = {}; self.force_events = []; self.peak_load = 0
+            fw = self.forward_windows(move); fs = {}; self.force_events = []; self.peak_load = 0; self.peak_joints = {}
             try:
                 while not self.abort:
                     now = time.perf_counter() - t0; tt = now * scale
@@ -168,10 +170,11 @@ class Arm:
         if self.abort:
             self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
         self.ease_to(rest, max_speed=float(P["return_speed"]))
-        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg; peak load {getattr(self, 'peak_load', 0)} in the strike windows" + (f"; force stop x{len(self.force_events)} " + str(self.force_events) if getattr(self, "force_events", None) else "")
+        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg; peak load {getattr(self, 'peak_load', 0)} in the strike windows {json.dumps(getattr(self, 'peak_joints', {}))}" + (f"; force stop x{len(self.force_events)} " + str(self.force_events) if getattr(self, "force_events", None) else "")
     def force_tick(self, P, fs):
         """force_over() plus the peak-load bookkeeping that play() reports afterwards."""
-        over = self.force_over(P, fs); self.peak_load = max(getattr(self, "peak_load", 0), int(fs.get("load", 0))); return over
+        over = self.force_over(P, fs); self.peak_load = max(getattr(self, "peak_load", 0), int(fs.get("load", 0)))
+        self.peak_joints = {k: max(getattr(self, "peak_joints", {}).get(k, 0), v) for k, v in fs.get("peaks", {}).items()}; return over
     def forward_windows(self, move):
         """[(t_start, t_pinned)] trajectory spans where the blade is on its way IN: every attack/feint beat of a compiled chain
         (its start to where the compiler pinned the blow), or a lone attack/feint's run-up to its strike END key."""

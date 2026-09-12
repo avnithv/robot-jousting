@@ -33,12 +33,12 @@
   "impact": "chain compiler: seconds into a beat where an attack lands",
   "guard": "chain compiler: seconds into a beat where a block is in place",
   "return_t": "chain compiler: seconds an attack takes to come back along its strike line before the next connector",
-  "force_limit": "servo load (0-1000, tenths of a percent of rated torque) above which a strike on its way in is ended and the arm reverses out; 0 = off. The studio's arm status shows live loads",
+  "force_limit": "per-joint servo load (0-1000) above which a strike on its way in is cut short; the daemon reports each play's peak load per joint in its status line, so set this from real numbers. A full-speed chop's own swing reads ~620 on the wrist/elbow; 0 = off",
   "force_ticks": "how many consecutive 50 Hz ticks the load must stay over the limit before it counts (debounce)",
   "force_joints": "which servos the force watch reads",
   "force_action": "what a strike does when it meets the force limit: 'limp' = drop torque, stop the other arm, and wait for a human to reset it (the game pauses and asks); 'reverse' = end the forward sequence and back out along the strike line"
  },
- "force_limit": 600,
+ "force_limit": 900,
  "force_ticks": 2,
  "force_joints": [
   "shoulder_lift",
@@ -47,5 +47,5 @@
   "wrist_roll",
   "gripper"
  ],
- "force_action": "limp"
+ "force_action": "reverse"
 }
