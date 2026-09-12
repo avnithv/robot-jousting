@@ -210,6 +210,16 @@ def api(handler, path, body):
             except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/calib_charge":    # carriages apart -> charge in -> the calibrated 1-beat pair, arms starting as the charge begins
+        ensure_daemon(); r = json.load(open(os.path.join(SIM, "contact_stops.json")))[body["key"]]
+        ours, theirs = ([r["attack"]], [r["defender_move"]]) if r["attacker"] == "A" else ([r["defender_move"]], [r["attack"]])
+        subprocess.run([PY, "chain.py", "pair", *ours, "--", *theirs], cwd=SIM, capture_output=True)
+        def go():
+            j = start_job("arm", f"CHARGE + PAIR {body['key']} x{body.get('scale', 0.5)}", ["true"], ARM)
+            try: rr = daemon("/turn", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": body.get("scale", 0.5), "overlap": True, "salute": False, "apart_after": False}, timeout=300); open(j["log"], "a").write(json.dumps(rr) + "\n"); j["status"] = "done" if rr.get("ok") else "failed"
+            except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
+            j["ended"] = time.time()
+        threading.Thread(target=go, daemon=True).start(); return {"ok": True}
     if path == "/api/home_arms":   # both arms slowly to their own rest poses
         ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)
     if path == "/api/calibrate_retreat": ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)

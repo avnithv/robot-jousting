@@ -79,12 +79,13 @@ async function calRefresh(){const sel=document.getElementById('calDef');if(!sel.
  for(const p of st.pairs){const keys=[];if(p.A.startsWith('ATTACK'))keys.push('A:'+p.A+'|B:'+p.B);if(p.B.startsWith('ATTACK'))keys.push('B:'+p.B+'|A:'+p.A);
   let cal='',act='';for(const k of keys){const r=st.stops[k];const att=k.split(':')[0];
    if(r){cal+=`<div><b style="color:#1a7f37">${att} attacks: stop ${r.stop_frac}</b> back-off <input type="number" step="0.01" min="0" max="0.5" value="${r.backoff??0.03}" style="width:56px" onchange="calBackoff('${k}',this.value)"></div>`;
-    act+=`<div><button onclick="calTest('${k}',0.3)">Test 0.3</button> <button onclick="calTest('${k}',1.0)">Test full</button> <button onclick="calReplace('${k}')">Replace</button> <button onclick="calDelete('${k}')">Delete</button></div>`}
+    act+=`<div><button onclick="calTest('${k}',0.3)">Test 0.3</button> <button onclick="calTest('${k}',1.0)">Test full</button> <button onclick="calCharge('${k}',0.5)">Charge+play 0.5</button> <button onclick="calCharge('${k}',1.0)">Charge+play full</button> <button onclick="calReplace('${k}')">Replace</button> <button onclick="calDelete('${k}')">Delete</button></div>`}
    else{cal+=`<div><span style="color:#b26a00">${att} attacks: not yet</span></div>`;act+=`<div><button onclick="calReplace('${k}')">Calibrate</button></div>`}}
   const tr=document.createElement('tr');tr.innerHTML=`<td class="k">${p.A}</td><td class="k">${p.B}</td><td class="h">${p.outcome}: ${p.touch||''}</td><td>${cal}</td><td>${act}</td>`;t.appendChild(tr)}}
 function calReplace(k){const [a,d]=k.split('|');document.getElementById('calAtt').value=a.split(':')[0];document.getElementById('calAttack').value=a.split(':')[1];document.getElementById('calDef').value=d.split(':')[1];calStart()}
 async function calDelete(k){if(!confirm('Delete the calibration for '+k+'?'))return;await api('/api/calib_delete',{key:k});calRefresh()}
 async function calBackoff(k,v){await api('/api/calib_backoff',{key:k,backoff:parseFloat(v)});calRefresh()}
+async function calCharge(k,scale){document.getElementById('calst').textContent='charge-in + '+k+' at '+scale+' (arms start as the carriages move in)';await api('/api/calib_charge',{key:k,scale});poll()}
 async function calTest(k,scale){document.getElementById('calst').textContent='testing '+k+' at '+scale+' (both arms)';await api('/api/calib_test',{key:k,scale});poll()}
 async function calStart(){const att=document.getElementById('calAtt').value;document.getElementById('calst').textContent='running: defender parks, attacker to strike start, then creeping... press STOP HERE when the blades meet';
  await api('/api/calibrate',{attacker:att,attack:document.getElementById('calAttack').value,defender_move:document.getElementById('calDef').value,speed:parseFloat(document.getElementById('calSpeed').value)});poll()}
