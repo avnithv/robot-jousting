@@ -9,3 +9,5 @@ arm/cmd.txt
 arm/motions_tuned.json.lock
 .claude/
 .DS_Store
+joust/assets/audio/*.m4a
+joust/assets/audio/*.mp3

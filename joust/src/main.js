@@ -36,7 +36,8 @@ async function loadAtlas(dir) { const r = await fetch(`assets/${dir}/atlas.json`
 function preload(dir, atlas) { return Promise.all(Object.values(atlas).map(a => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = `assets/${dir}/${a.file}`; }))); }
 
 async function main() {
-  const mods = { music: await optional('./audio/music.js'), voice: await optional('./audio/voice.js'), crowd: await optional('./audio/crowd.js'), servo: (await optional('./audio/foley.js')) || (await optional('./audio/servo.js')), barks: await optional('./game/barks.js') };
+  // music: the recorded tavern track (src/audio/track.js) when its file is present, else the procedural score
+  const mods = { music: (await optional('./audio/track.js')) || (await optional('./audio/music.js')), voice: await optional('./audio/voice.js'), crowd: await optional('./audio/crowd.js'), servo: (await optional('./audio/foley.js')) || (await optional('./audio/servo.js')), barks: await optional('./game/barks.js') };
   const music = mods.music?.music || coreMusic; const crowd = mods.crowd?.crowd || null; const ambience = coreAmbience;
   const ext = { music, crowd, crowdOn: () => getPref('crowd'), voice: mods.voice, servo: mods.servo, barks: mods.barks, safe };
   const [arms, arms2, town, arena, sprites, crowdAtlas] = await Promise.all([loadAtlas('arms'), loadAtlas('arms2'), loadAtlas('town'), loadAtlas('arena'), loadAtlas('sprites'), loadAtlas('crowd').catch(() => ({}))]);
