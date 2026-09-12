@@ -135,6 +135,7 @@ class H(BaseHTTPRequestHandler):
             try:
                 op = self.path.split("/")[-1]
                 if op == "abort": gantry.abort(); return self._json({"ok": True, "last": gantry.last})
+                if op == "unlock": gantry.lock = threading.RLock(); gantry.last = "lock cleared"; return self._json({"ok": True, "last": gantry.last})
                 if not gantry.lock.acquire(blocking=False): return self._json({"error": "gantry busy"}, 409)
                 try:
                     if op == "home": gantry.home()
