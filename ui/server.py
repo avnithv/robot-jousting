@@ -274,18 +274,23 @@ def api(handler, path, body):
             j = start_job("arm", f"SHOW {len(moves)} pairs x{scale}", ["true"], ARM); log = lambda s: open(j["log"], "a").write(s + "\n")
             try:
                 if not daemon_status().get("gantry", {}).get("homed"): raise RuntimeError("gantry not referenced: Home first")
+                # compile every pair FIRST (1-3 s each) and stash it under its own name, so the pairs play back to back
+                names = []
+                for i, m in enumerate(moves, 1):
+                    if SHOW["stop"]: raise RuntimeError("stopped")
+                    out = subprocess.run([PY, "chain.py", "pair", m["a"], "--", m["b"], "--no-render"], cwd=SIM, capture_output=True, text=True)
+                    if out.returncode: raise RuntimeError("compile failed: " + out.stderr[-300:])
+                    subprocess.run([PY, "stash_pair.py", f"SHOW{i}"], cwd=SIM, capture_output=True, text=True); names.append(f"SHOW{i}")
+                    close = [l for l in out.stdout.splitlines() if "closest" in l]; log(f"compiled {i}/{len(moves)}: A {m['a']} vs B {m['b']}  " + (close[0] if close else ""))
                 log("carriages together"); r = daemon("/gantry/together", {}, timeout=120)
                 if r.get("error"): raise RuntimeError(r["error"])
                 if SHOW["stop"]: raise RuntimeError("stopped")
                 log(f"salute: {opener['a']} / {opener['b']}"); r = daemon("/play_both", {"moveA": opener["a"], "moveB": opener["b"], "scale": 1.0, "return_speed": rs}, timeout=120)
                 if not r.get("ok"): raise RuntimeError(str(r))
-                for i, m in enumerate(moves, 1):
+                for i, (m, nm) in enumerate(zip(moves, names), 1):
                     if SHOW["stop"]: raise RuntimeError("stopped")
-                    out = subprocess.run([PY, "chain.py", "pair", m["a"], "--", m["b"], "--no-render"], cwd=SIM, capture_output=True, text=True)
-                    if out.returncode: raise RuntimeError("compile failed: " + out.stderr[-300:])
-                    close = [l for l in out.stdout.splitlines() if "closest" in l]; log(f"pair {i}/{len(moves)}: A {m['a']} vs B {m['b']}  " + (close[0] if close else ""))
-                    if SHOW["stop"]: raise RuntimeError("stopped")
-                    r = daemon("/play_both", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": scale, "return_speed": rs}, timeout=180); log("   " + json.dumps({k: r.get(k) for k in ("A", "B")}))
+                    log(f"pair {i}/{len(moves)}: A {m['a']} vs B {m['b']}")
+                    r = daemon("/play_both", {"moveA": nm, "moveB": nm, "scale": scale, "return_speed": rs, "hold_end": float(body.get("hold_end", 0.15))}, timeout=180); log("   " + json.dumps({k: r.get(k) for k in ("A", "B")}))
                     if not r.get("ok"): raise RuntimeError(str(r))
                 if SHOW["stop"]: raise RuntimeError("stopped")
                 log("carriages apart"); r = daemon("/gantry/apart", {}, timeout=120)

@@ -36,13 +36,17 @@ def compile_pair(p):
     if out.returncode: sys.exit("compile failed: " + out.stderr[-600:])
     print("   " + "\n   ".join(l for l in out.stdout.splitlines() if "closest" in l or "stops applied" in l))
 if single_ride:
+    names = []
+    for i, p in enumerate(D["passes"], 1):   # compile everything first, so the pairs play back to back
+        print(f"== compile {i}: A {p['a']} vs B {p['b']}"); compile_pair(p)
+        subprocess.run([PY, "stash_pair.py", f"SHOW{i}"], cwd=SIM, capture_output=True); names.append(f"SHOW{i}")
     print("== show: carriages together"); print("  ", daemon("/gantry/together", {}, timeout=120))
     if start == 1 and "--no-opener" not in flags:
         print("== salute"); print("  ", daemon("/play_both", {"moveA": D["opener"]["a"], "moveB": D["opener"]["b"], "scale": 1.0, "return_speed": rs}, timeout=120))
     for i, p in enumerate(D["passes"], 1):
         if i < start: continue
-        print(f"== pair {i}: A {p['a']} vs B {p['b']}  ({p.get('note', '')})"); compile_pair(p)
-        r = daemon("/play_both", {"moveA": "CHAIN_A", "moveB": "CHAIN_B", "scale": scale, "return_speed": rs}, timeout=180); print("  ", r)
+        print(f"== pair {i}: A {p['a']} vs B {p['b']}  ({p.get('note', '')})")
+        r = daemon("/play_both", {"moveA": names[i - 1], "moveB": names[i - 1], "scale": scale, "return_speed": rs, "hold_end": float(D.get("hold_end", 0.15))}, timeout=180); print("  ", r)
         if not r.get("ok"): sys.exit(f"pair failed: {r}")
     print("== carriages apart"); print("  ", daemon("/gantry/apart", {}, timeout=120)); print("show over: arms at rest, carriages apart"); sys.exit(0)
 if start == 1 and "--no-opener" not in flags:
