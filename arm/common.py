@@ -17,7 +17,10 @@ def connect(max_relative_target=None, arm="A", hold_on_disconnect=False):
     cfg = ARMS[arm]
     robot = SO101Follower(SO101FollowerConfig(port=cfg["port"], id=cfg["id"], use_degrees=True, max_relative_target=max_relative_target,
                                               disable_torque_on_disconnect=not hold_on_disconnect))
-    robot.connect(calibrate=True)   # loads the saved calibration; only runs the sweep if none matches
+    robot.connect(calibrate=False)   # never run LeRobot's interactive sweep (the daemon has no stdin)
+    if not robot.is_calibrated:      # servos hold some other calibration (a sweep run elsewhere): write ours back, non-interactively
+        print(f"arm {arm}: servo calibration differs from '{cfg['id']}' file, writing the file to the servos", flush=True)
+        robot.bus.write_calibration(robot.calibration)
     return robot
 
 def read_pose(robot):
