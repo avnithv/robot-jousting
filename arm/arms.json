@@ -3,17 +3,18 @@
  "A": {
   "model": "SO-100",
   "roll_offset": 76.0,
-  "rest": null
+  "rest": null,
+  "lift_limit": -89.0
  },
  "B": {
   "model": "SO-101",
-  "roll_offset": -89.0,
+  "roll_offset": -88.7,
   "rest": [
    -1.8,
    -93.8,
    36.6,
    8.4,
-   -89.0,
+   -88.7,
    0.0
   ],
   "lift_limit": -93.8

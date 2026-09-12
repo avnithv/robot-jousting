@@ -1,8 +1,8 @@
 {
- "_doc": "Hanging guard on the arm's RIGHT.",
+ "_doc": "Hanging guard, centred.",
  "x": 0.26,
  "z": 0.2,
- "pan": 20,
+ "pan": 0,
  "pitch": -45,
  "tol": 10,
  "t_move": 0.8,
@@ -19,12 +19,12 @@
  },
  "captured": {
   "end": [
-   20.1,
-   -34.4,
-   35.3,
-   3.5,
-   -99.5,
-   73.5
+   -8.5,
+   -22.5,
+   28.1,
+   2.0,
+   94.7,
+   100.0
   ]
  }
 }

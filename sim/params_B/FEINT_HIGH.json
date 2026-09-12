@@ -1,0 +1,45 @@
+{
+ "_doc": "Feint: follows ATTACK_HIGH into its strike up to `swing`, stops, then pulls back only `retreat` of the way toward the cocked pose (hand fast, arm slow).",
+ "like": "ATTACK_HIGH",
+ "pull_back": {
+  "lift": 0,
+  "wrist": 0
+ },
+ "jaw_after": 60,
+ "_help": {
+  "like": "uses this attack's raise and cock, then snaps back",
+  "pull_back.lift": "shoulder offset from the cocked pose at the end of the retreat (deg; negative = pulled back/up)",
+  "pull_back.wrist": "wrist offset at the end of the retreat (deg)",
+  "jaw_after": "jaw at the end of the retreat (0 shut .. 100 open): keeps the sword cocked if high",
+  "captured.start": "raised/cocked pose (real degrees): ATTACK_HIGH's cocked pose moved 30% toward its slam end, so the feint commits into the slam line before pulling back (40% brought the blade within 2.0 cm of an opponent resting blade as the jaw closes on the pull-back). Delete to use the attack's exact cocked pose.",
+  "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose.",
+  "swing": "how far into the attack's strike the feint goes before stopping (0 = stops at the cocked pose, 1 = full strike)",
+  "t_back_fast": "seconds for the wrist and jaw to pull back after the stop (fast is fine here)",
+  "t_back_slow": "seconds for the base, shoulder and elbow to settle back (slow = no visible jerk)",
+  "retreat": "how far the pull back goes, as a fraction of the way from the mid-swing stop back to the cocked pose (0.35 = slightly off, 1 = all the way)",
+  "strike_slow": "multiplier on the strike phase duration (1 = same speed as the attack, 1.6 = noticeably slower strike)"
+ },
+ "captured_retired_2026-09-12": {
+  "start": [
+   0.0,
+   -24.2,
+   -32.0,
+   33.5,
+   76.0,
+   50.0
+  ],
+  "end": [
+   -3.8,
+   -89.0,
+   48.0,
+   3.2,
+   76.1,
+   7.4
+  ]
+ },
+ "swing": 0.6,
+ "t_back_fast": 0.35,
+ "t_back_slow": 1.0,
+ "retreat": 0.5,
+ "strike_slow": 1.6
+}

@@ -1,8 +1,8 @@
 {
- "_doc": "Hanging guard on the arm's RIGHT.",
+ "_doc": "Hanging guard on the arm's LEFT: hand at (x, z), sword pitched `pitch` deg (down), pan -20. tol = pitch tolerance for the pose search.",
  "x": 0.26,
  "z": 0.2,
- "pan": 20,
+ "pan": -20,
  "pitch": -45,
  "tol": 10,
  "t_move": 0.8,
@@ -19,12 +19,12 @@
  },
  "captured": {
   "end": [
-   20.1,
-   -34.4,
-   35.3,
-   3.5,
-   -99.5,
-   73.5
+   -35.1,
+   24.0,
+   -49.9,
+   107.9,
+   -78.4,
+   2.3
   ]
  }
 }

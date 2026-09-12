@@ -6,6 +6,7 @@ from urllib.parse import urlparse, parse_qs
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIM, ARM, UI = os.path.join(ROOT, "sim"), os.path.join(ROOT, "arm"), os.path.dirname(os.path.abspath(__file__))
 PY = os.path.join(ROOT, ".venv", "bin", "python"); OUT = os.path.join(SIM, "out"); PARAMS = os.path.join(SIM, "params"); JOBS = os.path.join(UI, "jobs")
+def pdir(arm): return PARAMS if arm == "A" else os.path.join(SIM, f"params_{arm}")
 CLAUDE = shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
 jobs = {}; jobs_lock = threading.Lock(); arm_lock = threading.Lock(); gen_lock = threading.Lock()
 
@@ -36,8 +37,9 @@ def moves():
     for f in sorted(os.listdir(PARAMS)):
         if not f.endswith(".json"): continue
         n = f[:-5]; p = json.load(open(os.path.join(PARAMS, f))); t = tuned.get(n); vid = os.path.join(OUT, f"tuned_{n}.mp4")
-        vidB = os.path.join(OUT, f"tuned_{n}@B.mp4")
-        out[n] = {"params": p, "duration": round(t["t"][-1], 2) if t else None, "end": [round(x) for x in t["keys"][-1]] if t else None,
+        fb = os.path.join(pdir("B"), f); pB = json.load(open(fb)) if os.path.exists(fb) else None; tB = tuned.get(f"{n}@B"); vidB = os.path.join(OUT, f"tuned_{n}@B.mp4")
+        out[n] = {"params": p, "params_B": pB, "duration": round(t["t"][-1], 2) if t else None, "duration_B": round(tB["t"][-1], 2) if tB else None,
+                  "end": [round(x) for x in t["keys"][-1]] if t else None,
                   "video": f"/video/tuned_{n}.mp4?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None,
                   "video_B": f"/video/tuned_{n}@B.mp4?v={int(os.path.getmtime(vidB))}" if os.path.exists(vidB) else None}
     return out
@@ -78,9 +80,13 @@ def progress_from_stream(job, line, lf):
         note = "✅ finished: " + str(ev.get("result", ""))[:300].replace("\n", " "); job["progress"].append(note); lf.write(note + "\n")
     lf.flush()
 
-def agent_prompt(move, feedback, jid):
+def agent_prompt(move, feedback, jid, arm="A"):
+    folder = "sim/params" if arm == "A" else f"sim/params_{arm}"
     return f"""You are tuning moves of a robot-arm sword game in simulation. Work in this directory (~/game/sim).
-The user was looking at move {move} and wrote: "{feedback}"
+The user was looking at move {move} on ARM {arm} and wrote: "{feedback}"
+IMPORTANT: each arm has its OWN parameter folder and nothing is shared. Arm A = sim/params/, arm B = sim/params_B/.
+You are working on arm {arm}: edit files under {folder} only, and regenerate with `../.venv/bin/python tune.py <MOVE> --arm {arm}`
+(clips/filmstrips for arm B are named tuned_<MOVE>@B.*).
 
 How things work:
 - Every move is generated from sim/params/<MOVE>.json (read sim/params/README.md for conventions; each file has _help notes per key;
@@ -109,11 +115,11 @@ def api(handler, path, body):
             except Exception: pass
             outl.append({k: v for k, v in j.items() if k not in ("log", "proc")} | {"tail": tail})
         return outl
-    if path == "/api/params":     # save params then regenerate
-        move, params = body["move"], body["params"]
-        json.dump(params, open(os.path.join(PARAMS, f"{move}.json"), "w"), indent=1)
-        return start_job("gen", f"regenerate {move}", [PY, "tune.py", move], SIM, lock=gen_lock)
-    if path == "/api/gen": return start_job("gen", f"regenerate {body['move']}", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
+    if path == "/api/params":     # save this ARM's params then regenerate this arm's version
+        move, params, arm = body["move"], body["params"], body.get("arm", "A")
+        json.dump(params, open(os.path.join(pdir(arm), f"{move}.json"), "w"), indent=1)
+        return start_job("gen", f"regenerate {move} (arm {arm})", [PY, "tune.py", move, "--arm", arm], SIM, lock=gen_lock)
+    if path == "/api/gen": arm = body.get("arm", "A"); return start_job("gen", f"regenerate {body['move']} (arm {arm})", [PY, "tune.py", body["move"], "--arm", arm], SIM, lock=gen_lock)
     if path == "/api/pair": return start_job("pair", f"pair {body['a']} vs {body['b']}", [PY, "pair.py", body["a"], body["b"]], SIM, lock=gen_lock)
     if path == "/api/run":
         ensure_daemon(); arm = body.get("arm", "A")
@@ -155,14 +161,13 @@ def api(handler, path, body):
     if path == "/api/capture":
         ensure_daemon(); arm = body.get("arm", "A"); st = daemon_status().get("arms", {}).get(arm, {}); pose = st.get("pose")
         if not pose: return {"error": "no pose"}
-        if arm != "A" and body["move"] == "REST":   # arm B keeps its own rest pose in arms.json
-            c = json.load(open(os.path.join(ARM, "arms.json"))); c[arm]["rest"] = pose; json.dump(c, open(os.path.join(ARM, "arms.json"), "w"), indent=1)
-            return {"ok": True, "rest": pose}
-        f = os.path.join(PARAMS, f"{body['move']}.json"); p = json.load(open(f)); key = "captured" if arm == "A" else f"captured_{arm}"
-        p.setdefault(key, {})[body["which"]] = pose
-        p.setdefault("_help", {})[f"{key}.{body['which']}"] = f"pose captured from ARM {arm} (real degrees); applies only to arm {arm}. Delete the entry to go back to the computed pose."
+        f = os.path.join(pdir(arm), f"{body['move']}.json"); p = json.load(open(f))
+        if body["move"] == "REST": p["joints"] = dict(zip(["pan", "lift", "elbow", "wrist", "roll", "jaw"], pose))
+        else:
+            p.setdefault("captured", {})[body["which"]] = pose
+            p.setdefault("_help", {})[f"captured.{body['which']}"] = f"pose captured from arm {arm} (real degrees). Delete the entry to go back to the computed pose."
         json.dump(p, open(f, "w"), indent=1)
-        return start_job("gen", f"regenerate {body['move']} (captured {body['which']})", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
+        return start_job("gen", f"regenerate {body['move']} (arm {arm}, captured {body['which']})", [PY, "tune.py", body["move"], "--arm", arm], SIM, lock=gen_lock)
     if path == "/api/release": ensure_daemon(); return daemon("/release", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/feedback":
         jid = uuid.uuid4().hex[:8]; text = body["text"]
@@ -174,7 +179,7 @@ def api(handler, path, body):
                          f"[pan, lift, elbow, wrist_flex, wrist_roll, jaw], which is {sim} in the sim convention (roll - 76). Treat this as the pose the "
                          f"feedback refers to (usually the desired END pose of the move, or the START if the text says so). The cleanest way to use it is to set "
                          f"\"captured\": {{\"end\": {pose}}} (real degrees) in the move's params file, which overrides the computed pose; then regenerate and check the filmstrip.")
-        prompt = agent_prompt(body["move"], text, jid)
+        prompt = agent_prompt(body["move"], text, jid, body.get("arm", "A"))
         cmd = [CLAUDE, "-p", prompt, "--allowedTools", "Read,Edit,Write,Bash", "--max-turns", "60", "--output-format", "stream-json", "--verbose"]
         return start_job("agent", f"agent: {body['move']}: {body['text'][:60]}", cmd, SIM, jid=jid, stream=True)
     return {"error": "unknown"}

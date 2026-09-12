@@ -1,0 +1,29 @@
+{
+ "_doc": "Overhead chop. end = joint angles where the slam finishes; cock = how far the cocked pose is pulled back from it; jaw_open = sword cock angle; t_* = phase seconds (raise+reach, roll+cock, slam).",
+ "end": {
+  "lift": -6,
+  "elbow": -32,
+  "wrist": 72,
+  "pan": 0
+ },
+ "cock": {
+  "lift_back": 28,
+  "wrist_up": 55
+ },
+ "jaw_open": 45,
+ "t_raise": 0.7,
+ "t_cock": 0.35,
+ "t_slam": 0.22,
+ "_help": {
+  "end.lift": "shoulder angle when the slam finishes (deg; more positive = arm further forward/down)",
+  "end.elbow": "elbow angle at the slam finish (deg; negative = forearm raised)",
+  "end.wrist": "wrist pitch at the slam finish (deg; positive = hand pointing down: sets how steep the sword ends)",
+  "end.pan": "base rotation (deg; + = own right)",
+  "cock.lift_back": "how far the shoulder is pulled back from the end for the cocked pose (deg): bigger = more arm drop during the slam",
+  "cock.wrist_up": "how far the wrist is pitched up from the end for the cocked pose (deg): bigger = sword more vertical when cocked",
+  "jaw_open": "how far the sword cocks up before the slam (0 shut .. 100 fully open)",
+  "t_raise": "seconds: rest -> raised and reached forward",
+  "t_cock": "seconds: roll and cock the sword up",
+  "t_slam": "seconds: the slam (shorter = harder)"
+ }
+}

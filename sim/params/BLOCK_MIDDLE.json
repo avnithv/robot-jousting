@@ -15,8 +15,7 @@
   "tol": "allowed deviation from pitch in the pose search (deg)",
   "t_move": "seconds: rest -> guard",
   "t_hold": "seconds: hold",
-  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose.",
-  "captured_B.end": "pose captured from ARM B (real degrees); applies only to arm B. Delete the entry to go back to the computed pose."
+  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
  },
  "captured": {
   "end": [
@@ -26,16 +25,6 @@
    2.7,
    -101.0,
    73.3
-  ]
- },
- "captured_B": {
-  "end": [
-   -8.5,
-   -22.5,
-   28.1,
-   2.0,
-   94.7,
-   100.0
   ]
  }
 }

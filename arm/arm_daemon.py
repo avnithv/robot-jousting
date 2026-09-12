@@ -42,17 +42,19 @@ class Arm:
             if self.abort: return
             a = 0.5 - 0.5 * np.cos(np.pi * i / n); self.send(cur + a * (tgt - cur)); time.sleep(1 / RATE)
     def rest_pose(self):
-        r = self.cfg().get("rest")
-        return np.array(r if r else json.load(open(TUNED))["REST"]["q"][0], float)
+        T = json.load(open(TUNED)); key = "REST" if self.name == "A" else f"REST@{self.name}"
+        if key in T: return np.array(T[key]["q"][0], float)          # this arm's own REST (from its own params folder)
+        r = self.cfg().get("rest"); return np.array(r if r else T["REST"]["q"][0], float)
     def rebase(self, Q):
         """Tuned trajectories are in arm A's real coordinates. For another arm, move the roll to that arm's offset."""
         c = self.cfg(); Q = np.array(Q, float)
+        if getattr(self, "_entry_arm", None) == self.name: return Q      # generated for this arm already (its own coordinates)
         if self.name != "A":
             if c.get("roll_offset") is None: raise RuntimeError(f"arm {self.name}: roll_offset not set in arms.json (find the sword-on-top roll first)")
             Q[:, 4] = np.clip(Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"], -175, 175)   # never touch the +/-180 wrap
         return Q
     def prepare(self, move):
-        T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
+        T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); self._entry_arm = M.get("arm", "A"); Q = self.rebase(M["q"]); rest = self.rest_pose()
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
         self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         return t, Q, rest

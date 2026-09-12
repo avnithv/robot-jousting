@@ -58,20 +58,21 @@ async function load(){MOVES=await api('/api/moves');const m=document.getElementB
   for(const sel of [mA,mB]){const o2=document.createElement('option');o2.value=n;o2.textContent=n;sel.appendChild(o2)}} o.value=keep;if(kA)mA.value=kA;if(kB)mB.value=kB;
  if(!cur)select(Object.keys(MOVES)[0]);else refreshMain(false)}
 function select(n){cur=n;document.getElementById('opp').value='';document.querySelectorAll('#moves div').forEach(d=>d.className=d.textContent===n?'sel':'');refreshMain(true)}
-function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title').textContent=cur;
- document.getElementById('doc').textContent=(M.params._doc||'')+(M.duration?'  ('+M.duration+' s)':'  (not generated)')+((arm()==='B'&&M.video_B)?'  — arm B has its own version of this move':'');
+function P(M){return (arm()==='B'&&M.params_B)?M.params_B:M.params}
+function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title').textContent=cur+(arm()==='B'?'  (arm B)':'  (arm A)');
+ const dur=arm()==='B'?M.duration_B:M.duration;document.getElementById('doc').textContent=(P(M)._doc||'')+(dur?'  ('+dur+' s)':'  (not generated)');
  const opp=document.getElementById('opp').value;const v=document.getElementById('vid');
  const src=opp?'/video/pair_'+cur+'_vs_'+opp+'.mp4?v='+Date.now():((arm()==='B'&&M.video_B)?M.video_B:M.video); if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}
- if(rebuild){const t=document.getElementById('ptable');t.innerHTML='';const help=M.params._help||{};
-  for(const [k,val] of flatten(M.params)){const tr=document.createElement('tr');const ro=typeof val!=='number';
+ if(rebuild){const t=document.getElementById('ptable');t.innerHTML='';const help=P(M)._help||{};
+  for(const [k,val] of flatten(P(M))){const tr=document.createElement('tr');const ro=typeof val!=='number';
    tr.innerHTML=`<td class="k">${k}</td><td>${ro?`<span>${val}</span>`:`<input type="number" step="any" data-k="${k}" value="${val}">`}</td><td class="h">${help[k]||''}</td>`;t.appendChild(tr)}}}
 async function oppChanged(){const opp=document.getElementById('opp').value;if(opp){await api('/api/pair',{a:cur,b:opp})}refreshMain(false);poll()}
-async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p});poll()}
+async function apply(){const p=JSON.parse(JSON.stringify(P(MOVES[cur])));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p,arm:arm()});poll()}
 async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t,attach_pose:document.getElementById('attach').checked,arm:arm()});document.getElementById('fb').value='';poll()}
 let ARM=localStorage.getItem('arm')||'A';
 function arm(){return ARM}
 function setArm(a){ARM=a;try{localStorage.setItem('arm',a)}catch(e){}document.body.className=a;document.getElementById('btnA').className=a==='A'?'on':'';document.getElementById('btnB').className=a==='B'?'on':'';
- document.getElementById('runbtn').textContent='Run on arm '+a;if(cur)refreshMain(false);poll()}
+ document.getElementById('runbtn').textContent='Run on arm '+a;if(cur)refreshMain(true);poll()}
 async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
