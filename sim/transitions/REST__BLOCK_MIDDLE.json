@@ -1,41 +1,6 @@
-{
- "from": "REST",
- "to": "BLOCK_MIDDLE",
+{"from": "REST", "to": "BLOCK_MIDDLE",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "through_mid",
-   "style": "smooth",
-   "via": [
-    "MID"
-   ],
-   "durations": [
-    0.3
-   ],
-   "notes": "unfolds forward to mid height, then lets the blade roll under and drop into the middle guard"
-  },
-  {
-   "name": "swing_out",
-   "style": "smooth",
-   "via": [
-    [
-     0,
-     -55,
-     30,
-     10,
-     -90,
-     30
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "arm reaches straight forward with the blade held sideways, then the blade flops down into the guard"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "through_mid", "style": "smooth", "via": ["MID"], "durations": [0.3], "notes": "unfolds forward to mid height, then lets the blade roll under and drop into the middle guard"},
+  {"name": "swing_out", "style": "smooth", "via": [[0, -55, 30, 10, -90, 30]], "durations": [0.55], "notes": "arm reaches straight forward with the blade held sideways, then the blade flops down into the guard"}
+ ]}

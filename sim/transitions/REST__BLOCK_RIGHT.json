@@ -1,41 +1,6 @@
-{
- "from": "REST",
- "to": "BLOCK_RIGHT",
+{"from": "REST", "to": "BLOCK_RIGHT",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "through_mid",
-   "style": "smooth",
-   "via": [
-    "MID"
-   ],
-   "durations": [
-    0.3
-   ],
-   "notes": "unfolds forward to mid height, then swings right and lets the blade drop into the hanging guard"
-  },
-  {
-   "name": "swing_out_right",
-   "style": "smooth",
-   "via": [
-    [
-     20,
-     -55,
-     30,
-     10,
-     -90,
-     30
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "arm swings up and out to the right with the blade held sideways, then the blade flops down into the guard"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "through_mid", "style": "smooth", "via": ["MID"], "durations": [0.3], "notes": "unfolds forward to mid height, then swings right and lets the blade drop into the hanging guard"},
+  {"name": "swing_out_right", "style": "smooth", "via": [[20, -55, 30, 10, -90, 30]], "durations": [0.55], "notes": "arm swings up and out to the right with the blade held sideways, then the blade flops down into the guard"}
+ ]}

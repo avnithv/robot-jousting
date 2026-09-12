@@ -1,30 +1,5 @@
-{
- "from": "LOW_TIP",
- "to": "MID",
+{"from": "LOW_TIP", "to": "MID",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "lift_then_roll",
-   "style": "smooth",
-   "via": [
-    [
-     0,
-     -55,
-     35,
-     20,
-     -150,
-     0
-    ]
-   ],
-   "durations": [
-    0.2
-   ],
-   "notes": "arm lifts the tip clear first, then the blade rolls back over the top as it settles at mid"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "lift_then_roll", "style": "smooth", "via": [[0, -55, 35, 20, -150, 0]], "durations": [0.2], "notes": "arm lifts the tip clear first, then the blade rolls back over the top as it settles at mid"}
+ ]}

@@ -1,30 +1,5 @@
-{
- "from": "LOW_TIP",
- "to": "ATTACK_HIGH",
+{"from": "LOW_TIP", "to": "ATTACK_HIGH",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "scoop_up",
-   "style": "smooth",
-   "via": [
-    [
-     0,
-     -60,
-     10,
-     20,
-     -90,
-     0
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "arm scoops the blade up off the floor, rolling it back on top as it rises into the raised windup"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "scoop_up", "style": "smooth", "via": [[0, -60, 10, 20, -90, 0]], "durations": [0.55], "notes": "arm scoops the blade up off the floor, rolling it back on top as it rises into the raised windup"}
+ ]}

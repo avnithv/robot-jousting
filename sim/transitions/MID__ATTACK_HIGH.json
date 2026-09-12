@@ -1,23 +1,5 @@
-{
- "from": "MID",
- "to": "ATTACK_HIGH",
+{"from": "MID", "to": "ATTACK_HIGH",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "salute_rise",
-   "style": "smooth",
-   "via": [
-    "SALUTE"
-   ],
-   "durations": [
-    0.4
-   ],
-   "notes": "blade rolls back on top and swings up vertical, then tilts forward into the raised windup"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "salute_rise", "style": "smooth", "via": ["SALUTE"], "durations": [0.4], "notes": "blade rolls back on top and swings up vertical, then tilts forward into the raised windup"}
+ ]}

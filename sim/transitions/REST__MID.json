@@ -1,23 +1,5 @@
-{
- "from": "REST",
- "to": "MID",
+{"from": "REST", "to": "MID",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "rise_and_settle",
-   "style": "smooth",
-   "via": [
-    "SALUTE"
-   ],
-   "durations": [
-    0.45
-   ],
-   "notes": "arm springs up to a vertical salute, then folds forward and half-rolls into the mid stance"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "rise_and_settle", "style": "smooth", "via": ["SALUTE"], "durations": [0.45], "notes": "arm springs up to a vertical salute, then folds forward and half-rolls into the mid stance"}
+ ]}

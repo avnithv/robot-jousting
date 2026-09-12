@@ -1,30 +1,5 @@
-{
- "from": "MID",
- "to": "BLOCK_RIGHT",
+{"from": "MID", "to": "BLOCK_RIGHT",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "swing_out_right",
-   "style": "smooth",
-   "via": [
-    [
-     20,
-     -50,
-     30,
-     10,
-     -90,
-     30
-    ]
-   ],
-   "durations": [
-    0.3
-   ],
-   "notes": "arm swings out to the right with the blade sideways, then the blade drops into the hanging guard"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "swing_out_right", "style": "smooth", "via": [[20, -50, 30, 10, -90, 30]], "durations": [0.3], "notes": "arm swings out to the right with the blade sideways, then the blade drops into the hanging guard"}
+ ]}

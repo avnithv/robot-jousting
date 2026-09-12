@@ -1,48 +1,6 @@
-{
- "from": "REST",
- "to": "FEINT_LEFT",
+{"from": "REST", "to": "FEINT_LEFT",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "roll_then_drop",
-   "style": "smooth",
-   "via": [
-    [
-     -4,
-     -85,
-     50,
-     3,
-     90,
-     10
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "blade turns flat sideways while the arm is still folded, then the whole arm swings down and left, cocked for the slash"
-  },
-  {
-   "name": "wag_in",
-   "style": "smooth",
-   "via": [
-    [
-     -32,
-     -62,
-     85,
-     -20,
-     90,
-     30
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "arm swings down past the mark on the left, then eases back in and opens the jaw to cock"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "roll_then_drop", "style": "smooth", "via": [[-4, -85, 50, 3, 90, 10]], "durations": [0.55], "notes": "blade turns flat sideways while the arm is still folded, then the whole arm swings down and left, cocked for the slash"},
+  {"name": "wag_in", "style": "smooth", "via": [[-32, -62, 85, -20, 90, 30]], "durations": [0.55], "notes": "arm swings down past the mark on the left, then eases back in and opens the jaw to cock"}
+ ]}

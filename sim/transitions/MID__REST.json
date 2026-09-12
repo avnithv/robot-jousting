@@ -1,12 +1,4 @@
-{
- "from": "MID",
- "to": "REST",
+{"from": "MID", "to": "REST",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []}
+ ]}

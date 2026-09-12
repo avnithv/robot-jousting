@@ -1,30 +1,5 @@
-{
- "from": "SALUTE",
- "to": "REST",
+{"from": "SALUTE", "to": "REST",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "nod_and_fold",
-   "style": "smooth",
-   "via": [
-    [
-     0,
-     -40,
-     -25,
-     -3,
-     0,
-     0
-    ]
-   ],
-   "durations": [
-    0.25
-   ],
-   "notes": "a small nod of the blade, then the arm folds back down into rest"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "nod_and_fold", "style": "smooth", "via": [[0, -40, -25, -3, 0, 0]], "durations": [0.25], "notes": "a small nod of the blade, then the arm folds back down into rest"}
+ ]}

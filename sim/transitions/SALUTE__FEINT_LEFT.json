@@ -1,30 +1,5 @@
-{
- "from": "SALUTE",
- "to": "FEINT_LEFT",
+{"from": "SALUTE", "to": "FEINT_LEFT",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "roll_drop",
-   "style": "smooth",
-   "via": [
-    [
-     -10,
-     -55,
-     40,
-     -10,
-     90,
-     20
-    ]
-   ],
-   "durations": [
-    0.55
-   ],
-   "notes": "blade rolls flat to the left as the arm drops through mid height, then settles low and cocks"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "roll_drop", "style": "smooth", "via": [[-10, -55, 40, -10, 90, 20]], "durations": [0.55], "notes": "blade rolls flat to the left as the arm drops through mid height, then settles low and cocks"}
+ ]}

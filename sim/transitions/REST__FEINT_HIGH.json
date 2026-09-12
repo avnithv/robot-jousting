@@ -1,41 +1,6 @@
-{
- "from": "REST",
- "to": "FEINT_HIGH",
+{"from": "REST", "to": "FEINT_HIGH",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "salute_rise",
-   "style": "smooth",
-   "via": [
-    "SALUTE"
-   ],
-   "durations": [
-    0.45
-   ],
-   "notes": "comes up out of rest into a vertical salute, then tilts the blade forward into the raised windup"
-  },
-  {
-   "name": "uncoil",
-   "style": "smooth",
-   "via": [
-    [
-     -2,
-     -76,
-     2,
-     10,
-     0,
-     5
-    ]
-   ],
-   "durations": [
-    0.3
-   ],
-   "notes": "forearm flicks the blade straight up first, then the shoulder follows it forward into the raised windup"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "salute_rise", "style": "smooth", "via": ["SALUTE"], "durations": [0.45], "notes": "comes up out of rest into a vertical salute, then tilts the blade forward into the raised windup"},
+  {"name": "uncoil", "style": "smooth", "via": [[-2, -76, 2, 10, 0, 5]], "durations": [0.3], "notes": "forearm flicks the blade straight up first, then the shoulder follows it forward into the raised windup"}
+ ]}

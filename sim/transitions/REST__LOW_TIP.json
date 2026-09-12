@@ -1,23 +1,5 @@
-{
- "from": "REST",
- "to": "LOW_TIP",
+{"from": "REST", "to": "LOW_TIP",
  "paths": [
-  {
-   "name": "direct",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "through_mid",
-   "style": "smooth",
-   "via": [
-    "MID"
-   ],
-   "durations": [
-    0.3
-   ],
-   "notes": "arm unfolds forward to mid height, then the blade rolls under and the tip drops to the floor"
-  }
- ]
-}
+  {"name": "direct", "style": "plain", "via": [], "durations": []},
+  {"name": "through_mid", "style": "smooth", "via": ["MID"], "durations": [0.3], "notes": "arm unfolds forward to mid height, then the blade rolls under and the tip drops to the floor"}
+ ]}

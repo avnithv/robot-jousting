@@ -1,17 +1,4 @@
-{
- "from": "LOW_TIP",
- "to": "BLOCK_HIGH",
+{"from": "LOW_TIP", "to": "BLOCK_HIGH",
  "paths": [
-  {
-   "name": "plain",
-   "style": "plain",
-   "via": [
-    "MID"
-   ],
-   "durations": [
-    0.8
-   ],
-   "notes": "tip lifts off the floor through the mid stance, then the arm rears over and the blade swings out as the bar"
-  }
- ]
-}
+  {"name": "plain", "style": "plain", "via": ["MID"], "durations": [0.8], "notes": "tip lifts off the floor through the mid stance, then the arm rears over and the blade swings out as the bar"}
+ ]}

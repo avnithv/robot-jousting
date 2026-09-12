@@ -1,39 +1,5 @@
-{
- "from": "LOW_TIP",
- "to": "LOW_TIP",
+{"from": "LOW_TIP", "to": "LOW_TIP",
  "paths": [
-  {
-   "name": "hold",
-   "style": "plain",
-   "via": [],
-   "durations": []
-  },
-  {
-   "name": "floor_sweep",
-   "style": "smooth",
-   "via": [
-    [
-     -10,
-     -30,
-     40,
-     40,
-     -180,
-     0
-    ],
-    [
-     10,
-     -30,
-     40,
-     40,
-     -180,
-     0
-    ]
-   ],
-   "durations": [
-    0.25,
-    0.35
-   ],
-   "notes": "idle: the planted tip drags a little left then right along the floor"
-  }
- ]
-}
+  {"name": "hold", "style": "plain", "via": [], "durations": []},
+  {"name": "floor_sweep", "style": "smooth", "via": [[-10, -30, 40, 40, -180, 0], [10, -30, 40, 40, -180, 0]], "durations": [0.25, 0.35], "notes": "idle: the planted tip drags a little left then right along the floor"}
+ ]}
