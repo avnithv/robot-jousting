@@ -1,21 +1,25 @@
 {
- "_doc": "Low horizontal slash on the RIGHT side: starts on the arm's RIGHT, ends on its LEFT. Frozen 2026-09-12 from the mirror of ATTACK_LOW_LR (captured.start/end = that mirrored windup/end in real degrees), then the end wrist lowered 12 deg so the blade points down instead of level. Note: a mirror_of move ignores its own captured entry, hence the standalone form. Delete captured.* to recompute from end/start.",
+ "_doc": "Low horizontal slash on the RIGHT side, HALF sweep: starts from the user's physically posed windup (captured.start, real degrees, posed 2026-09-12: hand ~0.33 m forward, 3.5 cm up, pan 18 own-right, blade near level) then sweeps across like the normal low slash but stops around halfway (end.pan -1 instead of -20, end.z between the posed start height and the old 0.08 low line). Was: computed windup at (0.22, 0.09) pan 20 -> end (0.27, 0.08) pan -20 in 0.4 s. Delete captured.start to recompute the windup from start/end.",
  "_help": {
   "end.x": "hand distance forward at the end of the slash (m, keep <= 0.27)",
   "end.z": "height of the low line (m above the base plane)",
-  "end.pan": "where the slash ends (deg; negative = own left)",
-  "start.dx": "windup hand offset from the end, forward (m; negative = pulled back)",
-  "start.dz": "windup hand offset from the end, up (m)",
-  "start.pan": "where the slash starts (deg; + = own right)",
+  "end.pan": "where the slash ends (deg; negative = own left). -1 = halfway across; the full slash ended at -20",
+  "start.dx": "windup hand offset from the end, forward (m; negative = pulled back) - ignored while captured.start is set",
+  "start.dz": "windup hand offset from the end, up (m) - ignored while captured.start is set",
+  "start.pan": "where the slash starts (deg; + = own right) - ignored while captured.start is set",
   "roll": "wrist roll: -90 = jaw swings sideways on this side (keep -90)",
-  "jaw_open": "how wide the sword cocks before the sweep (0..100): smaller = comes from less wide",
-  "t_windup": "seconds: rest -> cocked low on the start side (0.85 = the old mirror timing)",
-  "t_slash": "seconds: the sweep (base pan speed)"
+  "jaw_open": "how wide the sword cocks before the sweep (0..100): 42 = as the user posed it",
+  "t_windup": "seconds: rest -> the posed windup on the right",
+  "t_slash": "seconds: the half sweep (0.25 keeps roughly the full slash's pan speed: 40 deg in 0.4 s)",
+  "captured.start": "the windup pose in REAL arm degrees [pan, lift, elbow, wrist, roll, jaw], posed by hand on the arm; overrides start.*"
+ },
+ "captured": {
+  "start": [18.2, 42.9, 30.9, -66.8, -174.5, 42.0]
  },
  "end": {
   "x": 0.27,
-  "z": 0.08,
-  "pan": -20
+  "z": 0.06,
+  "pan": -1
  },
  "start": {
   "dx": -0.05,
@@ -23,7 +27,7 @@
   "pan": 20
  },
  "roll": -90,
- "jaw_open": 55,
+ "jaw_open": 42,
  "t_windup": 0.85,
- "t_slash": 0.4
+ "t_slash": 0.25
 }
