@@ -1,12 +1,31 @@
 {
  "_doc": "The safe show: one gantry ride in, both salute, four pairs played one at a time (each from rest, back to rest), then the ride out. Only pairs from the safe list: attack/feint high vs block high, low slash vs the middle block, attack/feint high vs attack/feint high. Run from the studio's Show tab (big STOP there) or: python3 arm/duel_sequence.py sim/safe_show.json",
- "opener": {"a": "SALUTE", "b": "SALUTE"},
+ "opener": {
+  "a": "SALUTE",
+  "b": "SALUTE"
+ },
  "scale": 1.0,
  "return_speed": 120,
  "moves": [
-  {"a": "ATTACK_HIGH",   "b": "BLOCK_HIGH",   "note": "A's chop on B's bar"},
-  {"a": "BLOCK_HIGH",    "b": "FEINT_HIGH",   "note": "B fakes the chop at A's bar (no contact)"},
-  {"a": "ATTACK_LOW_LR", "b": "BLOCK_MIDDLE", "note": "A's low slash into B's hanging guard"},
-  {"a": "FEINT_HIGH",    "b": "ATTACK_HIGH",  "note": "A's high feint meets B's real chop"}
+  {
+   "a": "ATTACK_HIGH",
+   "b": "BLOCK_HIGH",
+   "note": "A's chop on B's bar"
+  },
+  {
+   "a": "BLOCK_HIGH",
+   "b": "FEINT_HIGH",
+   "note": "B fakes the chop at A's bar (no contact)"
+  },
+  {
+   "a": "ATTACK_LOW_RL",
+   "b": "BLOCK_MIDDLE",
+   "note": "A's low slash, right to left, into B's hanging guard"
+  },
+  {
+   "a": "FEINT_HIGH",
+   "b": "ATTACK_HIGH",
+   "note": "A's high feint meets B's real chop"
+  }
  ]
 }
