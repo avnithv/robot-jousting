@@ -1,8 +1,8 @@
 {
- "_doc": "Feint: follows ATTACK_LOW_RL into its strike up to `swing`, then the hand snaps back over t_back_fast while the arm settles over t_back_slow.",
+ "_doc": "Feint: follows ATTACK_LOW_RL into its strike up to `swing`, stops, then pulls back only `retreat` of the way toward the cocked pose (hand fast, arm slow).",
  "like": "ATTACK_LOW_RL",
  "pull_back": {
-  "lift": -8,
+  "lift": 0,
   "wrist": 0
  },
  "jaw_after": 40,
@@ -15,7 +15,8 @@
   "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose.",
   "swing": "how far into the attack's strike the feint goes before stopping (0 = stops at the cocked pose, 1 = full strike)",
   "t_back_fast": "seconds for the wrist and jaw to pull back after the stop (fast is fine here)",
-  "t_back_slow": "seconds for the base, shoulder and elbow to settle back (slow = no visible jerk)"
+  "t_back_slow": "seconds for the base, shoulder and elbow to settle back (slow = no visible jerk)",
+  "retreat": "how far the pull back goes, as a fraction of the way from the mid-swing stop back to the cocked pose (0.35 = slightly off, 1 = all the way)"
  },
  "captured_retired_2026-09-12": {
   "start": [
@@ -37,5 +38,6 @@
  },
  "swing": 0.5,
  "t_back_fast": 0.35,
- "t_back_slow": 1.0
+ "t_back_slow": 1.0,
+ "retreat": 0.35
 }

@@ -122,6 +122,7 @@ def feint(P):
     mid = cocked + swing * (end - cocked)                                   # stop part-way through the strike
     back = cocked.copy(); back[1] += P["pull_back"].get("lift", 0); back[3] += P["pull_back"].get("wrist", 0); back[5] = P["jaw_after"]
     if cap(P, "end") is not None: back = cap(P, "end", jaw=P["jaw_after"])
+    back = mid + float(P.get("retreat", 0.35)) * (back - mid)               # only pull back part of the way from the stop
     # retreat: the hand (wrist pitch + jaw) pulls back fast, the arm (pan, shoulder, elbow) follows slowly and smoothly
     t_fast = float(P.get("t_back_fast", 0.35)); t_slow = max(float(P.get("t_back_slow", 1.0)), t_fast + 0.1)
     k_fast = mid + (t_fast / t_slow) * (back - mid); k_fast[3] = back[3]; k_fast[5] = back[5]; k_fast[4] = back[4]
