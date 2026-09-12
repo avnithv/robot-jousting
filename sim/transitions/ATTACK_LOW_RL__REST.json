@@ -1,0 +1,6 @@
+{"from": "ATTACK_LOW_RL", "to": "REST",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "mid_settle", "style": "smooth", "via": ["MID"], "durations": [0.48], "notes": "hand lifts to the hub, then folds back to rest"},
+  {"name": "salute_recover", "style": "smooth", "via": ["SALUTE"], "durations": [0.45], "notes": "blade lifts to vertical in front, then folds back down into rest"}
+ ]}

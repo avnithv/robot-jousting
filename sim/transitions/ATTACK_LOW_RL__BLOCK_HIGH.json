@@ -1,0 +1,5 @@
+{"from": "ATTACK_LOW_RL", "to": "BLOCK_HIGH",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "raise_bar", "style": "smooth", "via": [[20, -40, 20, -40, 0, 50]], "durations": [0.45], "notes": "hand lifts through the middle with the sword coming on top, then cocks out into the bar"}
+ ]}

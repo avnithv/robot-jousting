@@ -1,0 +1,5 @@
+{"from": "ATTACK_LOW_LR", "to": "FEINT_RIGHT",
+ "paths": [
+  {"name": "plain", "style": "plain", "via": [[20, -45, 45, -30, 0, 30]], "durations": [0.43], "notes": "hand rises with the sword turning on top, then drops onto the right-hand windup"},
+  {"name": "salute_flip", "style": "smooth", "via": ["SALUTE"], "durations": [0.47], "notes": "blade goes vertical in the salute, then flips over to the other side"}
+ ]}

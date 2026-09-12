@@ -1,0 +1,6 @@
+{"from": "FEINT_RIGHT", "to": "REST",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "mid_settle", "style": "smooth", "via": ["MID"], "durations": [0.46], "notes": "hand lifts to the hub, then folds back to rest"},
+  {"name": "jaw_snap", "style": "snappy", "via": [[14, -24, 88, -58, -90, 0]], "durations": [0.18], "notes": "the sword snaps shut to the finger first, then the arm folds back to rest"}
+ ]}

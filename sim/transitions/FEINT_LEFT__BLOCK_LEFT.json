@@ -1,0 +1,5 @@
+{"from": "FEINT_LEFT", "to": "BLOCK_LEFT",
+ "paths": [
+  {"name": "plain", "style": "plain", "via": [[-20, -50, 30, -10, -90, 40]], "durations": [0.85], "notes": "hand rises and the sword rolls over up high, then drops into the left guard"},
+  {"name": "mid_guard", "style": "smooth", "via": ["MID"], "durations": [0.68], "notes": "up through the hub, then down into the left guard"}
+ ]}

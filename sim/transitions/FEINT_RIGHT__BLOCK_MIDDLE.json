@@ -1,0 +1,5 @@
+{"from": "FEINT_RIGHT", "to": "BLOCK_MIDDLE",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "raise_guard", "style": "smooth", "via": [[0, -40, 40, 0, -90, 30]], "durations": [0.46], "notes": "hand lifts to the middle, then settles down into the middle guard"}
+ ]}

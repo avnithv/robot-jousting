@@ -1,0 +1,5 @@
+{"from": "ATTACK_LOW_RL", "to": "LOW_TIP",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "hover_dip", "style": "smooth", "via": [[0, -30, 40, 20, -180, 0]], "durations": [0.58], "notes": "blade turns under and hovers level, then the tip dips to the board"}
+ ]}

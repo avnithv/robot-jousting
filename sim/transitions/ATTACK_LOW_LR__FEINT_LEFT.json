@@ -1,0 +1,6 @@
+{"from": "ATTACK_LOW_LR", "to": "FEINT_LEFT",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "overhand_reload", "style": "smooth", "via": [[0, -50, 60, -30, 90, 55]], "durations": [0.23], "notes": "hand arcs up and over to the left windup, jaw opening on the way"},
+  {"name": "wag", "style": "snappy", "via": [[32, -7, 68, -47, 90, 0]], "durations": [0.14], "notes": "a small extra push to the right, then the blade swings back to the windup"}
+ ]}

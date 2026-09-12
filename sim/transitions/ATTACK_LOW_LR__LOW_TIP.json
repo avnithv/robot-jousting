@@ -1,0 +1,5 @@
+{"from": "ATTACK_LOW_LR", "to": "LOW_TIP",
+ "paths": [
+  {"name": "plain", "style": "plain", "via": [[10, -50, 30, -10, -90, 0]], "durations": [0.85], "notes": "hand rises and the blade flips over up high, then drops tip-down"},
+  {"name": "mid_drop", "style": "smooth", "via": ["MID"], "durations": [0.68], "notes": "up through the hub with the blade rolling under, then the tip dips"}
+ ]}

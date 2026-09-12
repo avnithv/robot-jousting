@@ -1,0 +1,5 @@
+{"from": "ATTACK_LOW_LR", "to": "MID",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "straight blend"},
+  {"name": "salute_settle", "style": "smooth", "via": ["SALUTE"], "durations": [0.47], "notes": "blade rises to vertical, then lowers into the hub"}
+ ]}
