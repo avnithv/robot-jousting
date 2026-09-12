@@ -1,0 +1,5 @@
+{"from": "BLOCK_MIDDLE", "to": "MID",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts straight into the routing hub"},
+  {"name": "lift_first", "style": "smooth", "via": [[0, -50, 20, 10, -90, 0]], "durations": [0.45], "notes": "blade rises sideways clear of the board before the wrist rolls it onto the top and settles at the hub"}
+ ]}

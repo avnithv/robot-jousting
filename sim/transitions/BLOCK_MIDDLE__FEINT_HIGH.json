@@ -1,0 +1,6 @@
+{"from": "BLOCK_MIDDLE", "to": "FEINT_HIGH",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts and rolls the blade back on top while rising to the high windup"},
+  {"name": "lift_then_roll", "style": "smooth", "via": [[0, -50, 20, 10, -90, 0]], "durations": [0.45], "notes": "blade lifts sideways clear of the board first, then rolls on top and rises to the cocked-high windup"},
+  {"name": "hub_rise", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "blade lifts out of the middle guard into the hub, rolls back on top and rises into the feint high windup"}
+ ]}

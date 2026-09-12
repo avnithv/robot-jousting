@@ -1,0 +1,42 @@
+{
+ "from": "FEINT_HIGH",
+ "to": "FEINT_RIGHT",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "fold_right",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -35,
+     20,
+     -10,
+     -90,
+     20
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "blade flips onto its right side as the elbow folds high, then drops into the right windup"
+  },
+  {
+   "name": "hub_drop",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.4
+   ],
+   "notes": "settles through the hub, then drops to the right windup"
+  }
+ ]
+}

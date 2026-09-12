@@ -1,0 +1,30 @@
+{
+ "from": "MID",
+ "to": "LOW_TIP",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "roll_then_dip",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -60,
+     35,
+     10,
+     -180,
+     0
+    ]
+   ],
+   "durations": [
+    0.8
+   ],
+   "notes": "blade rolls all the way under at mid height first, then the arm reaches down to plant the tip"
+  }
+ ]
+}

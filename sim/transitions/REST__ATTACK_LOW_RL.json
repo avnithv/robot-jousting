@@ -1,0 +1,41 @@
+{
+ "from": "REST",
+ "to": "ATTACK_LOW_RL",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "through_mid",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "unfolds forward into the mid stance, then drops to the right with the blade rolled the other way, cocked"
+  },
+  {
+   "name": "roll_then_drop",
+   "style": "smooth",
+   "via": [
+    [
+     -4,
+     -85,
+     50,
+     3,
+     -90,
+     10
+    ]
+   ],
+   "durations": [
+    0.55
+   ],
+   "notes": "blade turns flat the other way while still folded, then the arm swings down and right to cock"
+  }
+ ]
+}

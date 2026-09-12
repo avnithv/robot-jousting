@@ -1,0 +1,6 @@
+{"from": "BLOCK_RIGHT", "to": "SALUTE",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts and rolls straight up into the salute"},
+  {"name": "hub_rise", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts through the hub, then the arm rises into the salute"},
+  {"name": "side_rise", "style": "smooth", "via": [[15, -50, 20, 10, -90, 0]], "durations": [0.5], "notes": "blade rises sideways, then sweeps up on top into the salute"}
+ ]}

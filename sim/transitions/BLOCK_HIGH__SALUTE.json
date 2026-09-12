@@ -1,0 +1,31 @@
+{
+ "from": "BLOCK_HIGH",
+ "to": "SALUTE",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "roll_over",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -40,
+     -25,
+     -15,
+     45,
+     40
+    ]
+   ],
+   "durations": [
+    0.5
+   ],
+   "notes": "bar lifts to vertical still twisted sideways, then rolls flat on top into the salute"
+  }
+ ]
+}

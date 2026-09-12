@@ -1,0 +1,5 @@
+{"from": "BLOCK_LEFT", "to": "FEINT_RIGHT",
+ "paths": [
+  {"name": "plain", "style": "plain", "via": [[-20, -60, 50, -30, -90, 0]], "durations": [0.7], "notes": "hand lifts back and rolls halfway (blade sideways), then swings right and cocks low"},
+  {"name": "hub_swing", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts to the hub, then swings right into the low-right windup"}
+ ]}

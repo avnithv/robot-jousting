@@ -1,0 +1,12 @@
+{
+ "from": "MID",
+ "to": "REST",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  }
+ ]
+}

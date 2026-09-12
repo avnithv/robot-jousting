@@ -155,6 +155,36 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm (or both)
             for x in (arms.values() if name == "both" else [a]): x.abort = True
             return self._json({"ok": True})
+        if self.path == "/turn":   # a full turn: (move apart if needed) -> charge in -> both salute -> both play their chains -> (apart)
+            A, B = arms.get("A"), arms.get("B")
+            if not (A and B): return self._json({"error": "both arms must be connected"}, 404)
+            if not gantry.homed: return self._json({"error": "gantry not referenced: press Home first"}, 409)
+            if not (A.busy.acquire(blocking=False)): return self._json({"error": "A busy"}, 409)
+            if not (B.busy.acquire(blocking=False)): A.busy.release(); return self._json({"error": "B busy"}, 409)
+            try:
+                scale = float(body.get("scale", 0.5)); feed = float(body.get("feed", gantry.cfg["charge_feed"])); log = []
+                def both(mA, mB, sc):
+                    bar = threading.Barrier(2); errs = {}
+                    def run(arm, move):
+                        try: arm.play(move, sc, 1, barrier=bar)
+                        except Exception as e: arm.last = f"error: {e}"; errs[arm.name] = str(e)
+                    ta = threading.Thread(target=run, args=(A, mA)); tb = threading.Thread(target=run, args=(B, mB)); ta.start(); tb.start(); ta.join(); tb.join()
+                    if errs: raise RuntimeError(str(errs))
+                for x in (A, B): x.ease_to(x.rest_pose())                       # arms at rest for the ride
+                with gantry.lock:
+                    st = gantry.status(); apart = gantry.cfg["apart"]
+                    if abs(st.get("x", 0) - apart["X"]) > 2 or abs(st.get("y", 0) - apart["Y"]) > 2:
+                        gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
+                    time.sleep(0.5); gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], feed); log.append("charged in")
+                if body.get("salute", True): both("SALUTE", "SALUTE", 1.0); log.append("saluted")
+                both(body.get("moveA", "CHAIN_A"), body.get("moveB", "CHAIN_B"), scale); log.append("played")
+                if body.get("apart_after", True):
+                    with gantry.lock: gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
+                self._json({"ok": True, "log": log, "A": A.last, "B": B.last})
+            except Exception as e:
+                self._json({"error": str(e)}, 500)
+            finally: A.busy.release(); B.busy.release()
+            return
         if self.path == "/play_both":   # two arms, two moves, synchronized start
             A, B = arms.get("A"), arms.get("B")
             if not (A and B): return self._json({"error": "both arms must be connected"}, 404)

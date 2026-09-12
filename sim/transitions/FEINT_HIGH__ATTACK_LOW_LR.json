@@ -1,0 +1,42 @@
+{
+ "from": "FEINT_HIGH",
+ "to": "ATTACK_LOW_LR",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "fold_left",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -35,
+     20,
+     -10,
+     90,
+     20
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "blade flips onto its left side as the elbow folds high, then drops into the left windup"
+  },
+  {
+   "name": "salute_drop",
+   "style": "smooth",
+   "via": [
+    "SALUTE"
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "blade lifts to vertical, then sweeps down and left into the windup"
+  }
+ ]
+}

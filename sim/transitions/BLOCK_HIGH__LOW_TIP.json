@@ -1,0 +1,35 @@
+{
+ "from": "BLOCK_HIGH",
+ "to": "LOW_TIP",
+ "paths": [
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "through the hub (roll-limited: the bar's roll has to unwind 230-270 deg), then the tip drops to the board"
+  },
+  {
+   "name": "high_roll",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -40,
+     10,
+     20,
+     -180,
+     0
+    ]
+   ],
+   "durations": [
+    1.2
+   ],
+   "notes": "bar lifts high and rolls all the way over the top, then the tip drops to the board"
+  }
+ ]
+}

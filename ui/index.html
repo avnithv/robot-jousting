@@ -38,7 +38,7 @@
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
  <div class="bar" id="bothbar"><b>Both arms</b> <label>A <select id="moveA"></select></label> <label>B <select id="moveB"></select></label>
   <label>speed <input id="scaleBoth" type="number" value="0.5" step="0.1" min="0.1" max="1.5"></label>
-  <button class="primary" onclick="runBoth()">Run both</button> <button class="abort" onclick="abortBoth()">ABORT BOTH</button> <small>collisions are possible: start slow, stay clear</small></div>
+  <button class="primary" onclick="runBoth()">Run both</button> <button class="primary" onclick="runTurn()" title="move apart if needed, charge in at the gantry feed, both salute, both play, move apart">Run TURN</button> <button class="abort" onclick="abortBoth()">ABORT BOTH</button> <small>collisions are possible: start slow, stay clear</small></div>
  <div class="bar" id="gantrybar"><b>Gantry</b> <span id="gst" class="arm"></span>
   <button onclick="gantry('home')">Home</button> <button class="primary" onclick="gantry('together')">Charge in</button> <button onclick="gantry('apart')">Move apart</button>
   <label>feed <input id="gfeed" type="number" value="24000" step="1000" min="1" max="24000"> mm/min</label> <button class="abort" onclick="gantry('abort')">ABORT GANTRY</button></div>
@@ -95,6 +95,7 @@ function setArm(a){ARM=a;try{localStorage.setItem('arm',a)}catch(e){}document.bo
 async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
+async function runTurn(){await api('/api/turn',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value),feed:parseFloat(document.getElementById('gfeed').value)});poll()}
 async function runBoth(){await api('/api/run_both',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value)});poll()}
 async function abortBoth(){await api('/api/abort',{arm:'both'});poll()}
 async function gantry(op){const f=parseFloat(document.getElementById('gfeed').value);await api('/api/gantry',{op,feed:f});poll()}

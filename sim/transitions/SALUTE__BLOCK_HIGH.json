@@ -1,0 +1,30 @@
+{
+ "from": "SALUTE",
+ "to": "BLOCK_HIGH",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "pan_over",
+   "style": "smooth",
+   "via": [
+    [
+     38,
+     -25,
+     -25,
+     -40,
+     45,
+     40
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "arm turns to the right first with the blade still up, then rears over and the blade swings out as the bar"
+  }
+ ]
+}

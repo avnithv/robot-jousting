@@ -1,0 +1,40 @@
+{
+ "from": "FEINT_HIGH",
+ "to": "MID",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "wag",
+   "style": "smooth",
+   "via": [
+    [
+     -10,
+     -26,
+     -32,
+     20,
+     0,
+     40
+    ],
+    [
+     10,
+     -26,
+     -32,
+     48,
+     0,
+     40
+    ]
+   ],
+   "durations": [
+    0.2,
+    0.2
+   ],
+   "notes": "finger wag: wrist and pan waggle the raised blade side to side (made you flinch), then settles to the hub"
+  }
+ ]
+}

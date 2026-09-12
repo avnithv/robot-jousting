@@ -1,0 +1,35 @@
+{
+ "from": "ATTACK_HIGH",
+ "to": "FEINT_RIGHT",
+ "paths": [
+  {
+   "name": "plain",
+   "style": "plain",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.45
+   ],
+   "notes": "pull up through the hub (the straight blend overreaches on arm B), then drop to the right windup"
+  },
+  {
+   "name": "recoil_fold",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -35,
+     20,
+     -10,
+     -90,
+     20
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "blade recoils up and flips onto its right side as the elbow folds, then drops into the right windup"
+  }
+ ]
+}

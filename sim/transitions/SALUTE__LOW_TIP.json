@@ -1,0 +1,23 @@
+{
+ "from": "SALUTE",
+ "to": "LOW_TIP",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "through_mid",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.4
+   ],
+   "notes": "arm comes down through the mid stance, blade rolling under, then reaches down to plant the tip"
+  }
+ ]
+}

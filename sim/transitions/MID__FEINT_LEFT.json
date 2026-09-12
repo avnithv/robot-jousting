@@ -1,0 +1,30 @@
+{
+ "from": "MID",
+ "to": "FEINT_LEFT",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "wag_in",
+   "style": "smooth",
+   "via": [
+    [
+     -32,
+     -62,
+     85,
+     -20,
+     90,
+     30
+    ]
+   ],
+   "durations": [
+    0.8
+   ],
+   "notes": "blade rolls over to the left as the arm drops past the mark, then eases back in and cocks"
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+{"from": "BLOCK_MIDDLE", "to": "FEINT_RIGHT",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts and rolls a quarter turn while swinging to the low-right windup"},
+  {"name": "lift_then_swing", "style": "smooth", "via": [[0, -50, 20, 10, -90, 0]], "durations": [0.45], "notes": "blade lifts sideways clear of the board, then swings right and cocks low"},
+  {"name": "hub_swing", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts to the hub, then swings right into the low-right windup"}
+ ]}

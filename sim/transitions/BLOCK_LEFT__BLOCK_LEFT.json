@@ -1,0 +1,5 @@
+{"from": "BLOCK_LEFT", "to": "BLOCK_LEFT",
+ "paths": [
+  {"name": "hold", "style": "plain", "via": [], "durations": [], "notes": "holds the guard"},
+  {"name": "side_flick", "style": "flourish", "via": [[-28, -30, 15, 40, -90, 40]], "durations": [0.5], "notes": "idle: blade swings out sideways with a jaw flick, then drops back into the same guard"}
+ ]}

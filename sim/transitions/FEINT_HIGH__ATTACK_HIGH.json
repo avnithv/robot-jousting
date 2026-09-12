@@ -1,0 +1,51 @@
+{
+ "from": "FEINT_HIGH",
+ "to": "ATTACK_HIGH",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "the classic feint-then-chop: straight re-raise to the cocked pose"
+  },
+  {
+   "name": "wag_recock",
+   "style": "smooth",
+   "via": [
+    [
+     -10,
+     -26,
+     -32,
+     20,
+     0,
+     40
+    ],
+    [
+     10,
+     -26,
+     -32,
+     48,
+     0,
+     40
+    ]
+   ],
+   "durations": [
+    0.2,
+    0.2
+   ],
+   "notes": "finger wag: wrist and pan waggle the raised blade side to side (made you flinch), then re-cocks"
+  },
+  {
+   "name": "salute_recock",
+   "style": "smooth",
+   "via": [
+    "SALUTE"
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "blade lifts to vertical then tips back overhead to cock"
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+{"from": "BLOCK_RIGHT", "to": "BLOCK_HIGH",
+ "paths": [
+  {"name": "plain", "style": "plain", "via": ["SALUTE"], "durations": [0.9], "notes": "arm rises into a salute, then the blade swings out into the high bar (direct blend overreaches on arm B)"},
+  {"name": "hub_rear", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts through the hub, then rears up into the high bar"}
+ ]}

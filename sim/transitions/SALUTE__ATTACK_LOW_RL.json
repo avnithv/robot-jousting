@@ -1,0 +1,23 @@
+{
+ "from": "SALUTE",
+ "to": "ATTACK_LOW_RL",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "through_mid",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.4
+   ],
+   "notes": "arm drops through the mid stance with the blade half rolled, then falls to the right and cocks"
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+{
+ "from": "LOW_TIP",
+ "to": "ATTACK_LOW_RL",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "wag_in",
+   "style": "smooth",
+   "via": [
+    [
+     30,
+     -30,
+     90,
+     -60,
+     -90,
+     30
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "tip lifts and the arm swings right past the mark with the blade sideways, then eases back in and cocks"
+  }
+ ]
+}

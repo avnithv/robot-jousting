@@ -1,0 +1,30 @@
+{
+ "from": "LOW_TIP",
+ "to": "BLOCK_MIDDLE",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "lift_settle",
+   "style": "smooth",
+   "via": [
+    [
+     -6,
+     -45,
+     40,
+     25,
+     -135,
+     20
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "tip lifts a little off the floor, then settles back down into the middle guard"
+  }
+ ]
+}

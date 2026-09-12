@@ -1,0 +1,58 @@
+{
+ "from": "ATTACK_HIGH",
+ "to": "FEINT_LEFT",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "recoil_fold",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -35,
+     20,
+     -10,
+     90,
+     20
+    ]
+   ],
+   "durations": [
+    0.6
+   ],
+   "notes": "blade recoils up and flips onto its left side as the elbow folds, then drops into the left windup"
+  },
+  {
+   "name": "quiver",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -6,
+     -32,
+     72,
+     0,
+     40
+    ],
+    [
+     0,
+     -6,
+     -32,
+     72,
+     0,
+     0
+    ]
+   ],
+   "durations": [
+    0.12,
+    0.12
+   ],
+   "notes": "blade shivers in the target (jaw flick x1) before it comes away, then swings down to the left windup"
+  }
+ ]
+}

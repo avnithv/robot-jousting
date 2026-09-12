@@ -1,0 +1,30 @@
+{
+ "from": "MID",
+ "to": "BLOCK_LEFT",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "swing_out_left",
+   "style": "smooth",
+   "via": [
+    [
+     -36,
+     -45,
+     20,
+     20,
+     -90,
+     30
+    ]
+   ],
+   "durations": [
+    0.3
+   ],
+   "notes": "arm swings out to the left with the blade sideways, then the blade drops into the hanging guard"
+  }
+ ]
+}

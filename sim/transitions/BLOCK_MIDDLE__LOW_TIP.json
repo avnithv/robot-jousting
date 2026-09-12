@@ -1,0 +1,5 @@
+{"from": "BLOCK_MIDDLE", "to": "LOW_TIP",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard slides across into the low tip pose (same roll world on arm A, a full roll under on arm B)"},
+  {"name": "dip_settle", "style": "flourish", "via": [[0, -36, 46, 34, -180, 0]], "durations": [0.9], "notes": "tip dips a touch under the low-tip pose then settles up into it"}
+ ]}

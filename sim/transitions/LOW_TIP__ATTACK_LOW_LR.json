@@ -1,0 +1,30 @@
+{
+ "from": "LOW_TIP",
+ "to": "ATTACK_LOW_LR",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "lift_roll_over",
+   "style": "smooth",
+   "via": [
+    [
+     -10,
+     -60,
+     50,
+     0,
+     -45,
+     10
+    ]
+   ],
+   "durations": [
+    0.8
+   ],
+   "notes": "tip lifts clear as the blade rolls all the way over the top to the left side, then drops to cock"
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+{"from": "BLOCK_MIDDLE", "to": "BLOCK_LEFT",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "pan slide from the middle guard to the left guard, tip stays low"},
+  {"name": "side_flick", "style": "flourish", "via": [[-28, -30, 15, 40, -90, 40]], "durations": [0.45], "notes": "slides across with the blade swinging out sideways and a jaw flick mid-way, then drops into the left guard"}
+ ]}

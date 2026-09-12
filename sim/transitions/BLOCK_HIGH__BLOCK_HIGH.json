@@ -1,0 +1,31 @@
+{
+ "from": "BLOCK_HIGH",
+ "to": "BLOCK_HIGH",
+ "paths": [
+  {
+   "name": "hold",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "stay put"
+  },
+  {
+   "name": "bar_lift",
+   "style": "smooth",
+   "via": [
+    [
+     20,
+     30,
+     -60,
+     -60,
+     90,
+     100
+    ]
+   ],
+   "durations": [
+    0.45
+   ],
+   "notes": "the bar lifts up and settles back down: a shove"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "from": "LOW_TIP",
+ "to": "REST",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "through_mid",
+   "style": "smooth",
+   "via": [
+    "MID"
+   ],
+   "durations": [
+    0.8
+   ],
+   "notes": "tip lifts off the floor as the arm rises to mid height, blade rolling back on top, then folds into rest"
+  }
+ ]
+}

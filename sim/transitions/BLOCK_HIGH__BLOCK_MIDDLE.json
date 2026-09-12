@@ -1,0 +1,31 @@
+{
+ "from": "BLOCK_HIGH",
+ "to": "BLOCK_MIDDLE",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "up_roll",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -30,
+     -20,
+     10,
+     -90,
+     20
+    ]
+   ],
+   "durations": [
+    0.85
+   ],
+   "notes": "bar lifts high and rolls over, then drops into the middle guard"
+  }
+ ]
+}

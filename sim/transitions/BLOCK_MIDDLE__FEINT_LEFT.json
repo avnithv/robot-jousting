@@ -1,0 +1,6 @@
+{"from": "BLOCK_MIDDLE", "to": "FEINT_LEFT",
+ "paths": [
+  {"name": "direct", "style": "plain", "via": [], "durations": [], "notes": "guard lifts and the blade rolls the long way over the top to the sideways low-left windup (arm A: 270 deg of roll)"},
+  {"name": "over_the_top", "style": "smooth", "via": [[0, -50, 25, 0, 0, 0]], "durations": [0.9], "notes": "blade lifts and rolls onto the top level, then drops left and cocks sideways"},
+  {"name": "hub_drop", "style": "smooth", "via": ["MID"], "durations": [0.7], "notes": "lifts to the hub, then drops left into the sideways windup"}
+ ]}

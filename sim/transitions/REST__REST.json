@@ -1,0 +1,39 @@
+{
+ "from": "REST",
+ "to": "REST",
+ "paths": [
+  {
+   "name": "hold",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "look_around",
+   "style": "smooth",
+   "via": [
+    [
+     -14,
+     -89,
+     47,
+     3,
+     0,
+     8
+    ],
+    [
+     6,
+     -89,
+     47,
+     3,
+     0,
+     8
+    ]
+   ],
+   "durations": [
+    0.3,
+    0.35
+   ],
+   "notes": "idle: folded arm pans a little left then right, like glancing across the table"
+  }
+ ]
+}

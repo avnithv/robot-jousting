@@ -1,0 +1,31 @@
+{
+ "from": "FEINT_HIGH",
+ "to": "BLOCK_LEFT",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "roll_then_drop",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -26,
+     -32,
+     34,
+     -90,
+     0
+    ]
+   ],
+   "durations": [
+    0.55
+   ],
+   "notes": "blade rolls underneath while still raised, then drops into the hanging guard on the left"
+  }
+ ]
+}

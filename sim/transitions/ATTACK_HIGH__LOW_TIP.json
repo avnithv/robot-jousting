@@ -1,6 +1,6 @@
 {
  "from": "ATTACK_HIGH",
- "to": "BLOCK_MIDDLE",
+ "to": "LOW_TIP",
  "paths": [
   {
    "name": "direct",
@@ -25,18 +25,7 @@
    "durations": [
     0.55
    ],
-   "notes": "blade recoils up off the target, rolls while high, then drops into the hanging guard in the middle"
-  },
-  {
-   "name": "drop_guard",
-   "style": "smooth",
-   "via": [
-    "MID"
-   ],
-   "durations": [
-    0.45
-   ],
-   "notes": "pull up through the hub, then settle into the middle guard"
+   "notes": "blade recoils up off the target, rolls underneath while high, then the tip drops to the board"
   }
  ]
 }

@@ -1,0 +1,30 @@
+{
+ "from": "SALUTE",
+ "to": "BLOCK_MIDDLE",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": []
+  },
+  {
+   "name": "swing_out",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -50,
+     30,
+     10,
+     -90,
+     30
+    ]
+   ],
+   "durations": [
+    0.55
+   ],
+   "notes": "arm comes down and forward with the blade sideways, then the blade drops into the middle guard"
+  }
+ ]
+}

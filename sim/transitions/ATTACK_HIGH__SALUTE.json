@@ -1,0 +1,40 @@
+{
+ "from": "ATTACK_HIGH",
+ "to": "SALUTE",
+ "paths": [
+  {
+   "name": "direct",
+   "style": "plain",
+   "via": [],
+   "durations": [],
+   "notes": "straight blend"
+  },
+  {
+   "name": "quiver",
+   "style": "smooth",
+   "via": [
+    [
+     0,
+     -6,
+     -32,
+     72,
+     0,
+     40
+    ],
+    [
+     0,
+     -6,
+     -32,
+     72,
+     0,
+     0
+    ]
+   ],
+   "durations": [
+    0.12,
+    0.12
+   ],
+   "notes": "blade shivers in the target (jaw flick x1) before it comes away, then snaps up to the salute"
+  }
+ ]
+}
