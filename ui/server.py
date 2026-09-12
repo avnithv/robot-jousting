@@ -146,6 +146,9 @@ def api(handler, path, body):
                 open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/connect": ensure_daemon(); return daemon("/connect", {"arm": body.get("arm", "B")}, timeout=60)
+    if path == "/api/gantry":
+        ensure_daemon(); return daemon("/gantry/" + body["op"], {k: v for k, v in body.items() if k != "op"}, timeout=400)
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)

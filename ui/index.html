@@ -12,6 +12,7 @@
  h2{margin:0 0 4px} small{color:#666} table{border-collapse:collapse;width:100%;max-width:760px} td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top} td.k{font-family:ui-monospace,monospace;white-space:nowrap;width:1%} td.h{color:#666;font-size:12px}
  input[type=number]{width:70px} .arm{font-size:13px;color:#444;margin-left:12px}
  button.abort{background:#c00;color:#fff;border-color:#900;font-weight:700}
+ #gantrybar{background:#eefbf0;border:1px solid #bfe8c8;border-radius:8px;padding:8px 10px}
  #bothbar{background:#f6f0ff;border:1px solid #d9c8ff;border-radius:8px;padding:8px 10px}
  #armbar{display:flex;align-items:center;gap:8px;margin-bottom:10px} #armbar button{font-size:18px;font-weight:700;padding:12px 22px;border:2px solid #bbb;background:#f3f3f3;color:#888}
  #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
@@ -31,6 +32,9 @@
  <div class="bar" id="bothbar"><b>Both arms</b> <label>A <select id="moveA"></select></label> <label>B <select id="moveB"></select></label>
   <label>speed <input id="scaleBoth" type="number" value="0.5" step="0.1" min="0.1" max="1.5"></label>
   <button class="primary" onclick="runBoth()">Run both</button> <button class="abort" onclick="abortBoth()">ABORT BOTH</button> <small>collisions are possible: start slow, stay clear</small></div>
+ <div class="bar" id="gantrybar"><b>Gantry</b> <span id="gst" class="arm"></span>
+  <button onclick="gantry('home')">Home</button> <button class="primary" onclick="gantry('together')">Charge in</button> <button onclick="gantry('apart')">Move apart</button>
+  <label>feed <input id="gfeed" type="number" value="24000" step="1000" min="1" max="24000"> mm/min</label> <button class="abort" onclick="gantry('abort')">ABORT GANTRY</button></div>
  <table id="ptable"></table>
  <div class="bar" style="flex-direction:column;align-items:stretch;margin-top:14px"><b>Chain builder</b>
   <div class="bar"><label>ours <input id="ours" size="46" placeholder="FEINT_HIGH ATTACK_HIGH BLOCK_MIDDLE"></label>
@@ -73,6 +77,7 @@ async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
 async function runBoth(){await api('/api/run_both',{moveA:document.getElementById('moveA').value,moveB:document.getElementById('moveB').value,scale:parseFloat(document.getElementById('scaleBoth').value)});poll()}
 async function abortBoth(){await api('/api/abort',{arm:'both'});poll()}
+async function gantry(op){const f=parseFloat(document.getElementById('gfeed').value);await api('/api/gantry',{op,feed:f});poll()}
 async function abortArm(){await api('/api/abort',{arm:arm()});poll()}
 async function runArm(){await api('/api/run',{move:cur,arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
@@ -84,6 +89,7 @@ async function poll(){const js=await api('/api/jobs');const l=document.getElemen
  const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
  const st=await api('/api/arm');const a=(st.arms||{})[arm()]||{};document.getElementById('armst').textContent=st.offline?'arms: idle (connect on first use)':(!st.arms[arm()]?'arm '+arm()+': not connected':(a.busy?'moving':(a.torque?'holding':'limp, move it by hand')));
  document.getElementById('live').textContent=a.pose?'live '+JSON.stringify(a.pose):'';
+ const g=st.gantry||{};document.getElementById('gst').textContent=!g.connected?'not connected (Home connects and references)':(g.error?('error: '+g.error):(`${g.state} X=${(g.x||0).toFixed(0)} Y=${(g.y||0).toFixed(0)}`+(g.homed?'':' (not referenced)')+(g.last?' — '+g.last:'')));
  setTimeout(poll,anyRun?1500:4000)}
 async function stopJob(id){await api('/api/stop',{id});poll()}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}

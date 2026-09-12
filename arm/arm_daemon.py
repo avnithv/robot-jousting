@@ -11,6 +11,9 @@ import numpy as np
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import connect, read_pose, JOINTS, ARMS
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gantry"))
+import serial
+from grbl_manual import XYController
 HERE = os.path.dirname(os.path.abspath(__file__)); RATE = 50.0; EASE_SPEED = 150.0
 HOLD_END = 1.5; RETURN_SPEED = 60.0   # hold the final pose, then return to rest slowly (the return is not part of the move)
 CFG = os.path.join(HERE, "arms.json"); TUNED = os.path.join(HERE, "motions_tuned.json")
@@ -69,6 +72,46 @@ class Arm:
         self.ease_to(rest, max_speed=RETURN_SPEED)
         self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg"
 
+class Gantry:
+    """GRBL two-axis gantry: X carries arm A, Y carries arm B. Referenced once per session (home), then absolute mm moves."""
+    def __init__(self):
+        self.cfg = json.load(open(CFG))["gantry"]; self.lock = threading.RLock(); self.cnc = None; self.last = ""; self.homed = False
+    def connect(self):
+        if self.cnc: return
+        conn = serial.Serial(self.cfg["port"], 115200, timeout=0.2, write_timeout=2); time.sleep(2); conn.reset_input_buffer()
+        self.cnc = XYController(conn); self.cnc.preflight(); self.last = "connected (not referenced)"
+    def home(self):
+        self.connect(); state, pins, _ = self.cnc.status()
+        if state == "Alarm":                     # clear a previous hard-limit alarm before referencing again
+            self.cnc.reset(); self.cnc.send("$X"); state, pins, _ = self.cnc.status()
+        if pins in (1, 2): self.cnc.release_axis("X" if pins == 1 else "Y")   # a carriage parked on its switch
+        self.cnc.home(); self.homed = True; self.last = "referenced: X=0 Y=0"
+    def status(self):
+        if not self.cnc: return {"connected": False, "homed": False}
+        if not self.lock.acquire(blocking=False): return {"connected": True, "homed": self.homed, "busy": True, "last": self.last or "moving / referencing"}
+        try:
+            state, pins, coords = self.cnc.status()
+            return {"connected": True, "homed": self.homed, "state": state, "pins": pins, "x": coords[0], "y": coords[1], "last": self.last}
+        except Exception as e: return {"connected": True, "homed": self.homed, "error": str(e)[:100], "last": self.last}
+        finally: self.lock.release()
+    def move(self, x=None, y=None, feed=None):
+        if not self.homed: raise RuntimeError("gantry not referenced: home it first")
+        axes = {}
+        if x is not None: axes["X"] = float(x)
+        if y is not None: axes["Y"] = float(y)
+        with self.lock:
+            cur = self.cnc.ready(); dx = abs(axes.get("X", cur[0]) - cur[0]); dy = abs(axes.get("Y", cur[1]) - cur[1])
+            f = float(feed or self.cfg["charge_feed"])
+            if dx > 0 and dy > 0: f = f * (dx * dx + dy * dy) ** 0.5 / max(dx, dy)   # path feed so the faster axis runs at `feed`
+            self.cnc.move(axes, min(f, self.cnc.max_feed))
+        self.last = f"at X={axes.get('X', cur[0]):.0f} Y={axes.get('Y', cur[1]):.0f}"
+    def abort(self):
+        if self.cnc:
+            try: self.cnc.reset()
+            except Exception: pass
+        self.homed = False; self.last = "ABORTED (reset; re-home before moving)"
+
+gantry = Gantry()
 arms = {n: Arm(n) for n in ARMS}
 arms = {n: a for n, a in arms.items() if a.robot}
 
@@ -81,9 +124,28 @@ class H(BaseHTTPRequestHandler):
         for n, a in arms.items():
             try: out[n] = {"busy": a.busy.locked(), "last": a.last, "torque": a.torque, "pose": [round(x, 1) for x in a.pose()], "model": ARMS[n]["model"]}
             except Exception as e: out[n] = {"error": str(e)[:100]}
-        self._json({"arms": out})
+        self._json({"arms": out, "gantry": gantry.status()})
     def do_POST(self):
         n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}"); name = body.get("arm", "A")
+        if self.path == "/connect":   # (re)connect one arm without restarting the daemon
+            a = Arm(name)
+            if a.robot: arms[name] = a; return self._json({"ok": True, "last": "connected"})
+            return self._json({"error": a.last}, 500)
+        if self.path.startswith("/gantry/"):
+            try:
+                op = self.path.split("/")[-1]
+                if op == "abort": gantry.abort(); return self._json({"ok": True, "last": gantry.last})
+                if not gantry.lock.acquire(blocking=False): return self._json({"error": "gantry busy"}, 409)
+                try:
+                    if op == "home": gantry.home()
+                    elif op == "move": gantry.move(body.get("x"), body.get("y"), body.get("feed"))
+                    elif op == "together": gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], body.get("feed"))
+                    elif op == "apart": gantry.move(gantry.cfg["apart"]["X"], gantry.cfg["apart"]["Y"], body.get("feed"))
+                    else: return self._json({"error": "unknown gantry op"}, 404)
+                finally: gantry.lock.release()
+                return self._json({"ok": True, "last": gantry.last})
+            except Exception as e:
+                gantry.last = f"error: {e}"; return self._json({"error": str(e)}, 500)
         a = arms.get(name) if name != "both" else next(iter(arms.values()), None)
         if a is None: return self._json({"error": f"arm {name} not connected"}, 404)
         if self.path == "/abort":   # handled outside the busy lock: stops whatever is running on that arm (or both)
