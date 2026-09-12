@@ -19,7 +19,8 @@
   "jaw": "jaw opening: 100 = sword fully out sideways",
   "t_move": "seconds: rest -> bar",
   "t_hold": "seconds: hold the bar",
-  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
+  "captured.end": "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose.",
+  "captured_B.end": "pose captured from ARM B (real degrees); applies only to arm B's version of this move"
  },
  "captured": {
   "end": [
@@ -29,6 +30,16 @@
    -73.1,
    127.6,
    76.3
+  ]
+ },
+ "captured_B": {
+  "end": [
+   21.5,
+   -41.4,
+   42.3,
+   -77.5,
+   -4.4,
+   89.4
   ]
  }
 }

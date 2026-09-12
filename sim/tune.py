@@ -41,6 +41,9 @@ REAL = json.load(open("../arm/motions_real.json")); OUT = "../arm/motions_tuned.
 BEAT = 1.4            # seconds per beat (impact/guard pinned inside it by the chain compiler)
 _r = PARAMS["REST"]["joints"]; REST = np.array([_r["pan"], _r["lift"], _r["elbow"], _r["wrist"], _r["roll"], _r["jaw"]], float); REST[4] -= ROLL_OFFSET   # params/REST.json is in real degrees
 POSE_CACHE = "pose_cache.json"
+ARMS_CFG = json.load(open("../arm/arms.json")); CURRENT_ARM = "A"   # which arm a recipe is being generated for (captured poses are per arm)
+def roll_offset(arm): return ARMS["A"]["roll_offset"] if arm == "A" else (ARMS_CFG.get(arm, {}).get("roll_offset") or ROLL_OFFSET)
+ARMS = {"A": {"roll_offset": ROLL_OFFSET}}
 
 def ik_pose(x, z, pitch, pan=0, roll=0, jaw=0):
     q, err, h, t = ik.solve(x, z, pitch, pan=pan, roll=roll); q[5] = jaw
@@ -66,10 +69,13 @@ def pose_search(x, z, pan, pitch, tol, roll=0, jaw=0, near=None):
     cache[key] = best[1].tolist(); json.dump(cache, open(POSE_CACHE, "w")); q = best[1]; q[4] = roll; q[5] = jaw; return q
 
 def cap(P, which, jaw=None):
-    """Captured pose (real degrees, from the arm) as sim joints, or None."""
-    c = (P.get("captured") or {}).get(which)
+    """Captured pose for the arm being generated (real degrees, from that arm) as sim joints, or None.
+    Arm A reads P["captured"]; arm B reads P["captured_B"] and falls back to A's."""
+    src = P.get("captured_B") if CURRENT_ARM == "B" and P.get("captured_B", {}).get(which) else P.get("captured")
+    c = (src or {}).get(which)
     if not c: return None
-    q = np.array(c, float); q[4] -= ROLL_OFFSET
+    off = roll_offset("B") if (CURRENT_ARM == "B" and P.get("captured_B", {}).get(which)) else ROLL_OFFSET
+    q = np.array(c, float); q[4] -= off
     if jaw is not None: q[5] = jaw
     return q
 
@@ -153,9 +159,10 @@ def replay(name, ts, Q, fps=30):
     strip = np.concatenate([np.concatenate([frames[i] for i in idx[:4]], axis=1), np.concatenate([frames[i] for i in idx[4:]], axis=1)], axis=0)
     imageio.imwrite(f"out/tuned_{name}_strip.png", strip[::2, ::2])
 
-def generate(name, render=True):
-    print(f"== {name}")
-    rec = recipe(name); keys = [enforce_floor(k, f"{name} key {i}") for i, (k, _) in enumerate(rec)]; times = np.cumsum([t for _, t in rec])
+def generate(name, render=True, arm="A"):
+    global CURRENT_ARM; CURRENT_ARM = arm; label = name if arm == "A" else f"{name}@{arm}"
+    print(f"== {label}")
+    rec = recipe(name); keys = [enforce_floor(k, f"{label} key {i}") for i, (k, _) in enumerate(rec)]; times = np.cumsum([t for _, t in rec])
     for k, T in zip(keys, times): print(f"  key @ {T:.2f}s  {np.round(k, 0).astype(int).tolist()}")
     ts, Q = catmull_rom(keys, times); Q[:, 5] = np.clip(Q[:, 5], 0, 100)
     zmin = min(wrist_z(q) for q in Q[::3])
@@ -165,10 +172,12 @@ def generate(name, render=True):
     import fcntl; lock = open(OUT + ".lock", "w"); fcntl.flock(lock, fcntl.LOCK_EX)
     tuned = json.load(open(OUT)) if os.path.exists(OUT) else {}
     Qr = Q.copy(); Qr[:, 4] += ROLL_OFFSET; keys_r = [np.array(k) + np.array([0, 0, 0, 0, ROLL_OFFSET, 0]) for k in keys]
-    tuned[name] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in row] for row in Qr], "roll_offset": ROLL_OFFSET,
+    tuned[label] = {"t": [round(float(x), 4) for x in ts], "q": [[round(float(x), 2) for x in row] for row in Qr], "roll_offset": ROLL_OFFSET,
                    "joints": JOINTS, "keys": [[round(float(x), 1) for x in k] for k in keys_r], "key_times": [round(float(x), 2) for x in times], "params": PARAMS[name]}
-    json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN); print(f"  saved {name}: {ts[-1]:.2f}s")
-    if render: replay(name, ts, Q)
+    json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN); print(f"  saved {label}: {ts[-1]:.2f}s")
+    if render: replay(label, ts, Q)
+    if arm == "A" and PARAMS[name].get("captured_B"): generate(name, render=render, arm="B")   # arm-B variant when B has its own captured poses
+    CURRENT_ARM = "A"
 
 if __name__ == "__main__":
     names = list(PARAMS) if sys.argv[1:] in (["ALL"], ["REST"]) else sys.argv[1:]   # changing REST regenerates everything

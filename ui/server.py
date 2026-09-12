@@ -36,8 +36,10 @@ def moves():
     for f in sorted(os.listdir(PARAMS)):
         if not f.endswith(".json"): continue
         n = f[:-5]; p = json.load(open(os.path.join(PARAMS, f))); t = tuned.get(n); vid = os.path.join(OUT, f"tuned_{n}.mp4")
+        vidB = os.path.join(OUT, f"tuned_{n}@B.mp4")
         out[n] = {"params": p, "duration": round(t["t"][-1], 2) if t else None, "end": [round(x) for x in t["keys"][-1]] if t else None,
-                  "video": f"/video/tuned_{n}.mp4?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None}
+                  "video": f"/video/tuned_{n}.mp4?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None,
+                  "video_B": f"/video/tuned_{n}@B.mp4?v={int(os.path.getmtime(vidB))}" if os.path.exists(vidB) else None}
     return out
 
 def start_job(kind, label, cmd, cwd, lock=None, env=None, jid=None, stream=False):
@@ -141,9 +143,9 @@ def api(handler, path, body):
         if arm != "A" and body["move"] == "REST":   # arm B keeps its own rest pose in arms.json
             c = json.load(open(os.path.join(ARM, "arms.json"))); c[arm]["rest"] = pose; json.dump(c, open(os.path.join(ARM, "arms.json"), "w"), indent=1)
             return {"ok": True, "rest": pose}
-        f = os.path.join(PARAMS, f"{body['move']}.json"); p = json.load(open(f))
-        p.setdefault("captured", {})[body["which"]] = pose
-        p.setdefault("_help", {})[f"captured.{body['which']}"] = "pose captured from the arm (real degrees). Delete the entry to go back to the computed pose."
+        f = os.path.join(PARAMS, f"{body['move']}.json"); p = json.load(open(f)); key = "captured" if arm == "A" else f"captured_{arm}"
+        p.setdefault(key, {})[body["which"]] = pose
+        p.setdefault("_help", {})[f"{key}.{body['which']}"] = f"pose captured from ARM {arm} (real degrees); applies only to arm {arm}. Delete the entry to go back to the computed pose."
         json.dump(p, open(f, "w"), indent=1)
         return start_job("gen", f"regenerate {body['move']} (captured {body['which']})", [PY, "tune.py", body["move"]], SIM, lock=gen_lock)
     if path == "/api/release": ensure_daemon(); return daemon("/release", {"arm": body.get("arm", "A")}, timeout=30)

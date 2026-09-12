@@ -10,16 +10,20 @@
  .prog{font-size:11px;color:#444;margin:2px 0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .st-stopped{color:#888}
  .job pre{max-height:160px;overflow:auto;font-size:11px;background:#f4f4f4;padding:4px;margin:4px 0;white-space:pre-wrap} .st-running,.st-queued{color:#b26a00} .st-done{color:#1a7f37} .st-failed{color:#c00}
  h2{margin:0 0 4px} small{color:#666} table{border-collapse:collapse;width:100%;max-width:760px} td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top} td.k{font-family:ui-monospace,monospace;white-space:nowrap;width:1%} td.h{color:#666;font-size:12px}
- input[type=number]{width:70px} .arm{font-size:12px;color:#666}
+ input[type=number]{width:70px} .arm{font-size:13px;color:#444;margin-left:12px}
+ #armbar{display:flex;align-items:center;gap:8px;margin-bottom:10px} #armbar button{font-size:18px;font-weight:700;padding:12px 22px;border:2px solid #bbb;background:#f3f3f3;color:#888}
+ #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
+ body.A #main{box-shadow:inset 6px 0 0 #d4a800} body.B #main{box-shadow:inset 6px 0 0 #2b5bd7}
 </style></head><body>
 <div id="moves"></div>
-<div id="main"><h2 id="title"></h2><small id="doc"></small>
+<div id="main">
+ <div id="armbar"><button id="btnA" onclick="setArm('A')">ARM A · SO-100</button><button id="btnB" onclick="setArm('B')">ARM B · SO-101</button><span id="armst" class="arm"></span></div>
+ <h2 id="title"></h2><small id="doc"></small>
  <div class="bar" style="margin-top:8px"><video id="vid" controls loop muted></video></div>
  <div class="bar"><label>show: <select id="opp" onchange="oppChanged()"><option value="">this move alone</option></select></label>
   <span style="flex:1"></span>
-  <label>arm <select id="arm"><option value="A">A: SO-100</option><option value="B">B: SO-101</option></select></label>
   <label>speed <input id="scale" type="number" value="1.0" step="0.1" min="0.1" max="1.5"></label>
-  <button class="primary" onclick="runArm()">Run on arm</button> <span class="arm" id="armst"></span></div>
+  <button class="primary" id="runbtn" onclick="runArm()">Run on arm A</button></div>
  <div class="bar"><small>Set a pose by hand:</small> <button onclick="release()">Power off arm (move by hand)</button> <span class="arm" id="live"></span>
   <button onclick="capture('start')">Use as START</button> <button onclick="capture('end')">Use as END</button></div>
  <table id="ptable"></table>
@@ -44,16 +48,19 @@ async function load(){MOVES=await api('/api/moves');const m=document.getElementB
  if(!cur)select(Object.keys(MOVES)[0]);else refreshMain(false)}
 function select(n){cur=n;document.getElementById('opp').value='';document.querySelectorAll('#moves div').forEach(d=>d.className=d.textContent===n?'sel':'');refreshMain(true)}
 function refreshMain(rebuild){const M=MOVES[cur];document.getElementById('title').textContent=cur;
- document.getElementById('doc').textContent=(M.params._doc||'')+(M.duration?'  ('+M.duration+' s)':'  (not generated)');
+ document.getElementById('doc').textContent=(M.params._doc||'')+(M.duration?'  ('+M.duration+' s)':'  (not generated)')+((arm()==='B'&&M.video_B)?'  — arm B has its own version of this move':'');
  const opp=document.getElementById('opp').value;const v=document.getElementById('vid');
- const src=opp?'/video/pair_'+cur+'_vs_'+opp+'.mp4?v='+Date.now():M.video; if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}
+ const src=opp?'/video/pair_'+cur+'_vs_'+opp+'.mp4?v='+Date.now():((arm()==='B'&&M.video_B)?M.video_B:M.video); if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}
  if(rebuild){const t=document.getElementById('ptable');t.innerHTML='';const help=M.params._help||{};
   for(const [k,val] of flatten(M.params)){const tr=document.createElement('tr');const ro=typeof val!=='number';
    tr.innerHTML=`<td class="k">${k}</td><td>${ro?`<span>${val}</span>`:`<input type="number" step="any" data-k="${k}" value="${val}">`}</td><td class="h">${help[k]||''}</td>`;t.appendChild(tr)}}}
 async function oppChanged(){const opp=document.getElementById('opp').value;if(opp){await api('/api/pair',{a:cur,b:opp})}refreshMain(false);poll()}
 async function apply(){const p=JSON.parse(JSON.stringify(MOVES[cur].params));document.querySelectorAll('#ptable input').forEach(i=>setPath(p,i.dataset.k,parseFloat(i.value)));await api('/api/params',{move:cur,params:p});poll()}
 async function feedback(){const t=document.getElementById('fb').value.trim();if(!t)return;await api('/api/feedback',{move:cur,text:t,attach_pose:document.getElementById('attach').checked,arm:arm()});document.getElementById('fb').value='';poll()}
-function arm(){return document.getElementById('arm').value}
+let ARM=localStorage.getItem('arm')||'A';
+function arm(){return ARM}
+function setArm(a){ARM=a;try{localStorage.setItem('arm',a)}catch(e){}document.body.className=a;document.getElementById('btnA').className=a==='A'?'on':'';document.getElementById('btnB').className=a==='B'?'on':'';
+ document.getElementById('runbtn').textContent='Run on arm '+a;refreshMain(false);poll()}
 async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
@@ -70,5 +77,5 @@ async function poll(){const js=await api('/api/jobs');const l=document.getElemen
  setTimeout(poll,anyRun?1500:4000)}
 async function stopJob(id){await api('/api/stop',{id});poll()}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-load();poll();
+setArm(ARM);load();poll();
 </script></body></html>

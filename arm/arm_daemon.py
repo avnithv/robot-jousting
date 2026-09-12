@@ -48,7 +48,7 @@ class Arm:
             Q[:, 4] = np.clip(Q[:, 4] - ARMS["A"]["roll_offset"] + c["roll_offset"], -175, 175)   # never touch the +/-180 wrap
         return Q
     def play(self, move, scale, repeat):
-        M = json.load(open(TUNED))[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
+        T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); Q = self.rebase(M["q"]); rest = self.rest_pose()
         self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         for i in range(repeat):
             if i: self.ease_to(Q[0]); time.sleep(0.1)
