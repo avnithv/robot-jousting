@@ -1,10 +1,10 @@
 {
- "_doc": "Salute in two keys: blade straight up in front of the face (via), then levelled at the opponent, raised ~30 deg so two facing tips stay ~0.23 m from their own bases. Joints are in this arm's REAL degrees (roll = sim roll + this arm's sword-on-top value).",
+ "_doc": "Salute in two keys: blade straight up in front of the face (via), then levelled at the opponent, raised ~30 deg so two facing tips stay ~0.23 m from their own bases. Joints are in this arm's REAL degrees (roll = sim roll + this arm's sword-on-top value). Arm A's levelled key sits lower than the shared solve (its real geometry put the same joints higher than B).",
  "joints": {
   "pan": 0,
-  "lift": -81.6,
-  "elbow": -5.9,
-  "wrist": 63.8,
+  "lift": -85.3,
+  "elbow": -14.6,
+  "wrist": 91.2,
   "jaw": 0,
   "roll": 76.0
  },
@@ -34,12 +34,12 @@
  "t_via": 0.5,
  "captured": {
   "end": [
-   0.8,
-   -91.3,
-   -6.8,
-   106.5,
-   76.4,
-   2.5
+   -3.3,
+   -84.0,
+   27.6,
+   71.7,
+   76.7,
+   7.4
   ]
  }
 }
