@@ -25,7 +25,8 @@ def turn(mA, mB, overlap, apart_after=True):
     return r
 print(f"{len(D['passes'])} passes at x{scale}; opener: {D['opener']['a']} / {D['opener']['b']}")
 for i, p in enumerate(D["passes"], 1):
-    cal = p.get("contact"); mark = "calibrated" if cal in stops else ("NO CALIBRATION" if cal else "miss by design")
+    cal = p.get("contact") or next((k for k in (f"A:{p['a']}|B:{p['b']}", f"B:{p['b']}|A:{p['a']}") if k in stops), None)
+    mark = "calibrated" if cal in stops else ("NO CALIBRATION" if p.get("contact") else "no stop (miss)")
     print(f"  {i:2d}. A {p['a']:14s} B {p['b']:14s} {mark:16s} {p['note']}")
 if "--dry" in flags: sys.exit(0)
 missing = [p["contact"] for p in D["passes"] if p.get("contact") and p["contact"] not in stops]
