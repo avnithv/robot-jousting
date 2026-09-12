@@ -31,8 +31,8 @@ def moves():
     tuned = json.load(open(os.path.join(ARM, "motions_tuned.json"))) if os.path.exists(os.path.join(ARM, "motions_tuned.json")) else {}
     out = {}
     for n in sorted(k for k in tuned if k.startswith("CHAIN")):
-        t = tuned[n]; vid = os.path.join(OUT, f"tuned_{n}.mp4" if n == "CHAIN_A" and not os.path.exists(os.path.join(OUT, "pair_CHAIN_A_vs_CHAIN_B.mp4")) else "pair_CHAIN_A_vs_CHAIN_B.mp4")
-        out[n] = {"params": {"_doc": "chain: " + " > ".join(t["chain"]) + "  (beats: " + ", ".join(f"{b['move']} {b['transition']}" for b in t["beats"]) + ")", "moves": " ".join(t["chain"])},
+        t = tuned[n]; vid = os.path.join(OUT, f"tuned_{n}.mp4")
+        out[n] = {"params": {"_doc": "chain: " + " > ".join(t["chain"]) + "  (beats: " + ", ".join(f"{b['move']} {b.get('connector', b.get('transition', ''))}" for b in t["beats"]) + ")", "moves": " ".join(t["chain"])},
                   "duration": round(t["t"][-1], 2), "end": [round(x) for x in t["keys"][-1]], "video": f"/video/{os.path.basename(vid)}?v={int(os.path.getmtime(vid))}" if os.path.exists(vid) else None, "chain": True}
     for f in sorted(os.listdir(PARAMS)):
         if not f.endswith(".json"): continue
@@ -155,6 +155,13 @@ def api(handler, path, body):
     if path == "/api/connect": ensure_daemon(); return daemon("/connect", {"arm": body.get("arm", "B")}, timeout=60)
     if path == "/api/gantry":
         ensure_daemon(); return daemon("/gantry/" + body["op"], {k: v for k, v in body.items() if k != "op"}, timeout=400)
+    if path == "/api/chain2":    # step-by-step chain for one arm: compile + render CHAIN_<arm>
+        arm = body.get("arm", "A"); steps = body["steps"]; seed = int(body.get("seed", 0))
+        return start_job("chain", f"chain {arm}: {' > '.join(steps)}", [PY, "chain.py", f"CHAIN_{arm}", *steps, "--arm", arm, "--seed", str(seed)], SIM, lock=gen_lock)
+    if path == "/api/feasible":
+        arm = body.get("arm", "A"); f = os.path.join(OUT, f"feasible_{arm}.json")
+        if body.get("refresh") or not os.path.exists(f): subprocess.run([PY, "matrices.py", "feasible"], cwd=SIM, capture_output=True)
+        return json.load(open(f))
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)
     if path == "/api/nudge": ensure_daemon(); return daemon("/nudge", body, timeout=60)

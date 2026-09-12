@@ -141,8 +141,14 @@ def feint(P):
     k_fast = mid + (t_fast / t_slow) * (back - mid); k_fast[3] = back[3]; k_fast[5] = back[5]; k_fast[4] = back[4]
     return head + [(mid, t_strike * swing * float(P.get("strike_slow", 1.0))), (k_fast, t_fast), (back, t_slow - t_fast)]
 
+STATES = ("MID", "SALUTE", "LOW_TIP")
+def state_pose(name):
+    """A named state's pose for the current arm (sim convention), from this arm's params/<NAME>.json."""
+    j = PARAMS[name]["joints"]; q = np.array([j["pan"], j["lift"], j["elbow"], j["wrist"], j["roll"], j["jaw"]], float); q[4] -= ROLL_OFFSET; return q
+
 def recipe(name):
     P = PARAMS[name]
+    if name in STATES: k = state_pose(name); return [(REST, 0), (k, P.get("t_move", 0.6)), (k, P.get("t_hold", 0.4))]
     if name == "REST":
         r = cap(P, "end") if cap(P, "end") is not None else REST; return [(r, 0), (r, 0.5)]
     if "mirror_of" in P: return attack_low(PARAMS[P["mirror_of"]], mirror=True)

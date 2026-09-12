@@ -1,0 +1,5 @@
+{"from": "ATTACK_HIGH", "to": "BLOCK_MIDDLE",
+ "paths": [
+  {"name": "drop_guard", "style": "smooth", "via": ["MID"], "durations": [0.45], "notes": "example: pull up through the hub, then settle into the middle guard"},
+  {"name": "direct", "style": "plain", "via": [], "durations": []}
+ ]}

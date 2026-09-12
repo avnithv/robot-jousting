@@ -73,7 +73,22 @@ def collision_report():
     open("../docs/collision_matrix.md", "w").write("\n".join(out) + "\n"); json.dump({f"{a}|{b}": {"dist": best, "when": when} for (a, b), (best, when) in rows.items()}, open("out/collision_matrix.json", "w"), indent=1)
     print("wrote docs/collision_matrix.md;", len(watch), "pairs flagged")
 
+def feasible_json(arm):
+    ends, starts = states(arm); table = {}
+    for e, qe in ends.items():
+        table[e] = {}
+        for s, qs in starts.items():
+            if path_ok(qe, qs): table[e][s] = {"ok": True, "s": round(seg_time(qe, qs), 2), "via": None}; continue
+            best = None
+            for h, qh in HUBS.items():
+                if path_ok(qe, qh) and path_ok(qh, qs):
+                    t = seg_time(qe, qh) + seg_time(qh, qs)
+                    if best is None or t < best[0]: best = (t, h)
+            table[e][s] = {"ok": best is not None, "s": round(best[0], 2) if best else None, "via": best[1] if best else None}
+    json.dump(table, open(f"out/feasible_{arm}.json", "w")); return table
+
 if __name__ == "__main__":
     what = sys.argv[1] if len(sys.argv) > 1 else "both"
+    if what == "feasible": [feasible_json(a) for a in ("A", "B")]; sys.exit()
     if what in ("both", "transitions"): transition_report()
     if what in ("both", "collisions"): collision_report()

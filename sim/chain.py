@@ -14,11 +14,17 @@ REACH_MAX = 0.32            # hand reach allowed in transit (m); the pair collis
 BLEND_RATE = 170.0          # deg/s used to size transitions (Catmull-Rom peaks ~1.5x the mean, so this keeps peaks < 300)
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUBS = {k: np.array(v, float) for k, v in json.load(open(os.path.join(HERE, "hubs.json"))).items() if not k.startswith("_")}
+def load_hubs():
+    """Hub poses for the CURRENT arm (from its params/<STATE>.json), falling back to hubs.json."""
+    global HUBS
+    HUBS = {n: (tune.state_pose(n) if n in tune.PARAMS else HUBS[n]) for n in ("MID", "SALUTE", "LOW_TIP")}
+LIB = os.path.join(HERE, "transitions")
 FLOURISHES = {k: v for k, v in json.load(open(os.path.join(HERE, "flourishes.json"))).items() if not k.startswith("_")}
 FAMILY = {"ATTACK_HIGH": "high", "FEINT_HIGH": "high", "ATTACK_LOW_LR": "low_left", "FEINT_LEFT": "low_left", "ATTACK_LOW_RL": "low_right", "FEINT_RIGHT": "low_right",
           "BLOCK_HIGH": "bar", "BLOCK_LEFT": "guard", "BLOCK_RIGHT": "guard", "BLOCK_MIDDLE": "guard", "REST": "rest"}
 
 def pin_of(move):
+    if move in tune.STATES: return ("first", GUARD)   # a state step: arrive by GUARD time and hold
     """Which key is pinned to the beat clock: blocks pin the guard key at GUARD; attacks pin the impact (last) key at IMPACT;
     feints pin the mid-swing stop (third key from the end) at IMPACT so the fake commits when a real attack would land."""
     if move.startswith("BLOCK"): return ("first", GUARD)
@@ -39,9 +45,23 @@ def resolve_via(via):
 def matches(pattern, move):
     return pattern == "*" or pattern == move or pattern == FAMILY.get(move, "") or pattern in HUBS and move == pattern
 
+def library_paths(prev_move, move):
+    """Precomputed transition paths for this handoff from sim/transitions/<END>__<START>.json (authored + validated)."""
+    f = os.path.join(LIB, f"{prev_move}__{move}.json")
+    if not os.path.exists(f): return []
+    return json.load(open(f)).get("paths", [])
+
 def candidates(prev_move, prev_pose, move, first, window, last_flourish=None):
-    """All valid connectors for this gap: (name, path poses, seconds needed, score). Higher score wins."""
+    """All valid connectors for this gap: (name, path poses, seconds needed, score). Higher score wins.
+    Library paths (precomputed) come first; then flourishes.json; then a direct blend; then hub routes."""
     out = []
+    for p in library_paths(prev_move, move):
+        path = resolve_via(p.get("via", [])); segs = list(zip([prev_pose] + path, path + [first]))
+        if all(path_ok(a, b) for a, b in segs):
+            durs = list(p.get("durations", [])) + [seg_time(path[-1] if path else prev_pose, first)]
+            need = max(sum(durs), sum(seg_time(a, b) for a, b in segs)); fits = need <= window
+            base = 5.0 + (0 if p.get("style") == "plain" or p["name"] == "direct" else 1.5) - (2 if p["name"] == last_flourish else 0)
+            out.append((f"lib:{p['name']}", path, need, (base - 0.1 * need) if fits else (-100 - 10 * need)))
     def add(name, path, base):
         segs = list(zip([prev_pose] + path[:-1] if path else [], path)); segs = list(zip([prev_pose] + path, path + [first]))
         if all(path_ok(a, b) for a, b in segs):
@@ -56,7 +76,7 @@ def candidates(prev_move, prev_pose, move, first, window, last_flourish=None):
     return sorted(out, key=lambda c: -c[3])
 
 def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verbose=True):
-    tune.use_arm(arm); rest = tune.REST.copy(); rng = random.Random(seed)
+    tune.use_arm(arm); load_hubs(); rest = tune.REST.copy(); rng = random.Random(seed)
     tuned = json.load(open(OUT)); suffix = "" if arm == "A" else f"@{arm}"
     keys = [rest]; times = [0.0]; beats = []; prev_move = "REST"; t_beat = 0.0; stretches = []; last_fl = None
     for move in moves:
@@ -66,7 +86,7 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
         cands = candidates(prev_move, keys[-1], move, rec[0][0], window, last_fl)
         if not cands: raise RuntimeError(f"no safe connector {prev_move} -> {move}")
         top = [c for c in cands if c[3] >= cands[0][3] - 0.5]; cname, path, need, _ = rng.choice(top)   # a little variety among near-equal options
-        last_fl = cname if cname in FLOURISHES else None
+        last_fl = cname.replace("lib:", "") if (cname in FLOURISHES or cname.startswith("lib:")) else None
         t_tr = max(window, need); stretch = t_tr - window
         if beat_extra is not None: stretch = max(stretch, beat_extra[len(beats)]); t_tr = window + stretch
         stretches.append(stretch)

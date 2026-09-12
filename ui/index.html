@@ -18,7 +18,14 @@
  #armbar button.on{color:#000} body.A #btnA.on{background:#ffe680;border-color:#d4a800} body.B #btnB.on{background:#cfe0ff;border-color:#2b5bd7}
  body.A #main{box-shadow:inset 6px 0 0 #d4a800} body.B #main{box-shadow:inset 6px 0 0 #2b5bd7}
 </style></head><body>
-<div id="moves"></div>
+<div id="moves"><div class="bar" style="margin:0 0 8px"><button id="tabMoves" class="primary" onclick="tab('moves')">Moves</button><button id="tabChain" onclick="tab('chain')">Chain</button></div><div id="movelist"></div></div>
+<div id="chainview" hidden style="padding:12px 16px;overflow:auto">
+ <h2 id="ctitle">Chain</h2><small>Build a sequence step by step for the selected arm. Each step is a move or a state; the dropdown shows how the handoff from the last step reads (direct blend time, or a route via a hub). Preview compiles it and shows the sim; Run plays it on the arm.</small>
+ <div class="bar" style="margin-top:10px"><b>Sequence:</b> <span id="seq">(starts at REST)</span> <button onclick="chainPop()">Remove last</button> <button onclick="chainClear()">Clear</button></div>
+ <div class="bar"><label>next step <select id="nextstep"></select></label> <button class="primary" onclick="chainAdd()">Add</button> <label>seed <input id="seed" type="number" value="0" min="0" max="99"></label></div>
+ <div class="bar"><button class="primary" onclick="chainPreview()">Preview in sim</button> <button class="primary" onclick="chainRun()">Run chain on arm</button> <button class="abort" onclick="abortArm()">ABORT</button> <small id="chainst"></small></div>
+ <div class="bar"><video id="cvid" controls loop muted></video></div>
+</div>
 <div id="main">
  <div id="armbar"><button id="btnA" onclick="setArm('A')">ARM A · SO-100</button><button id="btnB" onclick="setArm('B')">ARM B · SO-101</button><span id="armst" class="arm"></span></div>
  <h2 id="title"></h2><small id="doc"></small>
@@ -47,11 +54,23 @@
 </div>
 <div id="jobs"><b>Activity</b><div id="joblist"></div></div>
 <script>
-let MOVES={}, cur=null;
+let MOVES={}, cur=null, SEQ=[], FEAS={};
+const STATES=['MID','SALUTE','LOW_TIP'];
+function tab(t){document.getElementById('chainview').hidden=(t!=='chain');document.getElementById('main').hidden=(t==='chain');document.getElementById('tabMoves').className=t==='moves'?'primary':'';document.getElementById('tabChain').className=t==='chain'?'primary':'';if(t==='chain')chainRefresh()}
+async function chainRefresh(){FEAS=await api('/api/feasible',{arm:arm()});document.getElementById('ctitle').textContent='Chain for arm '+arm();
+ const last=SEQ.length?SEQ[SEQ.length-1]:'REST';const sel=document.getElementById('nextstep');sel.innerHTML='';
+ const opts=Object.keys(MOVES).filter(n=>!n.startsWith('CHAIN')&&n!=='REST').concat(STATES.filter(s=>!(s in MOVES)));
+ for(const n of opts){const f=(FEAS[last]||{})[n];const o=document.createElement('option');o.value=n;o.textContent=n+(f?(f.ok?(f.via?`  (via ${f.via}, ${f.s}s)`:`  (direct ${f.s}s)`):'  (no safe route)'):'');if(f&&!f.ok)o.disabled=true;sel.appendChild(o)}
+ document.getElementById('seq').textContent=SEQ.length?'REST > '+SEQ.join(' > '):'(starts at REST)';
+ const M=MOVES['CHAIN_'+arm()];const v=document.getElementById('cvid');const src=M&&M.video?M.video:null;if(src&&v.getAttribute('src')!==src){v.src=src;v.play().catch(()=>{})}}
+function chainAdd(){SEQ.push(document.getElementById('nextstep').value);chainRefresh()}
+function chainPop(){SEQ.pop();chainRefresh()} function chainClear(){SEQ=[];chainRefresh()}
+async function chainPreview(){if(!SEQ.length)return;document.getElementById('chainst').textContent='compiling...';await api('/api/chain2',{arm:arm(),steps:SEQ,seed:parseInt(document.getElementById('seed').value)});poll()}
+async function chainRun(){await api('/api/run',{move:'CHAIN_'+arm(),arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 async function api(p,b){const r=await fetch(p,b?{method:'POST',body:JSON.stringify(b)}:{});return r.json()}
 function flatten(o,pre=''){let out=[];for(const k in o){if(k.startsWith('_'))continue;const v=o[k];if(v&&typeof v==='object'&&!Array.isArray(v))out=out.concat(flatten(v,pre+k+'.'));else out.push([pre+k,v])}return out}
 function setPath(o,path,val){const ks=path.split('.');let t=o;for(const k of ks.slice(0,-1))t=t[k];t[ks[ks.length-1]]=val}
-async function load(){MOVES=await api('/api/moves');const m=document.getElementById('moves');m.innerHTML='';const o=document.getElementById('opp');const keep=o.value;o.innerHTML='<option value="">this move alone</option>';
+async function load(){MOVES=await api('/api/moves');const m=document.getElementById('movelist');m.innerHTML='';const o=document.getElementById('opp');const keep=o.value;o.innerHTML='<option value="">this move alone</option>';
  const mA=document.getElementById('moveA'),mB=document.getElementById('moveB');const kA=mA.value,kB=mB.value;mA.innerHTML='';mB.innerHTML='';
  for(const n in MOVES){const d=document.createElement('div');d.textContent=n;d.onclick=()=>select(n);if(n===cur)d.className='sel';m.appendChild(d);
   const op=document.createElement('option');op.value=n;op.textContent='vs '+n;o.appendChild(op);
@@ -72,7 +91,7 @@ async function feedback(){const t=document.getElementById('fb').value.trim();if(
 let ARM=localStorage.getItem('arm')||'A';
 function arm(){return ARM}
 function setArm(a){ARM=a;try{localStorage.setItem('arm',a)}catch(e){}document.body.className=a;document.getElementById('btnA').className=a==='A'?'on':'';document.getElementById('btnB').className=a==='B'?'on':'';
- document.getElementById('runbtn').textContent='Run on arm '+a;if(cur)refreshMain(true);poll()}
+ document.getElementById('runbtn').textContent='Run on arm '+a;if(cur)refreshMain(true);if(!document.getElementById('chainview').hidden)chainRefresh();poll()}
 async function release(){await api('/api/release',{arm:arm()});poll()}
 async function capture(which){await api('/api/capture',{move:cur,which,arm:arm()});poll()}
 async function buildChain(){await api('/api/chain',{ours:document.getElementById('ours').value,theirs:document.getElementById('theirs').value});poll()}
@@ -87,7 +106,7 @@ async function poll(){const js=await api('/api/jobs');const l=document.getElemen
   const el=((j.ended||Date.now()/1000)-j.started)|0;const prog=(j.progress||[]).slice(-3).map(p=>`<div class="prog">${esc(p)}</div>`).join('');
   d.innerHTML=`<span class="st-${j.status}">${j.status}</span> ${esc(j.label)} <small>${el}s</small>`+(run&&j.kind==='agent'?` <a href="#" onclick="stopJob('${j.id}');return false">stop</a>`:'')+prog+
    (j.result?`<details open><summary>agent summary</summary><pre>${esc(j.result)}</pre></details>`:'')+(j.tail&&j.kind!=='arm'?`<details><summary>full log</summary><pre>${esc(j.tail)}</pre></details>`:'');l.appendChild(d)}
- const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load()}
+ const done=js.filter(j=>j.ended).length;if(done!==lastDone){lastDone=done;await load();if(!document.getElementById('chainview').hidden){document.getElementById('chainst').textContent='';chainRefresh()}}
  const st=await api('/api/arm');const a=(st.arms||{})[arm()]||{};document.getElementById('armst').textContent=st.offline?'arms: idle (connect on first use)':(!st.arms[arm()]?'arm '+arm()+': not connected':(a.busy?'moving':(a.torque?'holding':'limp, move it by hand')));
  document.getElementById('live').textContent=a.pose?'live '+JSON.stringify(a.pose):'';
  const g=st.gantry||{};document.getElementById('gst').textContent=!g.connected?'not connected (Home connects and references)':(g.error?('error: '+g.error):(`${g.state} X=${(g.x||0).toFixed(0)} Y=${(g.y||0).toFixed(0)}`+(g.homed?'':' (not referenced)')+(g.last?' — '+g.last:'')));

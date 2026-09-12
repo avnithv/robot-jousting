@@ -1,0 +1,23 @@
+{
+ "_doc": "Flair state: hand high in front, sword vertical. Salute, twirls, taunts. Joints are in this arm's REAL degrees (roll = sim roll + this arm's sword-on-top value).",
+ "joints": {
+  "pan": 0,
+  "lift": -40,
+  "elbow": -25,
+  "wrist": -15,
+  "roll": 76.0,
+  "jaw": 0
+ },
+ "t_move": 0.6,
+ "t_hold": 0.4,
+ "_help": {
+  "joints.pan": "base rotation (deg)",
+  "joints.lift": "shoulder (deg)",
+  "joints.elbow": "elbow (deg)",
+  "joints.wrist": "wrist pitch (deg)",
+  "joints.roll": "wrist roll in real degrees",
+  "joints.jaw": "jaw 0..100",
+  "t_move": "seconds: rest -> this state",
+  "t_hold": "seconds held"
+ }
+}
