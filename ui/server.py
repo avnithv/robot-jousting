@@ -21,7 +21,7 @@ def daemon_status():
 def ensure_daemon():
     global daemon_proc
     if not daemon_status().get("offline"): return
-    daemon_proc = subprocess.Popen([ARM_PY, os.path.join(ARM, "arm_daemon.py")], stdout=open(os.path.join(JOBS, "arm_daemon.log"), "a"), stderr=subprocess.STDOUT)
+    daemon_proc = subprocess.Popen([ARM_PY, os.path.join(ARM, "arm_daemon.py")], stdout=open(os.path.join(JOBS, "arm_daemon.log"), "a"), stderr=subprocess.STDOUT, start_new_session=True)   # survives studio restarts
     for _ in range(100):
         time.sleep(0.2)
         if not daemon_status().get("offline"): return
