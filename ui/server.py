@@ -210,6 +210,8 @@ def api(handler, path, body):
             except Exception as e: open(j["log"], "a").write(str(e) + "\n"); j["status"] = "failed"
             j["ended"] = time.time()
         threading.Thread(target=go, daemon=True).start(); return {"ok": True}
+    if path == "/api/home_arms":   # both arms slowly to their own rest poses
+        ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)
     if path == "/api/calibrate_retreat": ensure_daemon(); return daemon("/calibrate_retreat", {}, timeout=120)
     if path == "/api/calib_status":
         stops = json.load(open(os.path.join(SIM, "contact_stops.json"))) if os.path.exists(os.path.join(SIM, "contact_stops.json")) else {}

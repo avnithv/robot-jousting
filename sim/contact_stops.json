@@ -16,5 +16,23 @@
   ],
   "speed": 0.12,
   "when": "2026-09-12 14:41"
+ },
+ "A:ATTACK_LOW_LR|B:BLOCK_RIGHT": {
+  "attacker": "A",
+  "attack": "ATTACK_LOW_LR",
+  "defender": "B",
+  "defender_move": "BLOCK_RIGHT",
+  "stopped": false,
+  "stop_frac": 1.0,
+  "stop_pose_real": [
+   0.8,
+   49.4,
+   8.2,
+   -60.2,
+   161.8,
+   15.0
+  ],
+  "speed": 0.12,
+  "when": "2026-09-12 14:55"
  }
 }

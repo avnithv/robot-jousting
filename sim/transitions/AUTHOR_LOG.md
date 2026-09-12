@@ -130,3 +130,25 @@ full run is back to 196 of 196 files fully valid (904 path/arm checks OK) on bot
 No path was dropped; every file keeps a `direct` or `plain` path. Filmstrips checked for LOW_TIP -> ATTACK_LOW_RL,
 BLOCK_LEFT -> LOW_TIP and ATTACK_HIGH -> ATTACK_LOW_LR. Still over the ~1.2 s target (roll-limited as before):
 ATTACK_LOW_LR -> BLOCK_RIGHT and BLOCK_LEFT -> ATTACK_LOW_LR/FEINT_LEFT (1.2-1.5 s). Nothing was left unsafe.
+
+## Repair pass for the re-posed low slashes (27 files) — 2026-09-12
+The four low slashes (ATTACK_LOW_LR/RL, FEINT_LEFT/RIGHT) now start from a low wide windup (hand ~4 cm up, reach 0.32 m) and
+end extended (hand reach 0.37 m, ~7 cm up; the END is the post-strike retracted key) so the blade reaches the other arm; the
+checker allows reach <= 0.40 m, hand >= 0, tip >= -0.10 m. validate_transition.py failed 27 files, every one a "leg 0 too
+fast" (and, for the flicks, over the spline speed cap) — no unsafe legs. All 27 repaired; the full run is 196 of 196 files
+fully valid on both arms. No via or path was dropped; every file keeps its `direct`/`plain`. Two fix classes:
+- Smooth arcs whose vias are now much further from the extended END: re-timed at ~0.85x need (0.75x is the floor).
+  ATTACK_LOW_LR -> ATTACK_HIGH/FEINT_HIGH `plain` 0.30 -> 0.40 (0.76 s); -> BLOCK_HIGH `plain` 0.34 -> 0.42 (0.59 s A /
+  1.16 s B); `overhand_reload` 0.34/0.43 -> 0.45 (1.00 s); `recoil` 0.29 -> 0.46 (0.81 s); `sweep_up` 0.33/0.32 -> 0.42
+  (0.77 s); ATTACK_LOW_RL `mid_cock`/`mid_settle`/`mid_guard` 0.48 -> 0.52 (0.79-0.91 s; the mid_guard guards 1.15 s B /
+  1.29-1.31 s A, roll-limited as before); FEINT_RIGHT -> BLOCK_LEFT `mid_guard` 0.46 -> 0.50 (1.12 s B / 1.29 s A);
+  FEINT_* -> MID `glide` 0.35/0.39 -> 0.47/0.52 (0.67-1.00 s); -> REST `mid_settle` 0.46 -> 0.52; -> SALUTE `lift_roll`
+  0.37 -> 0.44 (0.70 s); BLOCK_HIGH `bar_lift` 0.45 -> 0.62 (1.08 s A / 1.41 s B: arm B's bar sits at roll -45, pan -53,
+  so the shove is 135 deg of roll each way — over the 1.2 s target but it is an optional idle flourish).
+- Snappy flicks re-authored next to the new END poses so they stay 0.14 s per leg (0.29-0.35 s total): `wag` out of the
+  extended slash now [18,52,2,-58,86,0] / [-18,52,2,-58,-86,0] (a further 17 deg of pan on the slash side, jaw shut,
+  reach 0.38 m at most); FEINT_LEFT/RIGHT `recock` [-/+24,40,34,-70,+/-86,75] and `jaw_flick`/`jaw_snap`
+  [-/+14,44,26,-66,+/-86,0] sit beside the low pulled-back END (hand >= 3 cm, tip >= +1.3 cm on both arms). FEINT_RIGHT's
+  flicks were 0.21/0.18 s before and are 0.14 s now, matching FEINT_LEFT's.
+Filmstrips checked for ATTACK_LOW_LR `wag`, FEINT_RIGHT -> ATTACK_LOW_RL `jaw_flick`, FEINT_LEFT -> REST `jaw_snap`.
+Nothing was left unsafe.

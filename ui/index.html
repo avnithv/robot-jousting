@@ -37,7 +37,7 @@
  <div class="bar"><video id="cvid" controls loop muted></video></div>
 </div>
 <div id="main">
- <div id="armbar"><button id="btnA" onclick="setArm('A')">ARM A · SO-100</button><button id="btnB" onclick="setArm('B')">ARM B · SO-101</button><span id="armst" class="arm"></span></div>
+ <div id="armbar"><button id="btnA" onclick="setArm('A')">ARM A · SO-100</button><button id="btnB" onclick="setArm('B')">ARM B · SO-101</button><button onclick="homeArms()" title="both arms slowly to their rest poses">Home arms</button> <span id="armst" class="arm"></span></div>
  <h2 id="title"></h2><small id="doc"></small>
  <div class="bar" style="margin-top:8px"><video id="vid" controls loop muted></video></div>
  <div class="bar"><label>show: <select id="opp" onchange="oppChanged()"><option value="">this move alone</option></select></label>
@@ -127,6 +127,7 @@ async function runBoth(){await api('/api/run_both',{moveA:document.getElementByI
 async function abortBoth(){await api('/api/abort',{arm:'both'});poll()}
 async function gantry(op){const f=parseFloat(document.getElementById('gfeed').value);await api('/api/gantry',{op,feed:f});poll()}
 async function abortArm(){await api('/api/abort',{arm:arm()});poll()}
+async function homeArms(){await api('/api/home_arms',{});poll()}
 async function holdPose(which){await api('/api/hold_pose',{arm:arm(),move:cur,which});poll()}
 async function runArm(){await api('/api/run',{move:cur,arm:arm(),scale:parseFloat(document.getElementById('scale').value),repeat:1});poll()}
 let lastDone=0;
