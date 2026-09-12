@@ -9,7 +9,7 @@ def state_pose(name, which):
     if name in HUBS: return HUBS[name]
     if name == "REST": return tune.REST.copy()
     rec = [np.array(k, float) for k, _ in recipe(name)]
-    return rec[1] if which == "start" else rec[-1]
+    return rec[1 + chain.start_index(name)] if which == "start" else rec[-1]
 
 def check_path(a, path, b, durations):
     pts = [a] + path + [b]; durs = list(durations) + [seg_time(path[-1] if path else a, b)]

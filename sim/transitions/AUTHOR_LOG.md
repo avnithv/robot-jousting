@@ -71,3 +71,37 @@ All 42 files pass validate_transition.py for both arms (arm B's BLOCK_RIGHT para
 - BLOCK_HIGH -> *: `direct` for REST/MID/SALUTE/high moves/low windups/BLOCK_MIDDLE; `plain` routes where the straight blend fails on arm B: LOW_TIP via MID, BLOCK_LEFT and BLOCK_RIGHT via a lifted half-rolled pose [0,-30,-20,0,-45,30]. Styled: `bar_lift` hold flourish, `roll_over` into SALUTE, `flat_first` into the right windup, `high_roll` into LOW_TIP, `up_roll` into BLOCK_MIDDLE, salute lifts elsewhere.
 - Over the ~1.2 s target (roll-limited, no safe faster route exists at 170 deg/s): BLOCK_HIGH -> LOW_TIP 1.39 s (arm B's bar is roll +90 and LOW_TIP is -180: 270 deg of roll through 0), BLOCK_HIGH -> BLOCK_LEFT/RIGHT/MIDDLE 1.22-1.40 s (arm A's guards are roll -180 vs the bar's +52; arm B's wrist travels ~200 deg). ATTACK_HIGH -> BLOCK_MIDDLE `drop_guard` (via MID) is 1.23 s on arm A. Nothing was left unsafe.
 - Note for the library: arm A's guards are sword-underneath (roll ~-180) while arm B's are sword-on-top (roll 0), so the roll-first styled paths read as a recoil-and-roll on A and as a sideways flick-and-back on B; both validate.
+
+## ENDs ATTACK_LOW_LR, ATTACK_LOW_RL, FEINT_LEFT, FEINT_RIGHT (56 files) — 2026-09-12
+All 56 files validate on both arms (validate_transition.py: 56 of 56 fully valid, 258 path/arm checks OK). Durations are
+sized per leg at 0.8-0.9x the slower arm's need (rounded up to 0.01 s) so both arms clear the too-fast check and the
+Catmull-Rom speed cap. Filmstrips checked for the side switches, the guard drops, LOW_TIP routes, BLOCK_HIGH on arm B, the
+recoil/sweep/recock/hover flourishes.
+- Side switches (LR/FEINT_LEFT -> ATTACK_LOW_RL/FEINT_RIGHT and RL/FEINT_RIGHT -> ATTACK_LOW_LR/FEINT_LEFT, 8 files): the
+  straight blend passes the validator (tip stays >= +2.6 cm in sim) but it spins the sword 180 deg with the hand at 8 cm,
+  so per instruction there is NO direct path. `plain` goes via a raised pose with the sword turned on top
+  ([+/-20,-45,45,-30,0,30], pan matching the target windup): hand rises, the roll happens at the apex, then it drops onto
+  the other windup (~0.96 s both arms). Styled `salute_flip` via SALUTE (1.16-1.26 s): blade vertical, then flips over.
+- LR/FEINT_LEFT -> the guards: arm A's guards are roll -180 (270 deg from the +90 slash), arm B's roll 0. `direct` is kept
+  for BLOCK_RIGHT/BLOCK_MIDDLE (validator OK; A 1.56 s roll-limited, B 0.5-0.9 s; transit tip min -2.7..-4.5 cm, no lower
+  than the guards themselves). BLOCK_LEFT has no safe straight blend on A (tip -7.8 cm) -> `plain` via a lifted roll -90
+  pose [-20,-50,30,-10,-90,40] (1.38 s A / 1.53 s B). Styled `up_over` (lifted roll -90 pose, ~1.35 s) and `mid_guard`
+  (via MID, ~1.3-1.5 s). BLOCK_HIGH: direct fails on arm B (overreach) -> `plain` via a lifted bar pose
+  [35,-30,0,-60,80,80] (0.51 s A / 0.93 s B) + `salute_bar`.
+- RL/FEINT_RIGHT -> the guards: `direct` for BLOCK_MIDDLE and FEINT_RIGHT->BLOCK_RIGHT; ATTACK_LOW_RL -> BLOCK_RIGHT lost
+  its direct after arm B's BLOCK_RIGHT was recaptured mid-session ([21,-26,-17,108,-5,4], straight blend overreaches
+  0.34 m) -> `plain` via [10,-45,35,0,-90,30] (0.88 s A / 1.07 s B). BLOCK_LEFT has no safe straight blend on either arm
+  -> `plain` via a lifted roll -90 pose [-20,-40,40,0,-90,30] (0.98 s A / 1.07 s B) + `mid_guard`.
+- LR/FEINT_LEFT -> LOW_TIP: 270 deg of roll; direct passes but dips the tip to -6.7 cm low down, so no direct: `plain`
+  via [10,-50,30,-10,-90,0] (1.38 s, roll-limited) + `mid_drop` via MID (1.47 s). RL/FEINT_RIGHT -> LOW_TIP: `direct`
+  (0.57-0.79 s) + `hover_dip` (blade turns under and hovers level, then the tip dips).
+- RL/FEINT_RIGHT -> ATTACK_HIGH/FEINT_HIGH: straight blend fails on both arms (ATTACK_LOW_RL) -> `plain` via SALUTE
+  (0.64 s) + `mid_cock`; FEINT_RIGHT has `direct` (0.71 s) + `salute_cock`.
+- Everything else has `direct` plus flourishes: `recoil` (hand snaps up/back then to REST), `salute_recover`/`salute_settle`,
+  `sweep_up` (the slash carries on sideways and rises into SALUTE), `overhand_reload` (arc up and over to the same windup),
+  `wag` (extra push before swinging back), `recock` / `jaw_flick` (feint -> its own windup, 0.29 s), `glide`, `lift_roll`,
+  `raise_bar`/`raise_guard`, `jaw_snap` (sword shuts to the finger before folding to rest).
+- Over the ~1.2 s target (roll-limited, 170 deg/s sizing; no faster safe shared-pose route found by a 2.8k-pose grid
+  search): ATTACK_LOW_LR/FEINT_LEFT -> BLOCK_LEFT/RIGHT/MIDDLE/LOW_TIP 1.3-1.57 s (270 deg of roll on arm A, 180 on B),
+  FEINT_* -> opposite windup `salute_flip` 1.24-1.26 s, ATTACK_LOW_RL/FEINT_RIGHT -> BLOCK_LEFT `mid_guard` 1.26-1.28 s.
+  Nothing was left unsafe.

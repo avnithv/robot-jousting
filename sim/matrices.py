@@ -10,7 +10,7 @@ MOVES = ["ATTACK_HIGH", "ATTACK_LOW_LR", "ATTACK_LOW_RL", "FEINT_HIGH", "FEINT_L
 def states(arm):
     tune.use_arm(arm); ends = {"REST": tune.REST.copy()}; starts = {"REST": tune.REST.copy()}
     for m in MOVES:
-        rec = [np.array(k, float) for k, _ in recipe(m)]; starts[m] = rec[1]; ends[m] = rec[-1]
+        rec = [np.array(k, float) for k, _ in recipe(m)]; starts[m] = rec[1 + chain.start_index(m)]; ends[m] = rec[-1]
     for h, q in HUBS.items(): ends[h] = q; starts[h] = q
     return ends, starts
 

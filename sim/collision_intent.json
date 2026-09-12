@@ -1,0 +1,971 @@
+{
+ "_doc": "Collision INTENT (designed, not simulated) for arm A (rows) vs arm B (columns). Key 'A_MOVE|B_MOVE'. outcome: swords | A_taps_B | B_taps_A | both_tap | miss (visual outcome; the rules engine may still count a landed attack on a 'miss'). touch: what touches what. calibrate: end poses to set by hand, as '<arm>:<MOVE>:<pose>' where pose is end (the move's end key), end@X (a contact variant of that end pose for opponent move X), stop (a feint's stop/retreat pose), band (a low sweep's hand height + blade pitch). group: entries in _calibration. Sides: L = A's left = B's right, R = A's right = B's left. Keys starting with '_' are metadata.",
+ "_calibration": {
+  "C1": "ATTACK_HIGH end (anchor) vs BLOCK_MIDDLE guard hand: tip stops on the top of the gripper (0-1 cm), never drives down",
+  "C2": "BLOCK_HIGH contact variant vs the opponent's ATTACK_HIGH end: bar just touches the final blade mid-blade; grippers >= 8 cm apart",
+  "C3": "High bind: both ATTACK_HIGH ends together: blades cross mid-blade over the centre, hilts >= 8 cm; shorten both slams equally if not",
+  "C4": "FEINT_HIGH stop pose: (a) meets the opponent's landed ATTACK_HIGH blade flat and light; (b) stops >= 3 cm above BLOCK_HIGH's bar, a centre guard hand and the mirror feint",
+  "C5": "Low-sweep band (ATTACK_LOW_LR/RL hand z + blade pitch, windup included): blade passes >= 2 cm under the opponent's low gripper at every bearing (opponent ATTACK_LOW_* ends, FEINT_LEFT/RIGHT stops)",
+  "C6": "Low sweep into its guard: ATTACK_LOW_LR end pan vs opponent BLOCK_LEFT and BLOCK_MIDDLE stops 2-3 cm before the hanging blade; the guard's contact variant hangs its blade so it crosses the sweep line >= 6 cm ahead of the attacker's hilt (this also clears the windup on the off side and keeps two same-side guards >= 4 cm apart). ATTACK_LOW_RL vs BLOCK_RIGHT/MIDDLE by mirror, then verified",
+  "C7": "Low bind: ATTACK_LOW_LR end vs the opponent's ATTACK_LOW_RL end on the same side: both stop ~5 deg short so the blades cross mid-blade, hilts >= 8 cm",
+  "C8": "Crossing sweeps (no end pose): the crossing frame of two opposite low sweeps; C5 keeps the blades off the grippers, the blades brush flat at the centre; lengthen t_slash on both if the brush is hard",
+  "C9": "FEINT_LEFT/RIGHT stop pose: (a) cocked blade placed so the opponent's same-side sweep brushes its flat in the last 2-3 deg; (b) >= 3 cm clear of the guard on its line and of the mirror feint on the same side. FEINT_RIGHT by mirror",
+  "C10": "BLOCK_HIGH vs BLOCK_HIGH: two level bars, parallel, ~5 cm apart in x: verify >= 3 cm"
+ },
+ "ATTACK_HIGH|ATTACK_HIGH": {
+  "outcome": "swords",
+  "touch": "both chop blades cross mid-blade above the centre (the high bind)",
+  "calibrate": [
+   "A:ATTACK_HIGH:end",
+   "B:ATTACK_HIGH:end"
+  ],
+  "group": [
+   "C3"
+  ],
+  "why": "same line: clash"
+ },
+ "ATTACK_HIGH|ATTACK_LOW_LR": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A's chop comes down at the centre ~15 cm above B's low hand; B's sweep passes under A's raised arm. Both land by rule; both flinches sell it"
+ },
+ "ATTACK_HIGH|ATTACK_LOW_RL": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A's chop comes down at the centre ~15 cm above B's low hand; B's sweep passes under A's raised arm. Both land by rule; both flinches sell it"
+ },
+ "ATTACK_HIGH|FEINT_HIGH": {
+  "outcome": "swords",
+  "touch": "B's half-swung feint blade meets A's landed chop blade, flat; B then flops back",
+  "calibrate": [
+   "B:FEINT_HIGH:stop",
+   "A:ATTACK_HIGH:end"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "attack beats feint: the feint has committed 60% into the same high line, so the blades meet; reads as the chop catching the hesitating blade"
+ },
+ "ATTACK_HIGH|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "ATTACK_HIGH|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "ATTACK_HIGH|BLOCK_HIGH": {
+  "outcome": "swords",
+  "touch": "A's chop blade lands mid-blade on B's level bar",
+  "calibrate": [
+   "B:BLOCK_HIGH:end@ATTACK_HIGH",
+   "A:ATTACK_HIGH:end"
+  ],
+  "group": [
+   "C2"
+  ],
+  "why": "the bar is the high-line block; closest gripper-to-gripper case, both hands high and forward"
+ },
+ "ATTACK_HIGH|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "side guard is ~9 cm beside the chop line; A lands by rule in the gap, B's flinch sells it"
+ },
+ "ATTACK_HIGH|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "side guard is ~9 cm beside the chop line; A lands by rule in the gap, B's flinch sells it"
+ },
+ "ATTACK_HIGH|BLOCK_MIDDLE": {
+  "outcome": "A_taps_B",
+  "touch": "A's chop tip taps the top of B's sword hand (gripper/hilt) which sits at the centre under the high line",
+  "calibrate": [
+   "A:ATTACK_HIGH:end",
+   "B:BLOCK_MIDDLE:end"
+  ],
+  "group": [
+   "C1"
+  ],
+  "why": "a hanging guard leaves the high line open and puts the blocker's hand right under the chop: 'over the guard, onto the hand'; this is the chop's anchor target"
+ },
+ "ATTACK_LOW_LR|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B's chop comes down at the centre ~15 cm above A's low hand; A's sweep passes under B's raised arm. Both land by rule; both flinches sell it"
+ },
+ "ATTACK_LOW_LR|ATTACK_LOW_LR": {
+  "outcome": "swords",
+  "touch": "the blades brush flat as they cross at the centre mid-sweep; each then lands in air on its own side",
+  "calibrate": [
+   "A:ATTACK_LOW_LR:band",
+   "B:ATTACK_LOW_LR:band"
+  ],
+  "group": [
+   "C8",
+   "C5"
+  ],
+  "why": "opposite sweeps at one height must cross; both land by rule. No end pose fixes this: the band rule keeps each blade off the other gripper"
+ },
+ "ATTACK_LOW_LR|ATTACK_LOW_RL": {
+  "outcome": "swords",
+  "touch": "both sweep blades end crossed in an X just ahead of the hilts on side R (the low bind)",
+  "calibrate": [
+   "A:ATTACK_LOW_LR:end@ATTACK_LOW_RL",
+   "B:ATTACK_LOW_RL:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C7"
+  ],
+  "why": "same-direction sweeps ending on the same side: same line, clash; hands only ~7 cm apart"
+ },
+ "ATTACK_LOW_LR|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "ATTACK_LOW_LR|FEINT_LEFT": {
+  "outcome": "swords",
+  "touch": "A's sweep, in its last degrees, brushes the flat of B's cocked feint blade",
+  "calibrate": [
+   "B:FEINT_LEFT:stop",
+   "A:ATTACK_LOW_LR:band"
+  ],
+  "group": [
+   "C9",
+   "C5"
+  ],
+  "why": "B's feint hand sits on the side where A's sweep lands; the blade must pass under the gripper (band) and only catch the cocked blade"
+ },
+ "ATTACK_LOW_LR|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:ATTACK_LOW_LR:band"
+  ],
+  "group": [
+   "C5"
+  ],
+  "why": "B's feint is on the side where A's sweep starts; the sweep leaves it behind and lands in air (A wins by rule, B's flinch sells it); the feint hand is inside the sweep band so the blade must pass under it"
+ },
+ "ATTACK_LOW_LR|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "the bar is high, the sweep passes under it; the sweep lands by rule"
+ },
+ "ATTACK_LOW_LR|BLOCK_LEFT": {
+  "outcome": "swords",
+  "touch": "A's sweep blade stops against the flat of B's hanging guard blade (on the sweep's landing side)",
+  "calibrate": [
+   "A:ATTACK_LOW_LR:end@BLOCK_LEFT",
+   "B:BLOCK_LEFT:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "ATTACK_LOW_LR|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:BLOCK_RIGHT:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard is on the side where the sweep starts; the sweep leaves it and lands in air on the open side (A lands by rule). The windup and opening whip must clear the guard's hanging tip"
+ },
+ "ATTACK_LOW_LR|BLOCK_MIDDLE": {
+  "outcome": "swords",
+  "touch": "A's sweep blade stops against the flat of B's hanging guard blade (intercepts the sweep mid-way)",
+  "calibrate": [
+   "A:ATTACK_LOW_LR:end@BLOCK_MIDDLE",
+   "B:BLOCK_MIDDLE:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "ATTACK_LOW_RL|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B's chop comes down at the centre ~15 cm above A's low hand; A's sweep passes under B's raised arm. Both land by rule; both flinches sell it"
+ },
+ "ATTACK_LOW_RL|ATTACK_LOW_LR": {
+  "outcome": "swords",
+  "touch": "both sweep blades end crossed in an X just ahead of the hilts on side L (the low bind)",
+  "calibrate": [
+   "A:ATTACK_LOW_RL:end@ATTACK_LOW_LR",
+   "B:ATTACK_LOW_LR:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C7"
+  ],
+  "why": "same-direction sweeps ending on the same side: same line, clash; hands only ~7 cm apart"
+ },
+ "ATTACK_LOW_RL|ATTACK_LOW_RL": {
+  "outcome": "swords",
+  "touch": "the blades brush flat as they cross at the centre mid-sweep; each then lands in air on its own side",
+  "calibrate": [
+   "A:ATTACK_LOW_RL:band",
+   "B:ATTACK_LOW_RL:band"
+  ],
+  "group": [
+   "C8",
+   "C5"
+  ],
+  "why": "opposite sweeps at one height must cross; both land by rule. No end pose fixes this: the band rule keeps each blade off the other gripper"
+ },
+ "ATTACK_LOW_RL|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "A lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "ATTACK_LOW_RL|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:ATTACK_LOW_RL:band"
+  ],
+  "group": [
+   "C5"
+  ],
+  "why": "B's feint is on the side where A's sweep starts; the sweep leaves it behind and lands in air (A wins by rule, B's flinch sells it); the feint hand is inside the sweep band so the blade must pass under it"
+ },
+ "ATTACK_LOW_RL|FEINT_RIGHT": {
+  "outcome": "swords",
+  "touch": "A's sweep, in its last degrees, brushes the flat of B's cocked feint blade",
+  "calibrate": [
+   "B:FEINT_RIGHT:stop",
+   "A:ATTACK_LOW_RL:band"
+  ],
+  "group": [
+   "C9",
+   "C5"
+  ],
+  "why": "B's feint hand sits on the side where A's sweep lands; the blade must pass under the gripper (band) and only catch the cocked blade"
+ },
+ "ATTACK_LOW_RL|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "the bar is high, the sweep passes under it; the sweep lands by rule"
+ },
+ "ATTACK_LOW_RL|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:BLOCK_LEFT:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard is on the side where the sweep starts; the sweep leaves it and lands in air on the open side (A lands by rule). The windup and opening whip must clear the guard's hanging tip"
+ },
+ "ATTACK_LOW_RL|BLOCK_RIGHT": {
+  "outcome": "swords",
+  "touch": "A's sweep blade stops against the flat of B's hanging guard blade (on the sweep's landing side)",
+  "calibrate": [
+   "A:ATTACK_LOW_RL:end@BLOCK_RIGHT",
+   "B:BLOCK_RIGHT:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "ATTACK_LOW_RL|BLOCK_MIDDLE": {
+  "outcome": "swords",
+  "touch": "A's sweep blade stops against the flat of B's hanging guard blade (intercepts the sweep mid-way)",
+  "calibrate": [
+   "A:ATTACK_LOW_RL:end@BLOCK_MIDDLE",
+   "B:BLOCK_MIDDLE:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "FEINT_HIGH|ATTACK_HIGH": {
+  "outcome": "swords",
+  "touch": "A's half-swung feint blade meets B's landed chop blade, flat; A then flops back",
+  "calibrate": [
+   "A:FEINT_HIGH:stop",
+   "B:ATTACK_HIGH:end"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "attack beats feint: the feint has committed 60% into the same high line, so the blades meet; reads as the chop catching the hesitating blade"
+ },
+ "FEINT_HIGH|ATTACK_LOW_LR": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "FEINT_HIGH|ATTACK_LOW_RL": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "FEINT_HIGH|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_HIGH:stop",
+   "B:FEINT_HIGH:stop"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "two high feints both stop short of the centre; keep the tips >= 3 cm apart"
+ },
+ "FEINT_HIGH|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_HIGH|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_HIGH|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_HIGH:stop"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "feint beats block by rule, nothing touches: the feint stops >= 3 cm above the bar"
+ },
+ "FEINT_HIGH|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_HIGH|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_HIGH|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_HIGH:stop"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "feint beats block by rule, nothing touches: the feint stops >= 3 cm above the centre guard hand"
+ },
+ "FEINT_LEFT|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "FEINT_LEFT|ATTACK_LOW_LR": {
+  "outcome": "swords",
+  "touch": "B's sweep, in its last degrees, brushes the flat of A's cocked feint blade",
+  "calibrate": [
+   "A:FEINT_LEFT:stop",
+   "B:ATTACK_LOW_LR:band"
+  ],
+  "group": [
+   "C9",
+   "C5"
+  ],
+  "why": "A's feint hand sits on the side where B's sweep lands; the blade must pass under the gripper (band) and only catch the cocked blade"
+ },
+ "FEINT_LEFT|ATTACK_LOW_RL": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:ATTACK_LOW_RL:band"
+  ],
+  "group": [
+   "C5"
+  ],
+  "why": "A's feint is on the side where B's sweep starts; the sweep leaves it behind and lands in air (B wins by rule, A's flinch sells it); the feint hand is inside the sweep band so the blade must pass under it"
+ },
+ "FEINT_LEFT|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_LEFT|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_LEFT|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_LEFT:stop",
+   "B:FEINT_RIGHT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "two low feints cocked on the same side L; stop poses keep the blades >= 3 cm apart"
+ },
+ "FEINT_LEFT|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_LEFT|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_LEFT|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_LEFT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "FEINT_LEFT|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_LEFT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "FEINT_RIGHT|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "B lands by rule (attack beats feint) but chop and low feint are on different heights; nothing is under the blade"
+ },
+ "FEINT_RIGHT|ATTACK_LOW_LR": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:ATTACK_LOW_LR:band"
+  ],
+  "group": [
+   "C5"
+  ],
+  "why": "A's feint is on the side where B's sweep starts; the sweep leaves it behind and lands in air (B wins by rule, A's flinch sells it); the feint hand is inside the sweep band so the blade must pass under it"
+ },
+ "FEINT_RIGHT|ATTACK_LOW_RL": {
+  "outcome": "swords",
+  "touch": "B's sweep, in its last degrees, brushes the flat of A's cocked feint blade",
+  "calibrate": [
+   "A:FEINT_RIGHT:stop",
+   "B:ATTACK_LOW_RL:band"
+  ],
+  "group": [
+   "C9",
+   "C5"
+  ],
+  "why": "A's feint hand sits on the side where B's sweep lands; the blade must pass under the gripper (band) and only catch the cocked blade"
+ },
+ "FEINT_RIGHT|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_RIGHT|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_RIGHT:stop",
+   "B:FEINT_LEFT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "two low feints cocked on the same side R; stop poses keep the blades >= 3 cm apart"
+ },
+ "FEINT_RIGHT|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_RIGHT|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_RIGHT|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_RIGHT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "FEINT_RIGHT|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "FEINT_RIGHT|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:FEINT_RIGHT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "BLOCK_HIGH|ATTACK_HIGH": {
+  "outcome": "swords",
+  "touch": "B's chop blade lands mid-blade on A's level bar",
+  "calibrate": [
+   "A:BLOCK_HIGH:end@ATTACK_HIGH",
+   "B:ATTACK_HIGH:end"
+  ],
+  "group": [
+   "C2"
+  ],
+  "why": "the bar is the high-line block; closest gripper-to-gripper case, both hands high and forward"
+ },
+ "BLOCK_HIGH|ATTACK_LOW_LR": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "the bar is high, the sweep passes under it; the sweep lands by rule"
+ },
+ "BLOCK_HIGH|ATTACK_LOW_RL": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "the bar is high, the sweep passes under it; the sweep lands by rule"
+ },
+ "BLOCK_HIGH|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_HIGH:stop"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "feint beats block by rule, nothing touches: the feint stops >= 3 cm above the bar"
+ },
+ "BLOCK_HIGH|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_HIGH|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_HIGH|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_HIGH:end",
+   "B:BLOCK_HIGH:end"
+  ],
+  "group": [
+   "C10"
+  ],
+  "why": "two level bars overlap across the centre, parallel, ~5 cm apart: closest block-block case"
+ },
+ "BLOCK_HIGH|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_HIGH|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_HIGH|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_LEFT|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "side guard is ~9 cm beside the chop line; B lands by rule in the gap, A's flinch sells it"
+ },
+ "BLOCK_LEFT|ATTACK_LOW_LR": {
+  "outcome": "swords",
+  "touch": "B's sweep blade stops against the flat of A's hanging guard blade (on the sweep's landing side)",
+  "calibrate": [
+   "B:ATTACK_LOW_LR:end@BLOCK_LEFT",
+   "A:BLOCK_LEFT:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "BLOCK_LEFT|ATTACK_LOW_RL": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_LEFT:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard is on the side where the sweep starts; the sweep leaves it and lands in air on the open side (B lands by rule). The windup and opening whip must clear the guard's hanging tip"
+ },
+ "BLOCK_LEFT|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_LEFT|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_LEFT|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_RIGHT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "BLOCK_LEFT|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_LEFT|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_LEFT|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_LEFT:end",
+   "B:BLOCK_RIGHT:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_LEFT|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_LEFT:end",
+   "B:BLOCK_MIDDLE:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_RIGHT|ATTACK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": "side guard is ~9 cm beside the chop line; B lands by rule in the gap, A's flinch sells it"
+ },
+ "BLOCK_RIGHT|ATTACK_LOW_LR": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_RIGHT:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard is on the side where the sweep starts; the sweep leaves it and lands in air on the open side (B lands by rule). The windup and opening whip must clear the guard's hanging tip"
+ },
+ "BLOCK_RIGHT|ATTACK_LOW_RL": {
+  "outcome": "swords",
+  "touch": "B's sweep blade stops against the flat of A's hanging guard blade (on the sweep's landing side)",
+  "calibrate": [
+   "B:ATTACK_LOW_RL:end@BLOCK_RIGHT",
+   "A:BLOCK_RIGHT:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "BLOCK_RIGHT|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_RIGHT|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_LEFT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "BLOCK_RIGHT|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_RIGHT|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_RIGHT|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_RIGHT:end",
+   "B:BLOCK_LEFT:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_RIGHT|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_RIGHT|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_RIGHT:end",
+   "B:BLOCK_MIDDLE:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_MIDDLE|ATTACK_HIGH": {
+  "outcome": "B_taps_A",
+  "touch": "B's chop tip taps the top of A's sword hand (gripper/hilt) which sits at the centre under the high line",
+  "calibrate": [
+   "B:ATTACK_HIGH:end",
+   "A:BLOCK_MIDDLE:end"
+  ],
+  "group": [
+   "C1"
+  ],
+  "why": "a hanging guard leaves the high line open and puts the blocker's hand right under the chop: 'over the guard, onto the hand'; this is the chop's anchor target"
+ },
+ "BLOCK_MIDDLE|ATTACK_LOW_LR": {
+  "outcome": "swords",
+  "touch": "B's sweep blade stops against the flat of A's hanging guard blade (intercepts the sweep mid-way)",
+  "calibrate": [
+   "B:ATTACK_LOW_LR:end@BLOCK_MIDDLE",
+   "A:BLOCK_MIDDLE:end@ATTACK_LOW_LR"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "BLOCK_MIDDLE|ATTACK_LOW_RL": {
+  "outcome": "swords",
+  "touch": "B's sweep blade stops against the flat of A's hanging guard blade (intercepts the sweep mid-way)",
+  "calibrate": [
+   "B:ATTACK_LOW_RL:end@BLOCK_MIDDLE",
+   "A:BLOCK_MIDDLE:end@ATTACK_LOW_RL"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "guard on the sweep's line: the sweep must stop short of the hanging blade instead of driving through it"
+ },
+ "BLOCK_MIDDLE|FEINT_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_HIGH:stop"
+  ],
+  "group": [
+   "C4"
+  ],
+  "why": "feint beats block by rule, nothing touches: the feint stops >= 3 cm above the centre guard hand"
+ },
+ "BLOCK_MIDDLE|FEINT_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_LEFT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "BLOCK_MIDDLE|FEINT_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "B:FEINT_RIGHT:stop"
+  ],
+  "group": [
+   "C9"
+  ],
+  "why": "feint into the guard on its line: the half-sweep stops >= 3 cm short of the hanging blade; the blocker shoves air"
+ },
+ "BLOCK_MIDDLE|BLOCK_HIGH": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [],
+  "group": [],
+  "why": null
+ },
+ "BLOCK_MIDDLE|BLOCK_LEFT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_MIDDLE:end",
+   "B:BLOCK_LEFT:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_MIDDLE|BLOCK_RIGHT": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_MIDDLE:end",
+   "B:BLOCK_RIGHT:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ },
+ "BLOCK_MIDDLE|BLOCK_MIDDLE": {
+  "outcome": "miss",
+  "touch": null,
+  "calibrate": [
+   "A:BLOCK_MIDDLE:end",
+   "B:BLOCK_MIDDLE:end"
+  ],
+  "group": [
+   "C6"
+  ],
+  "why": "hanging guards nose to nose on the same side; the guard-variant spacing (blade tip not past the centre) keeps them >= 4 cm apart"
+ }
+}

@@ -23,6 +23,17 @@ FLOURISHES = {k: v for k, v in json.load(open(os.path.join(HERE, "flourishes.jso
 FAMILY = {"ATTACK_HIGH": "high", "FEINT_HIGH": "high", "ATTACK_LOW_LR": "low_left", "FEINT_LEFT": "low_left", "ATTACK_LOW_RL": "low_right", "FEINT_RIGHT": "low_right",
           "BLOCK_HIGH": "bar", "BLOCK_LEFT": "guard", "BLOCK_RIGHT": "guard", "BLOCK_MIDDLE": "guard", "REST": "rest"}
 
+def start_index(move):
+    """Index (within the recipe, after dropping REST) of the move's START pose: the pose a transition must reach before the move
+    does its own thing. Blocks/states: the held pose. Low attacks/feints: the wide windup. High attack/feint: the COCKED pose
+    (sword up, jaw open) right before the chop; the raise into it belongs to the transition."""
+    return 1 if move in ("ATTACK_HIGH", "FEINT_HIGH") else 0
+
+def move_keys(move):
+    """(start pose, [(pose, seconds), ...] from the start pose onward)"""
+    rec = [(np.array(k, float), float(d)) for k, d in recipe(move)][1:]
+    i = start_index(move); return rec[i][0], rec[i:]
+
 def pin_of(move):
     if move in tune.STATES: return ("first", GUARD)   # a state step: arrive by GUARD time and hold
     """Which key is pinned to the beat clock: blocks pin the guard key at GUARD; attacks pin the impact (last) key at IMPACT;
@@ -80,7 +91,7 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
     tuned = json.load(open(OUT)); suffix = "" if arm == "A" else f"@{arm}"
     keys = [rest]; times = [0.0]; beats = []; prev_move = "REST"; t_beat = 0.0; stretches = []; last_fl = None
     for move in moves:
-        rec = [(np.array(k, float), float(d)) for k, d in recipe(move)][1:]   # this arm's keys, dropping the leading REST
+        start, rec = move_keys(move)                                          # transition targets START; the move plays from there
         pin_which, pin_t = pin_of(move); pin_i = {"first": 0, "last": len(rec) - 1, "feint": len(rec) - 3}[pin_which]
         windup = sum(d for _, d in rec[1:pin_i + 1]); window = pin_t - windup
         cands = candidates(prev_move, keys[-1], move, rec[0][0], window, last_fl)
