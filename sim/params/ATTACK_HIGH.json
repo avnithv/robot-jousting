@@ -7,10 +7,10 @@
   "pan": 0
  },
  "cock": {
-  "lift_back": 14,
-  "wrist_up": 62
+  "lift_back": 28,
+  "wrist_up": 55
  },
- "jaw_open": 85,
+ "jaw_open": 45,
  "t_raise": 0.7,
  "t_cock": 0.35,
  "t_slam": 0.22,

@@ -1,7 +1,35 @@
 {
- "_doc": "Exact mirror of ATTACK_LOW_LR (pan and roll negated). Edit ATTACK_LOW_LR to change both.",
- "mirror_of": "ATTACK_LOW_LR",
+ "_doc": "Low horizontal slash, starts on the arm's RIGHT, ends on its LEFT (the mirror of ATTACK_LOW_LR). Was 'mirror_of' ATTACK_LOW_LR; made standalone on 2026-09-12 so the end pose can be captured (the mirror IK cannot pitch the blade flat here: the wrist sits at its -94 limit, so the tip pointed up relative to what the user wanted). captured.start = the old mirrored windup, unchanged; captured.end = same hand position, blade tilted 7 deg lower. end/start/roll below are the mirrored numbers and are only used if a captured entry is deleted.",
+ "end": {
+  "x": 0.27,
+  "z": 0.08,
+  "pan": -20
+ },
+ "start": {
+  "dx": -0.05,
+  "dz": 0.01,
+  "pan": 20
+ },
+ "roll": -90,
+ "jaw_open": 55,
+ "t_windup": 0.85,
+ "t_slash": 0.4,
+ "captured": {
+  "start": [20.0, -4.0, 88.3, -91.5, -14.0, 55.0],
+  "end": [-20.0, 16.4, 66.7, -81.9, -14.0, 0.0]
+ },
  "_help": {
-  "mirror_of": "generated as the mirror of this move; edit that move's file"
+  "end.x": "hand distance forward at the end of the slash (m, keep <= 0.27)",
+  "end.z": "height of the low line (m above the base plane)",
+  "end.pan": "where the slash ends (deg; negative = own left)",
+  "start.dx": "windup hand offset from the end, forward (m; negative = pulled back)",
+  "start.dz": "windup hand offset from the end, up (m)",
+  "start.pan": "where the slash starts (deg; + = own right)",
+  "roll": "wrist roll: -90 = jaw swings sideways on this side (keep -90)",
+  "jaw_open": "how wide the sword cocks before the sweep (0..100): smaller = comes from less wide",
+  "t_windup": "seconds: rest -> cocked low on the start side (0.85 = the old mirror timing)",
+  "t_slash": "seconds: the sweep (base pan speed)",
+  "captured.start": "windup pose (real degrees): the old mirrored windup, kept so only the end changes. Delete to recompute from start.*",
+  "captured.end": "end pose (real degrees): hand at (0.27, 0.08), blade pitched -14 deg (was -7: tip pointed up a bit). Delete to recompute from end.*"
  }
 }

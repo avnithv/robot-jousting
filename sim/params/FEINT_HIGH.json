@@ -1,14 +1,21 @@
 {
- "_doc": "ATTACK_HIGH's raise + cock, then a snap back: pull_back = joint offsets from the raised pose; jaw_after = jaw after the snap; t_back seconds.",
+ "_doc": "ATTACK_HIGH's raise + cock, then a pull back to rest (captured.end): follows the attack, then withdraws fully. pull_back offsets only apply when captured.end is removed.",
  "like": "ATTACK_HIGH",
  "pull_back": {
   "lift": -20,
   "wrist": -10
  },
- "jaw_after": 20,
- "t_back": 0.4,
+ "jaw_after": 8,
+ "t_back": 0.5,
  "captured": {
-  "end": [-5.8, 3.3, -15.4, -75.9, 75.9, 8.2]
+  "end": [
+   -3.3,
+   -89.0,
+   47.3,
+   3.6,
+   76.4,
+   7.9
+  ]
  },
  "_help": {
   "like": "uses this attack's raise and cock, then snaps back",
@@ -16,6 +23,6 @@
   "pull_back.wrist": "wrist offset for the snap back (deg)",
   "jaw_after": "jaw after the snap (0..100)",
   "t_back": "seconds: the snap back",
-  "captured.end": "end pose captured from the arm (real degrees): dips forward/down with the wrist snapped up. Overrides pull_back. Delete the entry to go back to the computed pose."
+  "captured.end": "end pose captured from the arm (real degrees): the rest pose, so the feint pulls all the way back at the end. Overrides pull_back. Delete the entry to go back to the computed pose."
  }
 }

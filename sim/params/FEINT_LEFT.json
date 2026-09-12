@@ -1,17 +1,28 @@
 {
- "_doc": "ATTACK_LOW_LR's windup (sword cocked low on the LEFT), then pull back by the joint offsets.",
+ "_doc": "ATTACK_LOW_LR's windup (sword cocked low on the LEFT), then pull back by the joint offsets, then pulls back to rest (captured.end).",
  "like": "ATTACK_LOW_LR",
  "pull_back": {
   "lift": -25,
   "wrist": 0
  },
- "jaw_after": 0,
- "t_back": 0.3,
+ "jaw_after": 8,
+ "t_back": 0.5,
  "_help": {
   "like": "uses this slash's windup (sword cocked low on the LEFT), then pulls back",
   "pull_back.lift": "shoulder offset from the windup for the pull back (deg; negative = up/back)",
   "pull_back.wrist": "wrist offset for the pull back (deg)",
   "jaw_after": "jaw after the pull back (0..100)",
-  "t_back": "seconds: the pull back"
+  "t_back": "seconds: the pull back",
+  "captured.end": "end pose captured from the arm (real degrees): the rest pose, so the feint pulls all the way back at the end. Overrides pull_back. Delete the entry to go back to the computed pose."
+ },
+ "captured": {
+  "end": [
+   -3.3,
+   -89.0,
+   47.3,
+   3.6,
+   76.4,
+   7.9
+  ]
  }
 }
