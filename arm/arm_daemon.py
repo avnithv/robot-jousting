@@ -325,9 +325,20 @@ class H(BaseHTTPRequestHandler):
                     st = gantry.status(); apart = gantry.cfg["apart"]
                     if abs(st.get("x", 0) - apart["X"]) > 2 or abs(st.get("y", 0) - apart["Y"]) > 2:
                         gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
-                    time.sleep(0.5); gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], feed); log.append("charged in")
-                if body.get("salute", True): both("SALUTE", "SALUTE", 1.0); log.append("saluted")
-                both(body.get("moveA", "CHAIN_A"), body.get("moveB", "CHAIN_B"), scale); log.append("played")
+                    time.sleep(0.5); mA, mB = body.get("moveA", "CHAIN_A"), body.get("moveB", "CHAIN_B"); errs = {}
+                    if body.get("overlap"):   # arms start the instant the charge-in is sent, so the moves run during the ride
+                        def go():
+                            try: both(mA, mB, scale)
+                            except Exception as e: errs["arms"] = str(e)
+                        th = threading.Thread(target=go); th.start()
+                    gantry.move(gantry.cfg["together"]["X"], gantry.cfg["together"]["Y"], feed); log.append("charged in")
+                if body.get("overlap"):
+                    th.join()
+                    if errs: raise RuntimeError(errs["arms"])
+                    log.append("played during the charge")
+                else:
+                    if body.get("salute", True): both("SALUTE", "SALUTE", 1.0); log.append("saluted")
+                    both(mA, mB, scale); log.append("played")
                 if body.get("apart_after", True):
                     with gantry.lock: gantry.move(apart["X"], apart["Y"], feed); log.append("moved apart")
                 self._json({"ok": True, "log": log, "A": A.last, "B": B.last})
