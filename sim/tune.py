@@ -110,19 +110,20 @@ def block(P):
     return [(REST, 0), (k, P["t_move"]), (k, P["t_hold"])]
 
 def feint(P):
-    like = P["like"]; base = PARAMS[like]
+    """Feint = the matching attack followed into the swing: windup, then the strike interpolated up to `swing` (0..1) of the way
+    to its end pose, then a smooth retreat (two eased keys) back to the cocked/windup pose pulled back by `pull_back` offsets."""
+    like = P["like"]; base = PARAMS[like]; swing = float(P.get("swing", 0.5)); t_back = float(P.get("t_back", 0.5))
     if like.startswith("ATTACK_HIGH"):
-        rec = attack_high(base)[:3]                                # REST, raised, cocked
-        kb = rec[1][0].copy(); kb[1] += P["pull_back"]["lift"]; kb[3] += P["pull_back"]["wrist"]; kb[5] = P["jaw_after"]
-        if cap(P, "start") is not None: rec[1] = (cap(P, "start", jaw=5), rec[1][1]); rec[2] = (cap(P, "start", jaw=rec[2][0][5]), rec[2][1])
-        if cap(P, "end") is not None: kb = cap(P, "end", jaw=P["jaw_after"])
-        return rec + [(kb, P["t_back"])]
-    mirror = "mirror_of" in base; src = PARAMS[base["mirror_of"]] if mirror else base
-    rec = attack_low(src, mirror=mirror)[:2]                       # REST, windup
-    kb = rec[1][0].copy(); kb[1] += P["pull_back"]["lift"]; kb[3] += P["pull_back"]["wrist"]; kb[5] = P["jaw_after"]   # pull back = windup + joint offsets
-    if cap(P, "start") is not None: rec[1] = (cap(P, "start", jaw=rec[1][0][5]), rec[1][1])
-    if cap(P, "end") is not None: kb = cap(P, "end", jaw=P["jaw_after"])
-    return rec + [(kb, P["t_back"])]
+        rec = attack_high(base); cocked, end = rec[2][0], rec[3][0]; t_strike = rec[3][1]; head = rec[:3]
+    else:
+        mirror = "mirror_of" in base; src = PARAMS[base["mirror_of"]] if mirror else base
+        rec = attack_low(src, mirror=mirror); cocked, end = rec[1][0], rec[2][0]; t_strike = rec[2][1]; head = rec[:2]
+    if cap(P, "start") is not None: cocked = cap(P, "start", jaw=cocked[5]); head[-1] = (cocked, head[-1][1])
+    mid = cocked + swing * (end - cocked)                                   # stop part-way through the strike
+    back = cocked.copy(); back[1] += P["pull_back"].get("lift", 0); back[3] += P["pull_back"].get("wrist", 0); back[5] = P["jaw_after"]
+    if cap(P, "end") is not None: back = cap(P, "end", jaw=P["jaw_after"])
+    ease = mid + 0.35 * (back - mid)                                        # first retreat key close to the stop: slow start, no jerk
+    return head + [(mid, t_strike * swing), (ease, t_back * 0.45), (back, t_back * 0.55)]
 
 def recipe(name):
     P = PARAMS[name]

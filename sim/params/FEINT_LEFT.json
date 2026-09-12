@@ -1,22 +1,23 @@
 {
- "_doc": "ATTACK_LOW_LR's windup (sword cocked low on the LEFT), committed ~30% into the sweep (captured.start), then a late, quick pull back to rest (captured.end). The recipe only has 3 keys (rest, windup, pull-back), so 'following the sweep' is done by aiming the windup at a pose 30% along the windup->slash-end line. In a chain the pull-back key is pinned at 1.0 s, so shorter t_back = pull back starts later. pull_back offsets only apply when captured.end is removed.",
+ "_doc": "Feint: follows ATTACK_LOW_LR into its strike up to `swing`, then eases back to the cocked pose over `t_back`.",
  "like": "ATTACK_LOW_LR",
  "pull_back": {
-  "lift": -25,
+  "lift": -8,
   "wrist": 0
  },
- "jaw_after": 8,
- "t_back": 0.4,
+ "jaw_after": 40,
+ "t_back": 0.55,
  "_help": {
   "like": "uses this slash's windup (sword cocked low on the LEFT), then pulls back",
-  "pull_back.lift": "shoulder offset from the windup for the pull back (deg; negative = up/back)",
-  "pull_back.wrist": "wrist offset for the pull back (deg)",
-  "jaw_after": "jaw after the pull back (0..100)",
-  "t_back": "seconds: the pull back (0.4 = as quick as the servo caps allow back to rest; the wrist roll has 90 deg to undo)",
+  "pull_back.lift": "shoulder offset from the cocked pose at the end of the retreat (deg; negative = pulled back/up)",
+  "pull_back.wrist": "wrist offset at the end of the retreat (deg)",
+  "jaw_after": "jaw at the end of the retreat (0 shut .. 100 open): keeps the sword cocked if high",
+  "t_back": "seconds for the smooth retreat back to the cocked pose (longer = softer)",
   "captured.start": "windup pose (real degrees): ATTACK_LOW_LR's windup moved 30% toward its slash end (pan -8 instead of -20), so the feint starts the sweep before pulling back. Delete to use the attack's exact windup.",
-  "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose."
+  "captured.end": "end pose captured from the arm 2026-09-12 (real degrees): the rest pose (lift clamped from -89.7 to the -89 hard rule). Overrides pull_back. Delete the entry to go back to the computed pose.",
+  "swing": "how far into the attack's strike the feint goes before stopping (0 = stops at the cocked pose, 1 = full strike)"
  },
- "captured": {
+ "captured_retired_2026-09-12": {
   "start": [
    -8.0,
    -41.3,
@@ -33,5 +34,6 @@
    76.1,
    7.4
   ]
- }
+ },
+ "swing": 0.5
 }
