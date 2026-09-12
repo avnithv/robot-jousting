@@ -131,11 +131,15 @@ async function main() {
         await dialogue.say(MARLA.hardwareOffline);
       }
     }
+    let campaignResume = null;                    // a campaign fight to pick up after a reload (see snapshot.saveCampaign)
     if (start.mode === 'resume') {
       const snap = pendingResume; pendingResume = null;
-      const ok = await resumeDuel({ snap, screens, stage, battle, dialogue, bridge, ext });
-      if (!ok) { snapshot.clear(); snapshot.setUrlRoom(null); }
-      continue;                                   // back to the title
+      if (snap && snap.kind === 'campaign') { campaignResume = snap; if (snap.settings) settings.merge(snap.settings); }
+      else {
+        const ok = await resumeDuel({ snap, screens, stage, battle, dialogue, bridge, ext });
+        if (!ok) { snapshot.clear(); snapshot.setUrlRoom(null); }
+        continue;                                 // back to the title
+      }
     }
     pendingResume = null;                         // the host chose something else: that duel is theirs to forget
     if (start.mode === 'mp') {
@@ -143,7 +147,7 @@ async function main() {
       await runMultiplayer({ screens, stage, battle, dialogue, bridge, ext, mp: start.mp, hp: +(params.get('myhp') || settings.get('hpA')) });
       continue;                                   // back to the title
     }
-    if (tutorial && firstVisit && settings.get('chatter')) await dialogue.say(MARLA.intro);
+    if (tutorial && firstVisit && settings.get('chatter') && !campaignResume) await dialogue.say(MARLA.intro);
     firstVisit = false;
     // Starting HP: the host's setting, unless a ?myhp= is pinned on the address for testing.
     const player = { name: PLAYER_NAME, title: 'House of the Red Lion', hp: +(params.get('myhp') || settings.get('hpA')) };
@@ -152,6 +156,7 @@ async function main() {
     // Counters are a run resource, not a deck card: you start the run holding as many as the host set, a
     // counter that fires is gone, and losing a fight hands you one more for the next attempt.
     let counters = settings.get('simple') ? 0 : settings.get('countersA');   // the simple duel has no counters
+    if (campaignResume) { fight = Number(campaignResume.fight) || 0; deck = [...(campaignResume.deck || deck)]; counters = Number(campaignResume.counters) || 0; showTutorial = false; }
     let quit = false;
     // The opening / finishing pose picks: the host panel and the versus screen set the same two settings.
     while (fight < LADDER.length && !quit) {
@@ -161,7 +166,7 @@ async function main() {
       if (params.get('opphp')) opp.hp = +params.get('opphp');      // testing: short fights
       const options = await loadPoseOptions();   // re-read each fight so freshly synced scenes show up
       panel.setPoseOptions(options);
-      const picked = await screens.versus(player, opp, fight, { a: 'assets/arms2/red_ready.png', b: 'assets/arms2/blue_ready.png' },
+      const picked = campaignResume ? { ...(campaignResume.poses || {}) } : await screens.versus(player, opp, fight, { a: 'assets/arms2/red_ready.png', b: 'assets/arms2/blue_ready.png' },
         { ...options, opener: settings.get('opener') || null, finale: settings.get('finale') || null });
       settings.set('opener', picked.opener || ''); settings.set('finale', picked.finale || '');
       let again = true;
@@ -170,10 +175,16 @@ async function main() {
         again = false;
         player.hp = +(params.get('myhp') || settings.get('hpA'));
         battle.show(true);
-        match = new Match({ stage, battle, dialogue, bridge, player, opponent: opp, playerDeck: deck, counters, tutorial: showTutorial, ext, poses: picked });
+        // Reload safety: the fight is snapshotted at the start of every planning phase (deck, counters, ladder
+        // position, poses, the match frozen at that turn), so a reload mid-fight offers "Resume the fight" on the
+        // title and picks the turn up at its planning phase. Nothing played on the metal is replayed.
+        const resumeMatch = campaignResume ? campaignResume.match : null; campaignResume = null;
+        const onPhase = (kind, extra, m) => { if (kind === 'plan' && !m.over) snapshot.saveCampaign({ fight, deck: [...deck], counters, poses: { ...picked }, oppName: opp.name, player: { name: player.name }, settings: settings.all(), match: m.snapshot() }); };
+        match = new Match({ stage, battle, dialogue, bridge, player, opponent: opp, playerDeck: deck, counters, tutorial: showTutorial, ext, poses: picked, onPhase, resume: resumeMatch });
         showTutorial = false;
         session.set({ mode: 'campaign', match, where: 'fight' });
         won = await match.run();
+        snapshot.clear();                         // however it ended, there is nothing to resume any more
         session.set({ match: null, where: 'between' });
         if (match.ended === 'restart') { again = true; stage.reset(); continue; }
       }

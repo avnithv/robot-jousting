@@ -49,11 +49,17 @@ export function clear() { try { sessionStorage.removeItem(KEY); } catch (e) {} }
 /** The snapshot this page should offer to resume: one that exists, matches the room in the URL, and is not
  *  a finished duel. Null otherwise. */
 export function resumable() {
+  const s = load(); if (!s) return null;
+  if (s.kind === 'campaign') return s.match ? s : null;   // a campaign fight (main.js saves one at every planning phase)
   const code = urlRoom(); if (!code) return null;
-  const s = load(); if (!s || s.code !== code) return null;
+  if (s.code !== code) return null;
   if (s.phase === 'over') return null;
   return s;
 }
+/** The campaign's own snapshot: which fight of the ladder, the deck and counters, the poses, and the match frozen at
+ *  the start of its current planning phase. Saved by main.js whenever a turn's plan phase begins, cleared when the
+ *  fight ends. Resuming restarts that turn's planning: nothing already played on the metal is replayed. */
+export function saveCampaign(s) { save({ ...s, kind: 'campaign', code: 'CAMPAIGN' }); }
 
 // ---- taking the room back from the server ---------------------------------------------------------------
 /** POST /api/mp/rooms/<code>/adopt -> { code, tokens, urls, rev, seq, seen }. The server keeps a room for

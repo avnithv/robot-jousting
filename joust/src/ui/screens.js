@@ -90,7 +90,11 @@ export class Screens {
     return new Promise(resolve => {
       this.clear();
       const s = el('div', 'screen title', this.layer);
-      const r = resume ? `<div class="resumebar">
+      const r = resume && resume.kind === 'campaign' ? `<div class="resumebar">
+          <b>A fight is still running: ${resume.player?.name || 'Lionheart'} vs ${resume.oppName || 'the opponent'}.</b>
+          <span>Turn ${resume.match?.turn ?? '?'}, ${resume.match?.hp?.a ?? '?'} vs ${resume.match?.hp?.b ?? '?'} HP. The page was reloaded; the fight picks up at that turn's planning phase.</span>
+          <button class="btn" id="resume">Resume the fight</button>
+          <button class="btn quiet" id="drop">Forget it</button></div>` : resume ? `<div class="resumebar">
           <b>A duel is still running in room ${resume.code}.</b>
           <span>${resume.players?.a?.name || 'Red knight'} vs ${resume.players?.b?.name || 'Blue knight'}${resume.match ? ` — turn ${resume.match.turn}, ${resume.match.hp?.a ?? '?'} vs ${resume.match.hp?.b ?? '?'}` : ''}. The phones are still waiting.</span>
           <button class="btn" id="resume">Resume the phone duel in room ${resume.code}</button>
