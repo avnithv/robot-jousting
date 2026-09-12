@@ -266,7 +266,11 @@ def api(handler, path, body):
     if path == "/api/calib_status":
         stops = json.load(open(os.path.join(SIM, "contact_stops.json"))) if os.path.exists(os.path.join(SIM, "contact_stops.json")) else {}
         intent = json.load(open(os.path.join(SIM, "collision_intent.json")))
-        pairs = [{"A": k.split("|")[0], "B": k.split("|")[1], "outcome": v["outcome"], "touch": v.get("touch")} for k, v in intent.items() if not k.startswith("_") and v["outcome"] != "miss"]
+        # every cell, contact expected or not: the document's guess is a hint, the metal decides. Attack-vs-attack and
+        # feint pairs the document calls a miss stay hidden (nothing to calibrate there), guards are always shown.
+        pairs = [{"A": k.split("|")[0], "B": k.split("|")[1], "outcome": v["outcome"], "touch": v.get("touch")} for k, v in intent.items()
+                 if not k.startswith("_") and (v["outcome"] != "miss" or (("BLOCK" in k) and ("ATTACK" in k)))]
+        pairs.sort(key=lambda p: (p["outcome"] == "miss", p["A"], p["B"]))
         return {"stops": stops, "pairs": pairs}
     if path == "/api/arm": return daemon_status()
     if path == "/api/hold": ensure_daemon(); return daemon("/hold", {"arm": body.get("arm", "A")}, timeout=30)

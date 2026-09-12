@@ -23,7 +23,8 @@ def profile(body=None):
     """The turn profile (every timing knob of a live exchange), read fresh each call so edits apply without a restart,
     with any same-named keys in a request body overriding it."""
     P = {"scale": 1.0, "beats_per_pass": 3, "overlap": True, "salute": False, "apart_after": True, "pause_before_charge": 0.2, "charge_feed": None, "apart_feed": None,
-         "settle": 0.1, "ease_speed": EASE_SPEED, "hold_end": HOLD_END, "return_speed": RETURN_SPEED}
+         "settle": 0.1, "ease_speed": EASE_SPEED, "hold_end": HOLD_END, "return_speed": RETURN_SPEED,
+         "force_limit": 600, "force_ticks": 2, "force_joints": ["shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]}
     try: P.update({k: v for k, v in json.load(open(PROFILE)).items() if not k.startswith("_")})
     except Exception: pass
     for k, v in (body or {}).items():
@@ -55,6 +56,19 @@ class Arm:
                 time.sleep(0.02)
     def pose(self):
         return self._bus(lambda: read_pose(self.robot))
+    def loads(self):
+        """Present_Load of every servo, signed, -1000..1000 (tenths of a percent of the rated torque, sign = direction)."""
+        return {k: int(v) for k, v in self._bus(lambda: self.robot.bus.sync_read("Present_Load", normalize=False)).items()}
+    def force_over(self, P, state):
+        """One tick of the force watch: True once a watched joint has pushed back over P['force_limit'] for P['force_ticks']
+        ticks in a row. `state` is a dict carrying the count between ticks; the peak load read is left in state['load']."""
+        lim = float(P.get("force_limit") or 0)
+        if lim <= 0: return False
+        try: L = self.loads()
+        except Exception: return False
+        mx = max((abs(L.get(j, 0)) for j in P.get("force_joints") or L), default=0); state["load"] = mx
+        state["over"] = state.get("over", 0) + 1 if mx >= lim else 0
+        return state["over"] >= int(P.get("force_ticks", 2))
     def send(self, q):
         self._bus(lambda: self.robot.send_action({f"{j}.pos": float(q[k]) for k, j in enumerate(JOINTS)}))
     def set_torque(self, on):
@@ -82,6 +96,7 @@ class Arm:
         P = P or profile()
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); self._entry_arm = M.get("arm", "A"); Q = self.rebase(M["q"]); rest = self.rest_pose()
         self._gantry = (M.get("gantry_axis"), M.get("gantry_mm"))   # ADDITIVE: an emote's carriage channel, or (None, None)
+        self._entry = M
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
         self.abort = False; self.ease_to(rest, max_speed=float(P["ease_speed"])); self.ease_to(Q[0], max_speed=float(P["ease_speed"])); time.sleep(float(P["settle"]))
         return t, Q, rest
@@ -91,11 +106,12 @@ class Arm:
     def play_segment(self, move, t0, t1, scale):
         """Play the part of `move` between trajectory times t0..t1 at `scale` speed, stopping if abort is pressed.
         Returns (aborted, fraction_of_segment_reached, pose_at_stop)."""
-        M, t, Q = self.trajectory(move); self.abort = False
+        M, t, Q = self.trajectory(move); self.abort = False; self.force_stop = False; P = profile(); fs = {}
         qi = lambda tt: np.array([np.interp(tt, t, Q[:, k]) for k in range(6)])
         T = (t1 - t0) / scale; t_start = time.perf_counter(); frac = 0.0
         while True:
             now = time.perf_counter() - t_start; frac = min(now / T, 1.0)
+            if not self.abort and self.force_over(P, fs): self.force_stop = True; self.abort = True   # the blades met: same as pressing STOP
             if self.abort: q = np.array(self.pose()); self.send(q); return True, frac, q
             if now >= T: self.send(qi(t1)); return False, 1.0, qi(t1)
             self.send(qi(t0 + frac * (t1 - t0))); time.sleep(1 / RATE)
@@ -114,18 +130,40 @@ class Arm:
             if i: self.ease_to(Q[0]); time.sleep(0.1)
             T = t[-1] / scale; t0 = time.perf_counter()
             if streaming: gstream.add(gax, t, gmm, t0, scale)     # ADDITIVE: carriage follows the same clock
+            # The force watch. While the trajectory is inside a FORWARD window (a strike on its way in: from the beat's
+            # start to the instant the blow is pinned), the servos' loads are read every tick; if a watched joint pushes
+            # back over the limit, the forward sequence ends where it is and the clock jumps to the point of the backward
+            # sequence (retract, return) nearest the current pose, so the arm reverses out from where it met resistance.
+            fw = self.forward_windows(move); fs = {}; self.force_events = []
             try:
                 while not self.abort:
-                    now = time.perf_counter() - t0
+                    now = time.perf_counter() - t0; tt = now * scale
                     if now > T: self.send(Q[-1]); break
-                    self.send(np.array([np.interp(now * scale, t, Q[:, k]) for k in range(6)])); time.sleep(1 / RATE)
+                    self.send(np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]))
+                    if fw and tt >= fw[0][1]: fw.pop(0); fs = {}
+                    elif fw and fw[0][0] <= tt and self.force_over(P, fs):
+                        cur = np.array([np.interp(tt, t, Q[:, k]) for k in range(6)]); idx = np.where(t >= fw[0][1])[0]
+                        j = int(idx[np.argmin(np.linalg.norm(Q[idx][:, :5] - cur[:5], axis=1))]) if len(idx) else None
+                        if j is not None: t0 = time.perf_counter() - float(t[j]) / scale
+                        self.force_events.append({"t": round(float(tt), 2), "load": int(fs.get("load", 0)), "skipped_to": round(float(t[j]), 2) if j is not None else None})
+                        print(f"arm {self.name}: force {fs.get('load')} at {tt:.2f}s of {move}: forward sequence ended, reversing out", flush=True)
+                        fw.pop(0); fs = {}
+                    time.sleep(1 / RATE)
             finally:
                 if streaming: gstream.remove(gax)                 # ADDITIVE: never stream through the hold/return
             time.sleep(float(P["hold_end"]))
         if self.abort:
             self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
         self.ease_to(rest, max_speed=float(P["return_speed"]))
-        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg"
+        self.last = f"{move} x{scale} done, end err {np.abs(np.array(self.pose())[:5] - rest[:5]).max():.1f} deg" + (f"; force stop x{len(self.force_events)} " + str(self.force_events) if getattr(self, "force_events", None) else "")
+    def forward_windows(self, move):
+        """[(t_start, t_pinned)] trajectory spans where the blade is on its way IN: every attack/feint beat of a compiled chain
+        (its start to where the compiler pinned the blow), or a lone attack/feint's run-up to its strike END key."""
+        M = getattr(self, "_entry", None) or {}
+        if M.get("beats"):
+            return [(float(b["start"]), float(b.get("pinned_at", b["end"]))) for b in M["beats"] if str(b.get("move", "")).startswith(("ATTACK", "FEINT")) and b.get("pinned_at") is not None]
+        kt = M.get("key_times") or []
+        return [(0.0, float(kt[-2]))] if move.startswith(("ATTACK", "FEINT")) and len(kt) >= 2 else []
 
 class Gantry:
     """GRBL two-axis gantry: X carries arm A, Y carries arm B. Referenced once per session (home), then absolute mm moves."""
@@ -266,7 +304,9 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         out = {}
         for n, a in arms.items():
-            try: out[n] = {"busy": a.busy.locked(), "last": a.last, "torque": a.torque, "pose": [round(x, 1) for x in a.pose()], "model": ARMS[n]["model"]}
+            try:
+                out[n] = {"busy": a.busy.locked(), "last": a.last, "torque": a.torque, "pose": [round(x, 1) for x in a.pose()], "model": ARMS[n]["model"]}
+                if not a.busy.locked(): out[n]["load"] = a.loads()
             except Exception as e: out[n] = {"error": str(e)[:100]}
         self._json({"arms": out, "gantry": gantry.status()})
     def do_POST(self):
@@ -315,7 +355,7 @@ class H(BaseHTTPRequestHandler):
                 qi = lambda tt: np.array([np.interp(tt, ta, Qa[:, k]) for k in range(6)]); stop_pose = qi(t0 + stop_frac * (t1 - t0))
                 att.abort = False
                 if aborted: att.ease_to(stop_pose, max_speed=20.0)                                                    # back off to the saved point
-                rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": float(body.get("backoff", 0.03)),
+                rec = {"attacker": att.name, "attack": attack, "defender": dfn.name, "defender_move": dmove, "stopped": aborted, "stopped_by": ("force" if getattr(att, "force_stop", False) else "button") if aborted else None, "stop_frac": round(stop_frac, 3), "press_frac": round(frac, 3), "backoff": float(body.get("backoff", 0.03)),
                        "stop_pose_real": [round(float(x), 1) for x in stop_pose], "speed": speed, "when": time.strftime("%Y-%m-%d %H:%M")}
                 path = os.path.join(os.path.dirname(HERE), "sim", "contact_stops.json"); S = json.load(open(path)) if os.path.exists(path) else {}
                 S[f"{att.name}:{attack}|{dfn.name}:{dmove}"] = rec; json.dump(S, open(path, "w"), indent=1)

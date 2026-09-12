@@ -32,6 +32,18 @@
   "beat": "chain compiler: seconds per beat (the move library was tuned at 1.4)",
   "impact": "chain compiler: seconds into a beat where an attack lands",
   "guard": "chain compiler: seconds into a beat where a block is in place",
-  "return_t": "chain compiler: seconds an attack takes to come back along its strike line before the next connector"
- }
+  "return_t": "chain compiler: seconds an attack takes to come back along its strike line before the next connector",
+  "force_limit": "servo load (0-1000, tenths of a percent of rated torque) above which a strike on its way in is ended and the arm reverses out; 0 = off. The studio's arm status shows live loads",
+  "force_ticks": "how many consecutive 50 Hz ticks the load must stay over the limit before it counts (debounce)",
+  "force_joints": "which servos the force watch reads"
+ },
+ "force_limit": 600,
+ "force_ticks": 2,
+ "force_joints": [
+  "shoulder_lift",
+  "elbow_flex",
+  "wrist_flex",
+  "wrist_roll",
+  "gripper"
+ ]
 }
