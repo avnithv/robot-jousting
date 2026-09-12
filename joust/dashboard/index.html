@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arm Studio · The Tilt of Tiltford</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;600;800&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<header id="top">
+  <a class="back" href="../" title="Back to the game"><span class="chev">&larr;</span> The Tilt of Tiltford</a>
+  <div class="title">
+    <h1>Arm Studio</h1>
+    <div class="sub">the physical motion library &middot; SO-100 &amp; SO-101 &middot; what the real arms do</div>
+  </div>
+  <nav>
+    <a href="#theatre">Theatre</a>
+    <a href="#interactions">Interactions</a>
+    <a href="#library">Library</a>
+    <a href="#viewer">Trajectory</a>
+    <a href="#pair">Pair</a>
+    <a href="#data">Data</a>
+    <a href="playhouse/" class="hot" title="Emotes: openers, hits, taunts, finales, idle scenes for both arms">Playhouse</a>
+  </nav>
+  <div id="status" class="status" title="Polls ../api/status every 4 s">
+    <span class="pill a" data-arm="armA"><i></i>Arm A <b>checking</b></span>
+    <span class="pill b" data-arm="armB"><i></i>Arm B <b>checking</b></span>
+    <span class="pill srv" data-arm="server"><i></i><b>server</b></span>
+  </div>
+</header>
+
+<main>
+  <section id="theatre" class="theatre">
+    <div class="th-frame">
+      <video id="th-video" muted playsinline preload="auto"></video>
+      <div class="th-overlay"><div id="th-title">&nbsp;</div><div id="th-sub">&nbsp;</div></div>
+    </div>
+    <div class="th-side">
+      <h2>Theatre</h2>
+      <p>The MuJoCo simulation of every taught move with the sword-fight foley locked to its timeline: the blade's whoosh follows the blade-tip speed, chainmail and leather move with the wind-up, armour clanks as a guard sets, steel rings at the impact.</p>
+      <div class="th-controls">
+        <button id="th-play" class="btn" disabled>Loading sound…</button>
+        <button id="th-all" class="btn quiet" disabled>Play all moves</button>
+        <button id="th-stop" class="btn quiet">Stop</button>
+        <label class="th-loop"><input type="checkbox" id="th-loop"> loop</label>
+      </div>
+      <div id="th-moves" class="th-moves"></div>
+      <div class="th-meter"><span>foley</span><div class="bar"><i id="th-level"></i></div></div>
+    </div>
+  </section>
+
+  <section id="interactions">
+    <div class="section-head">
+      <h2>Special interactions</h2>
+      <p>Every card against every card, resolved by the game's own rules (<code>src/game/rules.js</code>): rows are your beat, columns theirs. Hover a cell for the events, the statuses it leaves, the physical moves the arms play, how close the blades come in the simulation, and the sound and taunt cues it fires. <b>Click a cell to hear it</b>: both arms' foley on a 1.4 s beat, the crowd, and the fighter's line.</p>
+    </div>
+    <div class="ix-controls">
+      <label><input type="checkbox" id="ix-special" checked> dim the ordinary outcomes</label>
+      <span class="ix-legend"><i class="k-clash"></i>clash <i class="k-hit"></i>hit <i class="k-clean"></i>clean hit + stagger <i class="k-punish"></i>punished feint <i class="k-expose"></i>exposed <i class="k-block"></i>blocked / parried <i class="k-trick"></i>trick <i class="k-none"></i>nothing</span>
+    </div>
+    <div class="ix-wrap"><table id="ix-table"></table></div>
+    <div id="ix-detail" class="ix-detail">Hover a cell.</div>
+  </section>
+
+  <section id="hero" class="hero">
+    <div class="reel-frame">
+      <video id="reel" src="videos/reel_moves.mp4" autoplay muted loop playsinline controls></video>
+    </div>
+    <div class="hero-copy">
+      <h2>The reel</h2>
+      <p>Every taught move, rendered from the MuJoCo arena the moves were designed in. Arm A (red blade) plays; B holds its rest.</p>
+      <div class="chips" id="hero-chips"></div>
+      <p class="fine" id="hero-note"></p>
+    </div>
+  </section>
+
+  <section id="library">
+    <div class="section-head">
+      <h2>Move library</h2>
+      <p>One card per taught move: its clip, timing, peak servo speed against the 300&nbsp;deg/s cap, key poses, the tuning parameters, and the rule audit from forward kinematics. Hover a clip to play it.</p>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section id="viewer">
+    <div class="section-head">
+      <h2>Trajectory viewer</h2>
+      <p>Both arms as kinematic chains from the side, bases 0.61&nbsp;m apart, driven by the 50&nbsp;Hz trajectory the real arm plays. The selected move runs on arm A while B holds REST. The inset is the pan joint from above.</p>
+    </div>
+    <div class="viewer-grid">
+      <div class="stage-panel">
+        <div class="stage-wrap">
+          <canvas id="stage-canvas"></canvas>
+          <canvas id="inset-canvas" class="inset" title="top-down: the pan joint"></canvas>
+          <div class="stage-legend"><span class="sw a"></span>Arm A <span class="sw b"></span>Arm B <span class="sw lim"></span>0.27 m hand limit <span class="sw floor"></span>wrist floors <span class="sw centre"></span>centre line</div>
+        </div>
+        <div class="transport" id="transport">
+          <select id="v-move" title="Move to play on arm A"></select>
+          <button id="v-play" class="btn small">Play</button>
+          <input id="v-scrub" type="range" min="0" max="1" step="0.001" value="0">
+          <span id="v-time" class="mono">0.00 / 0.00 s</span>
+          <select id="v-speed" title="Playback speed">
+            <option value="0.1">0.1&times;</option><option value="0.25">&frac14;&times;</option><option value="0.5">&frac12;&times;</option><option value="1" selected>1&times;</option><option value="2">2&times;</option>
+          </select>
+          <label class="chk"><input id="v-loop" type="checkbox" checked> loop</label>
+          <label class="chk"><input id="v-trail" type="checkbox" checked> tip trail</label>
+          <button id="v-audition" class="btn small quiet audition" disabled title="Needs ../src/audio/servo.js">Audition</button>
+        </div>
+        <div class="keymarks" id="v-keys"></div>
+      </div>
+      <aside class="readouts">
+        <h3>Joints <small>real degrees</small></h3>
+        <div id="v-joints" class="joint-rows"></div>
+        <h3>Hand &amp; blade</h3>
+        <div id="v-hand" class="kv"></div>
+        <h3>Audit</h3>
+        <div id="v-audit" class="audit"></div>
+      </aside>
+    </div>
+    <div class="plot-panel">
+      <div class="plot-head"><h3>Joint velocity</h3><div class="plot-legend" id="vel-legend"></div></div>
+      <canvas id="vel-canvas"></canvas>
+    </div>
+  </section>
+
+  <section id="pair">
+    <div class="section-head">
+      <h2>Pair viewer</h2>
+      <p>Choose a move for each arm (or a compiled chain). Moves are front-padded so an attack's impact key and a block's guard key land on the beat clock (impact 1.0&nbsp;s, guard 0.55&nbsp;s; when a key is later than its pin the beat stretches, as sim/chain.py does). The readout tracks the closest blade-to-blade distance; touching is 2.4&nbsp;cm (two capsule radii).</p>
+    </div>
+    <div class="viewer-grid">
+      <div class="stage-panel">
+        <div class="stage-wrap">
+          <canvas id="pair-canvas"></canvas>
+          <canvas id="pair-inset" class="inset" title="top-down"></canvas>
+          <div class="pair-dist" id="pair-dist"></div>
+        </div>
+        <div class="transport">
+          <label class="lbl a">A</label><select id="p-a"></select>
+          <label class="lbl b">B</label><select id="p-b"></select>
+          <button id="p-play" class="btn small">Play</button>
+          <input id="p-scrub" type="range" min="0" max="1" step="0.001" value="0">
+          <span id="p-time" class="mono">0.00 / 0.00 s</span>
+          <select id="p-speed" title="Playback speed">
+            <option value="0.1">0.1&times;</option><option value="0.25">&frac14;&times;</option><option value="0.5">&frac12;&times;</option><option value="1" selected>1&times;</option><option value="2">2&times;</option>
+          </select>
+          <label class="chk"><input id="p-loop" type="checkbox" checked> loop</label>
+          <button id="p-audition" class="btn small quiet audition" disabled title="Needs ../src/audio/servo.js">Audition</button>
+        </div>
+        <div class="keymarks" id="p-keys"></div>
+      </div>
+      <aside class="readouts">
+        <h3>Closest approach</h3>
+        <div id="p-report" class="kv"></div>
+        <h3>Alignment</h3>
+        <div id="p-align" class="kv"></div>
+        <h3>Distance over time</h3>
+        <canvas id="dist-canvas" class="mini-plot"></canvas>
+      </aside>
+    </div>
+    <div class="matrix-panel">
+      <div class="plot-head"><h3>Every pair, closest blade distance (cm)</h3><div class="plot-legend"><span class="cell-key touch">&le; 2.4 touch</span><span class="cell-key near">&lt; 5</span><span class="cell-key close">&lt; 10</span><span class="cell-key clear">clear</span></div></div>
+      <div class="matrix-wrap"><table id="matrix"></table></div>
+      <p class="fine">Rows: arm A. Columns: arm B. Click a cell to load the pair above. Blade-to-blade only; wrists, grippers and forearms are not checked (see docs/reactions_and_pairs.md, section 4).</p>
+    </div>
+  </section>
+
+  <section id="data">
+    <div class="section-head">
+      <h2>Hubs, transitions &amp; conventions</h2>
+      <p>Hub poses that chains route through when a direct joint-space blend is unsafe, the explicit transition table, and the conventions everything above assumes.</p>
+    </div>
+    <div class="data-grid">
+      <div class="panel"><h3>Hub poses</h3><table id="hubs" class="tbl"></table><p class="fine" id="hubs-doc"></p></div>
+      <div class="panel"><h3>Transition routes</h3><table id="transitions" class="tbl"></table><p class="fine" id="transitions-doc"></p></div>
+      <div class="panel"><h3>Conventions &amp; rules</h3><div id="conventions" class="conv"></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span id="foot-gen"></span>
+  <span>Regenerate: <code>python3 tools/make_dashboard_data.py</code></span>
+</footer>
+
+<div id="tooltip" class="tooltip" hidden></div>
+<script type="module" src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Lab: The Tilt of Tiltford</title>
+<style>
+  :root { color-scheme: dark; --bg: #1b120c; --panel: #2a1d14; --ink: #f3e6c8; --dim: #b39b7a; --gilt: #d9a441; --line: #4a3626; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 Georgia, "Times New Roman", serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: var(--gilt); font-weight: 600; }
+  h1 small { color: var(--dim); font-size: 14px; margin-left: 10px; }
+  fieldset { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); margin: 14px 0; padding: 12px 16px 14px; }
+  legend { color: var(--gilt); padding: 0 6px; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 6px 0; }
+  label { color: var(--dim); font-size: 13px; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 74px; background: #14100b; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; resize: vertical; }
+  select, input[type=number] { background: #14100b; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; }
+  input[type=number] { width: 64px; }
+  button { background: #3d2a1c; color: var(--ink); border: 1px solid #6a4b30; border-radius: 6px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  button:hover { background: #4f3623; }
+  button.primary { background: var(--gilt); color: #1b120c; border-color: #f0c060; font-weight: 700; }
+  button.primary:hover { background: #f0c060; }
+  #out { min-height: 64px; margin-top: 10px; padding: 12px 16px; background: #f3e6c8; color: #2a1d14; border-radius: 6px; font-size: 22px; line-height: 1.3; border: 3px solid #7a5a33; }
+  #out.talk::after { content: '|'; animation: blink 0.6s steps(2) infinite; }
+  @keyframes blink { to { opacity: 0; } }
+  .meter { display: flex; align-items: center; gap: 10px; }
+  .meter .bar { position: relative; flex: 1; height: 10px; background: #14100b; border-radius: 5px; overflow: hidden; }
+  .meter .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #6bb36a, #d9a441 70%, #d9534f); }
+  .meter .db { width: 150px; font-variant-numeric: tabular-nums; color: var(--dim); font-size: 13px; }
+  #log { font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--dim); white-space: pre-wrap; max-height: 160px; overflow: auto; margin: 0; }
+  .hint { color: var(--dim); font-size: 13px; margin: 4px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voice Lab <small>src/audio/voice.js, src/game/barks.js</small></h1>
+  <p class="hint">Click anything to start audio. The meter watches the voice bus (after its 0.55 gain, before master).</p>
+
+  <fieldset>
+    <legend>Say</legend>
+    <textarea id="text">Oi! Over here, love. Welcome to The Tilted Crown. It's Tilt Day in Tiltford, isn't it?</textarea>
+    <div class="row">
+      <label>voice <select id="voice"></select></label>
+      <label>mood <select id="mood"></select></label>
+      <label>charMs <input id="charMs" type="number" value="34" min="8" max="120"></label>
+      <button id="say" class="primary">Say (say(): scheduled)</button>
+      <button id="blipmode">Type via blip() (dialogue.js path)</button>
+      <button id="stop">Stop</button>
+      <button id="tour">Cast tour</button>
+    </div>
+    <div id="out"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Vocalize</legend>
+    <div class="row" id="vocal"></div>
+    <p class="hint">Uses the voice and mood picked above.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Barks</legend>
+    <div class="row">
+      <label>who <select id="who"></select></label>
+      <label>event <select id="event"></select></label>
+      <button id="bark" class="primary">Bark</button>
+      <button id="barkall">All events for this character</button>
+    </div>
+    <p class="hint">Picks a random line with bark(who, event), sets the voice to voiceFor(who) and the mood to barkMood(who, event), then says it.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Level</legend>
+    <div class="meter"><div class="bar"><i id="meterbar"></i></div><div class="db" id="meterdb">silent</div></div>
+    <pre id="log"></pre>
+  </fieldset>
+</main>
+<script type="module" src="voice_lab.js"></script>
+</body>
+</html>

@@ -122,19 +122,24 @@ def compile_chain(moves, name, arm="A", seed=0, beat_extra=None, save=True, verb
         json.dump(tuned, open(OUT, "w")); fcntl.flock(lock, fcntl.LOCK_UN)
     return ts, Q, beats, stretches
 
-def compile_pair(ours, theirs, seed=0):
+def compile_pair(ours, theirs, seed=0, render=True):
     sA = compile_chain(ours, "CHAIN_A", "A", seed, verbose=False, save=False)[3]; sB = compile_chain(theirs, "CHAIN_B", "B", seed, verbose=False, save=False)[3]
     n = max(len(sA), len(sB)); extra = [max((sA + [0] * n)[i], (sB + [0] * n)[i]) for i in range(n)]
     print("beat lengths:", [round(BEAT + e, 2) for e in extra])
     print("== CHAIN_A (arm A)", ours); compile_chain(ours, "CHAIN_A", "A", seed, beat_extra=extra)
     print("== CHAIN_B (arm B)", theirs); compile_chain(theirs, "CHAIN_B", "B", seed, beat_extra=extra)
-    import pair; pair.run("CHAIN_A", "CHAIN_B")
+    # The pair pass does two things: the blade-distance SAFETY CHECK (always) and a MuJoCo video (optional).
+    # The game only needs the check, and the render is the overwhelming bulk of the time -- rendering between
+    # a player locking in and the arms moving is 10-80 s of frozen screen. server.py passes --no-render.
+    import pair; pair.run("CHAIN_A", "CHAIN_B", render=render)
 
 if __name__ == "__main__":
     a = sys.argv[1:]; seed = 0; arm = "A"
     if "--seed" in a: i = a.index("--seed"); seed = int(a[i + 1]); a = a[:i] + a[i + 2:]
     if "--arm" in a: i = a.index("--arm"); arm = a[i + 1]; a = a[:i] + a[i + 2:]
+    render = "--no-render" not in a
+    if not render: a = [x for x in a if x != "--no-render"]
     if a and a[0] == "pair":
-        i = a.index("--"); compile_pair(a[1:i], a[i + 1:], seed)
+        i = a.index("--"); compile_pair(a[1:i], a[i + 1:], seed, render=render)
     else:
         name, moves = a[0], a[1:]; print("==", name, moves, "arm", arm); ts, Q, beats, _ = compile_chain(moves, name, arm, seed); tune.replay(name, ts, Q)

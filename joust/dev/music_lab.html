@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music lab</title>
+<style>
+  body { margin: 0; padding: 14px 18px 30px; background: #15161a; color: #d8d6cc; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  h1 { font-size: 15px; margin: 0 0 10px; } h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8d8a7d; margin: 16px 0 6px; }
+  small { color: #8d8a7d; font-weight: normal; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  button { background: #26282f; color: #e6e3d6; border: 1px solid #3a3d47; border-radius: 4px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button:hover { background: #31343d; } button.on { background: #5b2f2a; border-color: #b8262b; } button.next { border-color: #d9a441; border-style: dashed; }
+  label { display: inline-flex; gap: 6px; align-items: center; } input[type=range] { width: 160px; }
+  #counter { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
+  #counter div { background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; padding: 6px 8px; } #counter b { display: block; font-size: 20px; color: #f0e6c8; font-weight: 600; }
+  #beats { display: flex; gap: 3px; margin-top: 8px; } #beats i { flex: 1; height: 14px; background: #1e2026; border-radius: 2px; } #beats i.q { background: #2f333e; } #beats i.e { background: #24272f; } #beats i.on { background: #d9a441; }
+  #stems { display: flex; gap: 6px; flex-wrap: wrap; } #stems div { width: 64px; } #stems span { display: block; font-size: 10px; color: #8d8a7d; }
+  #stems i { display: block; height: 8px; background: #0f1013; border: 1px solid #2c2e36; border-radius: 3px; overflow: hidden; } #stems i b { display: block; height: 100%; width: 0; background: #4fa3e0; }
+  #meter { height: 8px; width: 260px; background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; overflow: hidden; } #meter i { display: block; height: 100%; width: 0; background: #d9a441; } #meter i.hot { background: #e6544a; }
+  #log { white-space: pre-wrap; color: #f2a1a1; background: #1c1416; border: 1px solid #4a2a2c; border-radius: 4px; padding: 6px; min-height: 1.2em; margin-top: 12px; }
+  #log:empty::before { content: 'no errors'; color: #5f8a5f; }
+  kbd { color: #8d8a7d; }
+</style>
+</head>
+<body>
+<h1>Music lab <small>src/audio/music.js &middot; one motif, 6/8, stems that grow with intensity &middot; click anything to start audio</small></h1>
+<h2>Moods <small><kbd>1-5</kbd>, <kbd>space</kbd> stops &middot; changes land on the next bar line</small></h2>
+<div class="row" id="moods"></div>
+<h2>Stings <small><kbd>q w e r t</kbd> &middot; one-bar fragments of the motif in the current mode</small></h2>
+<div class="row" id="stings"></div>
+<h2>Controls</h2>
+<div class="row">
+  <label>intensity <input id="x" type="range" min="0" max="1" step="0.01" value="0"><span id="xv">0.00</span></label>
+  <label>music bus <input id="vol" type="range" min="0" max="1" step="0.01" value="0.22"><span id="volv">0.22</span></label>
+  <label>out peak <span id="meter"><i></i></span><span id="peak">-inf dBFS</span></label>
+</div>
+<h2>Counter</h2>
+<div id="counter">
+  <div>mood<b id="c-mood">-</b></div><div>section / chord<b id="c-sec">-</b></div><div>bar<b id="c-bar">-</b></div><div>beat.eighth<b id="c-beat">-</b></div><div>bpm (dotted 1/4) / lift<b id="c-bpm">-</b></div><div>x (applied)<b id="c-x">-</b></div>
+</div>
+<div id="beats"></div>
+<h2>Stems <small>current targets</small></h2>
+<div id="stems"></div>
+<div id="log"></div>
+<script type="module" src="music_lab.js"></script>
+</body>
+</html>

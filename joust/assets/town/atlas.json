@@ -1,0 +1,1010 @@
+{
+ "tavern": {
+  "file": "tavern.png",
+  "w": 442,
+  "h": 331,
+  "row": 0,
+  "col": 0,
+  "src": [
+   9,
+   2,
+   451,
+   333
+  ],
+  "index": 0,
+  "anchor": [
+   208.5,
+   331
+  ]
+ },
+ "forge": {
+  "file": "forge.png",
+  "w": 313,
+  "h": 342,
+  "row": 0,
+  "col": 1,
+  "src": [
+   426,
+   0,
+   739,
+   342
+  ],
+  "index": 1,
+  "anchor": [
+   156.0,
+   342
+  ]
+ },
+ "arena_gate": {
+  "file": "arena_gate.png",
+  "w": 377,
+  "h": 327,
+  "row": 0,
+  "col": 2,
+  "src": [
+   740,
+   13,
+   1117,
+   340
+  ],
+  "index": 2,
+  "anchor": [
+   189.5,
+   327
+  ]
+ },
+ "market_stall": {
+  "file": "market_stall.png",
+  "w": 360,
+  "h": 199,
+  "row": 1,
+  "col": 0,
+  "src": [
+   10,
+   339,
+   370,
+   538
+  ],
+  "index": 3,
+  "anchor": [
+   177.0,
+   199
+  ]
+ },
+ "notice_board": {
+  "file": "notice_board.png",
+  "w": 180,
+  "h": 205,
+  "row": 1,
+  "col": 1,
+  "src": [
+   356,
+   341,
+   536,
+   546
+  ],
+  "index": 4,
+  "anchor": [
+   92.5,
+   205
+  ]
+ },
+ "signpost": {
+  "file": "signpost.png",
+  "w": 129,
+  "h": 195,
+  "row": 1,
+  "col": 2,
+  "src": [
+   529,
+   348,
+   658,
+   543
+  ],
+  "index": 5,
+  "anchor": [
+   70.5,
+   195
+  ]
+ },
+ "sign_swords": {
+  "file": "sign_swords.png",
+  "w": 109,
+  "h": 153,
+  "row": 1,
+  "col": 3,
+  "src": [
+   690,
+   350,
+   799,
+   503
+  ],
+  "index": 6,
+  "anchor": [
+   64.0,
+   153
+  ]
+ },
+ "sign_mug": {
+  "file": "sign_mug.png",
+  "w": 81,
+  "h": 127,
+  "row": 1,
+  "col": 4,
+  "src": [
+   790,
+   403,
+   871,
+   530
+  ],
+  "index": 7,
+  "anchor": [
+   38.0,
+   127
+  ]
+ },
+ "banner_blue_lion": {
+  "file": "banner_blue_lion.png",
+  "w": 80,
+  "h": 183,
+  "row": 1,
+  "col": 5,
+  "src": [
+   870,
+   358,
+   950,
+   541
+  ],
+  "index": 8,
+  "anchor": [
+   43.0,
+   183
+  ]
+ },
+ "banner_red_fleur": {
+  "file": "banner_red_fleur.png",
+  "w": 83,
+  "h": 176,
+  "row": 1,
+  "col": 6,
+  "src": [
+   946,
+   365,
+   1029,
+   541
+  ],
+  "index": 9,
+  "anchor": [
+   41.5,
+   176
+  ]
+ },
+ "pennants_vertical": {
+  "file": "pennants_vertical.png",
+  "w": 82,
+  "h": 188,
+  "row": 1,
+  "col": 7,
+  "src": [
+   1029,
+   356,
+   1111,
+   544
+  ],
+  "index": 10,
+  "anchor": [
+   73.0,
+   188
+  ]
+ },
+ "tents": {
+  "file": "tents.png",
+  "w": 308,
+  "h": 184,
+  "row": 2,
+  "col": 0,
+  "src": [
+   3,
+   537,
+   311,
+   721
+  ],
+  "index": 11,
+  "anchor": [
+   154.0,
+   184
+  ]
+ },
+ "training_dummy": {
+  "file": "training_dummy.png",
+  "w": 90,
+  "h": 166,
+  "row": 2,
+  "col": 1,
+  "src": [
+   309,
+   558,
+   399,
+   724
+  ],
+  "index": 12,
+  "anchor": [
+   44.0,
+   166
+  ]
+ },
+ "weapon_rack": {
+  "file": "weapon_rack.png",
+  "w": 135,
+  "h": 188,
+  "row": 2,
+  "col": 2,
+  "src": [
+   406,
+   536,
+   541,
+   724
+  ],
+  "index": 13,
+  "anchor": [
+   67.0,
+   188
+  ]
+ },
+ "cart": {
+  "file": "cart.png",
+  "w": 202,
+  "h": 131,
+  "row": 2,
+  "col": 3,
+  "src": [
+   543,
+   587,
+   745,
+   718
+  ],
+  "index": 14,
+  "anchor": [
+   96.0,
+   131
+  ]
+ },
+ "horse": {
+  "file": "horse.png",
+  "w": 204,
+  "h": 174,
+  "row": 2,
+  "col": 4,
+  "src": [
+   743,
+   546,
+   947,
+   720
+  ],
+  "index": 15,
+  "anchor": [
+   93.5,
+   174
+  ]
+ },
+ "crates_pile": {
+  "file": "crates_pile.png",
+  "w": 165,
+  "h": 149,
+  "row": 2,
+  "col": 5,
+  "src": [
+   952,
+   567,
+   1117,
+   716
+  ],
+  "index": 16,
+  "anchor": [
+   82.0,
+   149
+  ]
+ },
+ "table_long": {
+  "file": "table_long.png",
+  "w": 202,
+  "h": 110,
+  "row": 3,
+  "col": 0,
+  "src": [
+   8,
+   730,
+   210,
+   840
+  ],
+  "index": 17,
+  "anchor": [
+   44.0,
+   110
+  ]
+ },
+ "bench": {
+  "file": "bench.png",
+  "w": 144,
+  "h": 74,
+  "row": 3,
+  "col": 1,
+  "src": [
+   215,
+   745,
+   359,
+   819
+  ],
+  "index": 18,
+  "anchor": [
+   31.0,
+   74
+  ]
+ },
+ "stool": {
+  "file": "stool.png",
+  "w": 56,
+  "h": 72,
+  "row": 3,
+  "col": 2,
+  "src": [
+   369,
+   755,
+   425,
+   827
+  ],
+  "index": 19,
+  "anchor": [
+   27.5,
+   72
+  ]
+ },
+ "barrel_large": {
+  "file": "barrel_large.png",
+  "w": 72,
+  "h": 91,
+  "row": 3,
+  "col": 3,
+  "src": [
+   441,
+   736,
+   513,
+   827
+  ],
+  "index": 20,
+  "anchor": [
+   36.0,
+   91
+  ]
+ },
+ "barrel_small": {
+  "file": "barrel_small.png",
+  "w": 54,
+  "h": 67,
+  "row": 3,
+  "col": 4,
+  "src": [
+   519,
+   760,
+   573,
+   827
+  ],
+  "index": 21,
+  "anchor": [
+   26.5,
+   67
+  ]
+ },
+ "crate_sack": {
+  "file": "crate_sack.png",
+  "w": 132,
+  "h": 78,
+  "row": 3,
+  "col": 5,
+  "src": [
+   580,
+   748,
+   712,
+   826
+  ],
+  "index": 22,
+  "anchor": [
+   65.5,
+   78
+  ]
+ },
+ "apple_basket": {
+  "file": "apple_basket.png",
+  "w": 61,
+  "h": 54,
+  "row": 3,
+  "col": 6,
+  "src": [
+   712,
+   762,
+   773,
+   816
+  ],
+  "index": 23,
+  "anchor": [
+   30.5,
+   54
+  ]
+ },
+ "candles": {
+  "file": "candles.png",
+  "w": 42,
+  "h": 60,
+  "row": 3,
+  "col": 7,
+  "src": [
+   767,
+   768,
+   809,
+   828
+  ],
+  "index": 24,
+  "anchor": [
+   20.5,
+   60
+  ]
+ },
+ "lantern_wall": {
+  "file": "lantern_wall.png",
+  "w": 51,
+  "h": 105,
+  "row": 3,
+  "col": 8,
+  "src": [
+   807,
+   735,
+   858,
+   840
+  ],
+  "index": 25,
+  "anchor": [
+   12.0,
+   105
+  ]
+ },
+ "lantern_post": {
+  "file": "lantern_post.png",
+  "w": 83,
+  "h": 124,
+  "row": 3,
+  "col": 9,
+  "src": [
+   870,
+   716,
+   953,
+   840
+  ],
+  "index": 26,
+  "anchor": [
+   69.5,
+   124
+  ]
+ },
+ "torch_brazier": {
+  "file": "torch_brazier.png",
+  "w": 55,
+  "h": 86,
+  "row": 3,
+  "col": 10,
+  "src": [
+   964,
+   752,
+   1019,
+   838
+  ],
+  "index": 27,
+  "anchor": [
+   27.5,
+   86
+  ]
+ },
+ "banner_post": {
+  "file": "banner_post.png",
+  "w": 79,
+  "h": 154,
+  "row": 3,
+  "col": 11,
+  "src": [
+   1038,
+   713,
+   1117,
+   867
+  ],
+  "index": 28,
+  "anchor": [
+   18.0,
+   154
+  ]
+ },
+ "well": {
+  "file": "well.png",
+  "w": 147,
+  "h": 148,
+  "row": 4,
+  "col": 0,
+  "src": [
+   9,
+   833,
+   156,
+   981
+  ],
+  "index": 29,
+  "anchor": [
+   73.5,
+   148
+  ]
+ },
+ "fountain": {
+  "file": "fountain.png",
+  "w": 154,
+  "h": 145,
+  "row": 4,
+  "col": 1,
+  "src": [
+   158,
+   827,
+   312,
+   972
+  ],
+  "index": 30,
+  "anchor": [
+   76.5,
+   145
+  ]
+ },
+ "planter_purple": {
+  "file": "planter_purple.png",
+  "w": 118,
+  "h": 87,
+  "row": 4,
+  "col": 2,
+  "src": [
+   319,
+   868,
+   437,
+   955
+  ],
+  "index": 31,
+  "anchor": [
+   58.5,
+   87
+  ]
+ },
+ "flower_pot": {
+  "file": "flower_pot.png",
+  "w": 65,
+  "h": 77,
+  "row": 4,
+  "col": 3,
+  "src": [
+   447,
+   876,
+   512,
+   953
+  ],
+  "index": 32,
+  "anchor": [
+   31.0,
+   77
+  ]
+ },
+ "flower_box": {
+  "file": "flower_box.png",
+  "w": 95,
+  "h": 60,
+  "row": 4,
+  "col": 4,
+  "src": [
+   514,
+   890,
+   609,
+   950
+  ],
+  "index": 33,
+  "anchor": [
+   46.5,
+   60
+  ]
+ },
+ "bush_flowers": {
+  "file": "bush_flowers.png",
+  "w": 101,
+  "h": 77,
+  "row": 4,
+  "col": 5,
+  "src": [
+   618,
+   874,
+   719,
+   951
+  ],
+  "index": 34,
+  "anchor": [
+   49.5,
+   77
+  ]
+ },
+ "cypress_pot": {
+  "file": "cypress_pot.png",
+  "w": 51,
+  "h": 131,
+  "row": 4,
+  "col": 6,
+  "src": [
+   724,
+   826,
+   775,
+   957
+  ],
+  "index": 35,
+  "anchor": [
+   25.5,
+   131
+  ]
+ },
+ "fence_wood": {
+  "file": "fence_wood.png",
+  "w": 109,
+  "h": 93,
+  "row": 4,
+  "col": 7,
+  "src": [
+   785,
+   862,
+   894,
+   955
+  ],
+  "index": 36,
+  "anchor": [
+   54.0,
+   93
+  ]
+ },
+ "rope_post": {
+  "file": "rope_post.png",
+  "w": 66,
+  "h": 94,
+  "row": 4,
+  "col": 8,
+  "src": [
+   904,
+   867,
+   970,
+   961
+  ],
+  "index": 37,
+  "anchor": [
+   32.5,
+   94
+  ]
+ },
+ "bunting": {
+  "file": "bunting.png",
+  "w": 145,
+  "h": 106,
+  "row": 4,
+  "col": 9,
+  "src": [
+   970,
+   851,
+   1115,
+   957
+  ],
+  "index": 38,
+  "anchor": [
+   72.0,
+   106
+  ]
+ },
+ "arch": {
+  "file": "arch.png",
+  "w": 145,
+  "h": 133,
+  "row": 5,
+  "col": 0,
+  "src": [
+   9,
+   983,
+   154,
+   1116
+  ],
+  "index": 39,
+  "anchor": [
+   72.0,
+   133
+  ]
+ },
+ "wall_ivy": {
+  "file": "wall_ivy.png",
+  "w": 146,
+  "h": 109,
+  "row": 5,
+  "col": 1,
+  "src": [
+   157,
+   997,
+   303,
+   1106
+  ],
+  "index": 40,
+  "anchor": [
+   72.5,
+   109
+  ]
+ },
+ "pillar_banner": {
+  "file": "pillar_banner.png",
+  "w": 78,
+  "h": 143,
+  "row": 5,
+  "col": 2,
+  "src": [
+   304,
+   967,
+   382,
+   1110
+  ],
+  "index": 41,
+  "anchor": [
+   23.5,
+   143
+  ]
+ },
+ "cobbles": {
+  "file": "cobbles.png",
+  "w": 165,
+  "h": 59,
+  "row": 5,
+  "col": 3,
+  "src": [
+   372,
+   1057,
+   537,
+   1116
+  ],
+  "index": 42,
+  "anchor": [
+   72.0,
+   59
+  ]
+ },
+ "pillar_lamp": {
+  "file": "pillar_lamp.png",
+  "w": 44,
+  "h": 106,
+  "row": 5,
+  "col": 4,
+  "src": [
+   400,
+   956,
+   444,
+   1062
+  ],
+  "index": 43,
+  "anchor": [
+   21.5,
+   106
+  ]
+ },
+ "wall_low": {
+  "file": "wall_low.png",
+  "w": 123,
+  "h": 55,
+  "row": 5,
+  "col": 5,
+  "src": [
+   461,
+   992,
+   584,
+   1047
+  ],
+  "index": 44,
+  "anchor": [
+   61.5,
+   55
+  ]
+ },
+ "grass_patch": {
+  "file": "grass_patch.png",
+  "w": 96,
+  "h": 64,
+  "row": 5,
+  "col": 6,
+  "src": [
+   538,
+   1053,
+   634,
+   1117
+  ],
+  "index": 45,
+  "anchor": [
+   36.5,
+   64
+  ]
+ },
+ "rocks_a": {
+  "file": "rocks_a.png",
+  "w": 92,
+  "h": 64,
+  "row": 5,
+  "col": 7,
+  "src": [
+   597,
+   984,
+   689,
+   1048
+  ],
+  "index": 46,
+  "anchor": [
+   45.5,
+   64
+  ]
+ },
+ "dirt_small": {
+  "file": "dirt_small.png",
+  "w": 50,
+  "h": 31,
+  "row": 5,
+  "col": 8,
+  "src": [
+   634,
+   1088,
+   684,
+   1119
+  ],
+  "index": 47,
+  "anchor": [
+   27.5,
+   31
+  ]
+ },
+ "dirt_patch": {
+  "file": "dirt_patch.png",
+  "w": 132,
+  "h": 55,
+  "row": 5,
+  "col": 9,
+  "src": [
+   641,
+   1053,
+   773,
+   1108
+  ],
+  "index": 48,
+  "anchor": [
+   62.5,
+   55
+  ]
+ },
+ "rocks_b": {
+  "file": "rocks_b.png",
+  "w": 24,
+  "h": 23,
+  "row": 5,
+  "col": 10,
+  "src": [
+   669,
+   989,
+   693,
+   1012
+  ],
+  "index": 49,
+  "anchor": [
+   11.5,
+   23
+  ]
+ },
+ "rock_c": {
+  "file": "rock_c.png",
+  "w": 64,
+  "h": 63,
+  "row": 5,
+  "col": 11,
+  "src": [
+   697,
+   985,
+   761,
+   1048
+  ],
+  "index": 50,
+  "anchor": [
+   31.5,
+   63
+  ]
+ },
+ "standing_stone": {
+  "file": "standing_stone.png",
+  "w": 70,
+  "h": 73,
+  "row": 5,
+  "col": 12,
+  "src": [
+   768,
+   973,
+   838,
+   1046
+  ],
+  "index": 51,
+  "anchor": [
+   34.5,
+   73
+  ]
+ },
+ "rubble": {
+  "file": "rubble.png",
+  "w": 78,
+  "h": 62,
+  "row": 5,
+  "col": 13,
+  "src": [
+   785,
+   1053,
+   863,
+   1115
+  ],
+  "index": 52,
+  "anchor": [
+   47.0,
+   62
+  ]
+ },
+ "palisade": {
+  "file": "palisade.png",
+  "w": 114,
+  "h": 79,
+  "row": 5,
+  "col": 14,
+  "src": [
+   846,
+   969,
+   960,
+   1048
+  ],
+  "index": 53,
+  "anchor": [
+   56.5,
+   79
+  ]
+ },
+ "heraldic_bunting": {
+  "file": "heraldic_bunting.png",
+  "w": 258,
+  "h": 63,
+  "row": 5,
+  "col": 15,
+  "src": [
+   860,
+   1054,
+   1118,
+   1117
+  ],
+  "index": 54,
+  "anchor": [
+   132.0,
+   63
+  ]
+ },
+ "gate_wood": {
+  "file": "gate_wood.png",
+  "w": 144,
+  "h": 86,
+  "row": 5,
+  "col": 16,
+  "src": [
+   975,
+   968,
+   1119,
+   1054
+  ],
+  "index": 55,
+  "anchor": [
+   71.0,
+   86
+  ]
+ }
+}

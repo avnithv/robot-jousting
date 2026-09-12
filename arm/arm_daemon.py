@@ -5,6 +5,8 @@
   POST /rest    {"arm":"A"}      POST /hold {"arm":"A"}      POST /release {"arm":"A"}   (torque off: move by hand)
   POST /nudge   {"arm":"A","joint":"wrist_flex","deg":15,"oneway":false}
   POST /goto    {"arm":"A","q":[...6 real degrees...],"speed":60}    ease to a pose and hold
+A motion that carries `gantry_axis` + `gantry_mm` (the emote scenes do) also streams its carriage track on the
+GRBL gantry while it plays -- see GantryStream. Every other motion behaves exactly as it always has.
 Arm A = SO-100 (moves were tuned on it). Arm B = SO-101; its trajectories are re-based to its own roll offset (arms.json)."""
 import json, os, sys, time, threading
 import numpy as np
@@ -17,6 +19,8 @@ from grbl_manual import XYController
 HERE = os.path.dirname(os.path.abspath(__file__)); RATE = 50.0; EASE_SPEED = 150.0
 HOLD_END = 1.5; RETURN_SPEED = 60.0   # hold the final pose, then return to rest slowly (the return is not part of the move)
 CFG = os.path.join(HERE, "arms.json"); TUNED = os.path.join(HERE, "motions_tuned.json")
+STREAM_DT = 0.25      # gantry channel: one merged G1 per this many seconds of the trajectory (see GantryStream)
+STREAM_DEADBAND_MM = 0.2   # below this the carriage is not really moving: skip the block rather than creep
 
 class Arm:
     def __init__(self, name):
@@ -55,20 +59,29 @@ class Arm:
         return Q
     def prepare(self, move):
         T = json.load(open(TUNED)); M = T.get(f"{move}@{self.name}") or T[move]; t = np.array(M["t"]); self._entry_arm = M.get("arm", "A"); Q = self.rebase(M["q"]); rest = self.rest_pose()
+        self._gantry = (M.get("gantry_axis"), M.get("gantry_mm"))   # ADDITIVE: an emote's carriage channel, or (None, None)
         if move == "REST": Q = np.tile(rest, (len(t), 1))   # REST always means THIS arm's own rest pose
         self.abort = False; self.ease_to(rest); self.ease_to(Q[0]); time.sleep(0.1)
         return t, Q, rest
     def play(self, move, scale, repeat, barrier=None):
         t, Q, rest = self.prepare(move)
+        # ADDITIVE: if this motion carries a gantry channel (the emote scenes do), park the carriage where the
+        # scene starts while the arm is still easing in, then stream the channel alongside the arm samples.
+        gax, gmm = getattr(self, "_gantry", (None, None)); streaming = gstream.usable(gax, gmm)
+        if streaming: gstream.preposition(gax, gmm[0])
         if barrier is not None: barrier.wait(timeout=30)   # start together with the other arm
         for i in range(repeat):
             if self.abort: break
             if i: self.ease_to(Q[0]); time.sleep(0.1)
             T = t[-1] / scale; t0 = time.perf_counter()
-            while not self.abort:
-                now = time.perf_counter() - t0
-                if now > T: self.send(Q[-1]); break
-                self.send(np.array([np.interp(now * scale, t, Q[:, k]) for k in range(6)])); time.sleep(1 / RATE)
+            if streaming: gstream.add(gax, t, gmm, t0, scale)     # ADDITIVE: carriage follows the same clock
+            try:
+                while not self.abort:
+                    now = time.perf_counter() - t0
+                    if now > T: self.send(Q[-1]); break
+                    self.send(np.array([np.interp(now * scale, t, Q[:, k]) for k in range(6)])); time.sleep(1 / RATE)
+            finally:
+                if streaming: gstream.remove(gax)                 # ADDITIVE: never stream through the hold/return
             time.sleep(HOLD_END)
         if self.abort:
             self.send(np.array(self.pose())); self.last = f"{move} ABORTED, holding where it stopped"; self.abort = False; return
@@ -114,7 +127,87 @@ class Gantry:
             except Exception: pass
         self.homed = False; self.last = "ABORTED (reset; re-home before moving)"
 
+class GantryStream:
+    """ADDITIVE: the carriage channel an emote scene carries, streamed in time with the arm samples.
+
+    motions_tuned.json stores the emote scenes (EN_GARDE_OPENER / SAMURAI_FINISH and their @B and _SWAP
+    variants) with two extra fields next to `t` and `q`: `gantry_axis` ("X" for the arm-A part, "Y" for the
+    arm-B part) and `gantry_mm`, one carriage position per trajectory sample. Playing only the joints throws
+    half of the choreography away -- the opener IS the two carriages charging in from the apart stop while the
+    arms fold to keep the tips on target. So while such a motion runs, this streams its carriage track.
+
+    Deliberately conservative, because this is the one part of the daemon that has never met the hardware:
+      * it does nothing unless the motion really carries a channel AND the gantry is connected AND referenced,
+        so every existing /play, /play_both and /turn behaves exactly as it did before;
+      * it never calls Gantry.move() / XYController.move(): those demand an Idle machine and dwell until the
+        segment has finished, which would stall the 50 Hz arm loop. It queues plain G1 blocks into GRBL's
+        planner instead (send() returns on the "ok", i.e. once the block is accepted), which is ordinary
+        G-code streaming and lets the planner blend consecutive segments into one smooth ride;
+      * ONE merged move per STREAM_DT covering every registered axis, so a two-arm scene moves both carriages
+        together instead of X and Y taking turns in the planner queue;
+      * feed is the segment's distance / STREAM_DT, capped at the configured charge_feed and at the
+        controller's own max, and every target is clamped into [0, apart] -- the stream can never drive a
+        carriage past the stop /gantry/apart parks it at, nor past the reference end;
+      * it holds gantry.lock for the whole scene, so a /gantry/* request arriving mid-emote gets the usual
+        409 "gantry busy" instead of two senders sharing one serial port;
+      * any serial error ends the stream and lands in gantry.last. The arms keep dancing regardless.
+    """
+    def __init__(self, g):
+        self.g = g; self.lock = threading.Lock(); self.channels = {}; self.thread = None; self.stop = False
+    def limit(self):
+        ap = self.g.cfg["apart"]; return float(max(ap["X"], ap["Y"]))
+    def clamp(self, v): return max(0.0, min(self.limit(), float(v)))
+    def usable(self, axis, mm):
+        """True only when there is really something to stream and something referenced to stream it to."""
+        return bool(axis in ("X", "Y") and mm is not None and len(mm) and self.g.cnc and self.g.homed)
+    def preposition(self, axis, mm):
+        """Park the carriage where the scene starts, while the arm is still easing in: the first streamed
+        segment is then a small step instead of a 130 mm catch-up jump at full feed."""
+        try:
+            with self.g.lock: self.g.move(**{axis.lower(): self.clamp(mm)})
+        except Exception as e: self.g.last = f"gantry preposition failed: {str(e)[:80]}"
+    def add(self, axis, t, mm, t0, scale):
+        with self.lock:
+            self.channels[axis] = (np.array(t, float), np.array(mm, float), t0, float(scale))
+            if self.thread is None or not self.thread.is_alive():
+                self.stop = False; self.thread = threading.Thread(target=self._run, daemon=True); self.thread.start()
+    def remove(self, axis):
+        with self.lock: self.channels.pop(axis, None); done = not self.channels
+        if done: self.stop = True
+    def _run(self):
+        if not self.g.lock.acquire(timeout=2.0):
+            self.g.last = "gantry busy: emote carriage channel skipped"; self.stop = True; return
+        cnc = self.g.cnc; feed_cap = float(self.g.cfg["charge_feed"]); last = {}
+        try:
+            cnc.motion_may_be_active = True; self.g.last = "streaming the scene's carriage channel"
+            while not self.stop:
+                time.sleep(STREAM_DT)
+                with self.lock: chans = dict(self.channels)
+                if not chans: break
+                now = time.perf_counter(); moved = {}
+                for axis, (t, mm, t0, scale) in chans.items():
+                    target = self.clamp(np.interp((now - t0) * scale, t, mm))
+                    prev = last.get(axis, self.clamp(mm[0]))     # prepositioned there, so this is where we are
+                    if abs(target - prev) >= STREAM_DEADBAND_MM: moved[axis] = (prev, target)
+                if not moved: continue
+                dist = max(abs(b - a) for a, b in moved.values())
+                feed = max(1.0, min(feed_cap, cnc.max_feed, dist / STREAM_DT * 60.0))
+                words = " ".join(f"{ax}{v[1]:.3f}" for ax, v in sorted(moved.items()))
+                cnc.send(f"G21 G90 G94 G54 G1 {words} F{feed:.3f}")
+                for ax, v in moved.items(): last[ax] = v[1]
+        except Exception as e:
+            self.g.last = f"gantry stream stopped: {str(e)[:90]}"
+        finally:
+            try: cnc.send("G4 P0.01", timeout=60)    # let the queued blocks run out before anyone else moves
+            except Exception: pass
+            cnc.motion_may_be_active = False
+            with self.lock: self.channels.clear()
+            self.stop = True
+            if last: self.g.last = f"scene ended at {', '.join(f'{k}={v:.0f}' for k, v in sorted(last.items()))}"
+            self.g.lock.release()
+
 gantry = Gantry()
+gstream = GantryStream(gantry)
 arms = {n: Arm(n) for n in ARMS}
 arms = {n: a for n, a in arms.items() if a.robot}
 

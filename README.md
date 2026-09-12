@@ -9,6 +9,7 @@ small web UI ("move studio") to tweak parameters, preview, and run moves.
 
 | Path | What |
 |---|---|
+| `joust/` | **The game.** Browser front end for the fight ("The Tilt of Tiltford"): the card battler (voltage / rush / full tilt / counter on top of the beat rules), campaign and phone 1v1 (QR links, `server.py` mailbox), host control panel, Arm Studio dashboard, procedural score, and the hardware seam that drives this repo's daemon (`joust/start_live.sh`, `joust/tools/mock_daemon.py` to rehearse without arms). See `joust/README.md`. |
 | `sim/params/*.json` | **The move definitions.** One file per move, every parameter has a `_help` note. `REST.json` is the rest pose (real-arm degrees). |
 | `sim/tune.py` | Turns a parameter file into key poses, splines them, checks joint speed, saves a 50 Hz trajectory to `arm/motions_tuned.json` and renders `sim/out/tuned_<MOVE>.mp4` (+ filmstrip png). `python tune.py ALL` |
 | `sim/pair.py` | Two-arm simulation: `python pair.py BLOCK_HIGH ATTACK_HIGH` (A = us, B = opponent). Reports closest blade distance, renders a clip. |

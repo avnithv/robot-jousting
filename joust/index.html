@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tilt of Tiltford</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;600;800&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <div class="layer sky" id="sky"></div>
+    <div class="layer far" id="far"></div>
+    <div class="layer town" id="town"></div>
+    <div class="layer crowd" id="crowd"></div>
+    <div class="layer mid" id="mid"></div>
+    <div class="layer ground" id="ground"></div>
+    <div class="layer arena" id="arena"></div>
+    <div class="layer fore" id="fore"></div>
+    <div class="layer fxlayer" id="fx"></div>
+    <div class="layer hud" id="hud"></div>
+    <div class="layer table" id="table"></div>
+    <div class="layer dialogue" id="dialogue"></div>
+    <div class="layer overlay" id="overlay"></div>
+    <div class="vignette"></div>
+  </div>
+  <div id="settings">
+    <button id="hostbtn" title="Host controls: pause, skip, end a fight, settings, phone duel (Esc closes)">⚙ host</button>
+    <button data-pref="music" class="on" title="Music and crowd">music</button>
+    <button data-pref="sfx" class="on" title="Sound effects">sounds</button>
+    <button data-pref="voice" class="on" title="Marla's voice">voice</button>
+    <button data-pref="crowd" title="Crowd murmur and reactions (off: the music carries the ambience)">crowd</button>
+    <button id="rulesbtn" title="How beats resolve">rules</button>
+    <button id="hwbtn" title="Drive the real arms through server.py">arms: sim</button>
+    <a id="dashlink" href="dashboard/" target="_blank" title="Arm studio: the physical move library, MuJoCo clips, trajectories">arm studio</a>
+    <button id="fsbtn" title="Fullscreen">fullscreen</button>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

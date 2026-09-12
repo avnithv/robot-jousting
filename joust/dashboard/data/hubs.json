@@ -1,0 +1,89 @@
+{
+ "doc": "Hub poses (sim convention degrees [pan, lift, elbow, wrist, roll, jaw]) that transitions route through when a direct blend is unsafe. From docs/transitions_and_flourishes.md.",
+ "poses": {
+  "EN_GARDE": {
+   "q_sim": [
+    0,
+    -60,
+    30,
+    20,
+    0,
+    0
+   ],
+   "hand": [
+    0.2184,
+    -0.0002,
+    0.2968
+   ],
+   "tip": [
+    0.3931,
+    -0.0402,
+    0.2795
+   ],
+   "hand_r": 0.2184
+  },
+  "READY_MID": {
+   "q_sim": [
+    0,
+    -50,
+    60,
+    -20,
+    0,
+    0
+   ],
+   "hand": [
+    0.2532,
+    -0.0002,
+    0.2198
+   ],
+   "tip": [
+    0.4278,
+    -0.0402,
+    0.2025
+   ],
+   "hand_r": 0.2532
+  },
+  "TUCK": {
+   "q_sim": [
+    10,
+    20,
+    -20,
+    -90,
+    0,
+    0
+   ],
+   "hand": [
+    0.2266,
+    -0.0401,
+    0.3777
+   ],
+   "tip": [
+    0.2663,
+    -0.0877,
+    0.5467
+   ],
+   "hand_r": 0.2301
+  },
+  "GATE": {
+   "q_sim": [
+    20,
+    10,
+    -95,
+    -94,
+    0,
+    0
+   ],
+   "hand": [
+    -0.0711,
+    0.0257,
+    0.3602
+   ],
+   "tip": [
+    -0.2427,
+    0.0456,
+    0.4106
+   ],
+   "hand_r": -0.0756
+  }
+ }
+}

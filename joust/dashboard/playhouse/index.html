@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Playhouse · Arm Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;600;800&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../dashboard.css">
+<link rel="stylesheet" href="playhouse.css">
+</head>
+<body>
+<header id="top">
+  <a class="back" href="../" title="Back to the Arm Studio"><span class="chev">&larr;</span> Arm Studio</a>
+  <div class="title">
+    <h1>The Playhouse</h1>
+    <div class="sub">emotes for two arms &middot; openers, hits, gloats, finales, idle &middot; every scene as MuJoCo rendered it</div>
+  </div>
+  <nav id="famnav">
+    <a href="#stage">Stage</a>
+  </nav>
+  <div id="status" class="status" title="Polls ../../api/status every 4 s">
+    <span class="pill a" data-arm="armA"><i></i>Arm A <b>checking</b></span>
+    <span class="pill b" data-arm="armB"><i></i>Arm B <b>checking</b></span>
+  </div>
+</header>
+
+<main>
+  <section id="stage" class="stage">
+    <div class="st-frame">
+      <div class="marquee"><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span><span class="lamp"></span></div>
+      <div class="curtain left"></div><div class="curtain right"></div>
+      <video id="st-video" muted playsinline preload="auto"></video>
+      <img id="st-strip" class="strip hidden" alt="filmstrip">
+      <div class="st-caption"><span id="st-family" class="fam">&nbsp;</span><span id="st-title">Loading the company&hellip;</span></div>
+      <div class="timeline" id="st-timeline"><div class="fill" id="st-fill"></div></div>
+    </div>
+    <aside class="st-side">
+      <div class="moods">
+        <span class="mood a"><i>A</i><b id="st-moodA">&nbsp;</b></span>
+        <span class="vs">vs</span>
+        <span class="mood b"><i>B</i><b id="st-moodB">&nbsp;</b></span>
+      </div>
+      <p id="st-blurb" class="blurb">&nbsp;</p>
+      <div class="controls">
+        <button id="st-prev" class="btn quiet" title="previous scene (←)">&larr;</button>
+        <button id="st-play" class="btn" title="play / pause (space)">Play</button>
+        <button id="st-next" class="btn quiet" title="next scene (→)">&rarr;</button>
+        <button id="st-all" class="btn quiet" title="play every scene in order">Play all</button>
+        <label class="tog"><input type="checkbox" id="st-loop" checked> loop</label>
+        <label class="tog"><input type="checkbox" id="st-slow"> half speed</label>
+        <label class="tog"><input type="checkbox" id="st-showstrip"> filmstrip</label>
+      </div>
+      <div class="arms-row">
+        <button id="st-arms" class="btn arms" title="POST ../../api/emote: plays SCENE on arm A and SCENE@B on arm B (needs the daemons)">Perform on the arms</button>
+        <label class="tog" title="send arm A's part to arm B and B's to A"><input type="checkbox" id="st-swap"> swap</label>
+        <span id="st-arms-msg" class="fine"></span>
+      </div>
+      <h3>Script</h3>
+      <ol id="st-script" class="script"></ol>
+      <h3>Checks</h3>
+      <div id="st-checks" class="checks"></div>
+    </aside>
+  </section>
+
+  <section id="company">
+    <div class="section-head">
+      <h2>The company</h2>
+      <p>Every scene, both arms. A is the yellow SO-101 with the red blade, B the black SO-100 with the blue blade. The captions burned into each clip are the stage directions the choreographer wrote; the dashboard's script follows them beat by beat. Click a card to bring it to the stage.</p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <input id="search" class="search" type="search" placeholder="search titles, moods, stage directions&hellip;">
+    <div id="families"></div>
+  </section>
+
+  <footer class="fine" id="foot"></footer>
+</main>
+<script type="module" src="playhouse.js"></script>
+</body>
+</html>

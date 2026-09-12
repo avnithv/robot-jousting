@@ -1,0 +1,212 @@
+{
+ "generated": "2026-09-12 06:50:13",
+ "repo": "/Users/hshi/Desktop/hackcmu26/robot-jousting",
+ "source": "/Users/hshi/Desktop/hackcmu26/robot-jousting/arm/motions_tuned.json",
+ "joints": [
+  "pan",
+  "lift",
+  "elbow",
+  "wrist_flex",
+  "wrist_roll",
+  "jaw"
+ ],
+ "joint_labels": [
+  "shoulder_pan",
+  "shoulder_lift",
+  "elbow_flex",
+  "wrist_flex",
+  "wrist_roll",
+  "gripper"
+ ],
+ "joint_range_sim": {
+  "pan": [
+   -110.0,
+   110.0
+  ],
+  "lift": [
+   -100.0,
+   100.0
+  ],
+  "elbow": [
+   -96.8,
+   96.8
+  ],
+  "wrist_flex": [
+   -95.0,
+   95.0
+  ],
+  "wrist_roll": [
+   -185.0,
+   185.0
+  ],
+  "jaw": [
+   -10.0,
+   100.0
+  ]
+ },
+ "conventions": {
+  "units": "degrees, seconds, metres",
+  "q": "[pan, lift, elbow, wrist_flex, wrist_roll, jaw] as the real arm plays them",
+  "roll_offset": 76.0,
+  "roll_note": "real wrist_roll = sim roll + 76 (sim 0 = sword on top)",
+  "pan": "+ = the arm's own right",
+  "pitch": "positive lift/elbow/wrist pitch the chain down",
+  "jaw": "0 shut, 100 open",
+  "hand": "metres from the arm's own pan axis: x forward, z up from the base plane"
+ },
+ "rules": {
+  "hand_x_max": 0.27,
+  "centre_x": 0.305,
+  "base_gap": 0.61,
+  "servo_cap_dps": 300.0,
+  "lift_min": -89.0,
+  "roll_real_limit": 180.0,
+  "wrist_floors": {
+   "wrist_flex": 0.12,
+   "wrist_roll": 0.092
+  },
+  "wrist_floors_note": "measured on the arm 2026-09-12 (pitch housing 0.120 m, roll housing 0.092 m); dropped from tune.py in the lift>=-89 commit, kept here as an advisory line",
+  "touch_cm": 2.4
+ },
+ "beat": {
+  "beat_s": 1.4,
+  "impact_s": 1.0,
+  "guard_s": 0.55,
+  "react_s": 1.07,
+  "note": "chain.py pins an attack/feint's last key at 1.0 s and a block's guard key at 0.55 s; moves are front-padded, never time-scaled"
+ },
+ "geometry": {
+  "chain": [
+   {
+    "body": "shoulder",
+    "pos": [
+     0.0388353,
+     0.0,
+     0.0624
+    ],
+    "quat_wxyz": [
+     0.0,
+     0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   {
+    "body": "upper_arm",
+    "pos": [
+     -0.0303992,
+     -0.0182778,
+     -0.0542
+    ],
+    "quat_wxyz": [
+     0.5,
+     -0.5,
+     -0.5,
+     -0.5
+    ]
+   },
+   {
+    "body": "lower_arm",
+    "pos": [
+     -0.11257,
+     -0.028,
+     0.0
+    ],
+    "quat_wxyz": [
+     0.707107,
+     0.0,
+     0.0,
+     0.707107
+    ]
+   },
+   {
+    "body": "wrist",
+    "pos": [
+     -0.1349,
+     0.0052,
+     0.0
+    ],
+    "quat_wxyz": [
+     0.707107,
+     0.0,
+     0.0,
+     -0.707107
+    ]
+   },
+   {
+    "body": "gripper",
+    "pos": [
+     0.0,
+     -0.0611,
+     0.0181
+    ],
+    "quat_wxyz": [
+     0.0172091,
+     -0.0172091,
+     0.706897,
+     0.706897
+    ]
+   },
+   {
+    "body": "jaw",
+    "pos": [
+     0.0202,
+     0.0188,
+     -0.0234
+    ],
+    "quat_wxyz": [
+     0.707107,
+     0.707107,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "pan_axis_x": 0.0388353,
+  "hilt_reach": 0.353,
+  "sword_len": 0.18,
+  "sword_dir_local": [
+   -0.2522,
+   -0.9388,
+   0.2347
+  ],
+  "sword_start_local": [
+   -0.0202,
+   -0.0752,
+   0.0188
+  ],
+  "note": "SO101 MJCF chain; B drawn as a mirrored SO101 (the real B is an SO100 with the joint mapping in sim/arena.py)"
+ },
+ "moves": [
+  "ATTACK_HIGH",
+  "ATTACK_LOW_LR",
+  "ATTACK_LOW_RL",
+  "FEINT_HIGH",
+  "FEINT_LEFT",
+  "FEINT_RIGHT",
+  "BLOCK_HIGH",
+  "BLOCK_LEFT",
+  "BLOCK_MIDDLE",
+  "BLOCK_RIGHT",
+  "REST"
+ ],
+ "chains": [
+  "CHAIN_A",
+  "CHAIN_B"
+ ],
+ "videos": [
+  "reel_moves.mp4",
+  "tuned_ATTACK_HIGH.mp4",
+  "tuned_ATTACK_LOW_LR.mp4",
+  "tuned_ATTACK_LOW_RL.mp4",
+  "tuned_BLOCK_HIGH.mp4",
+  "tuned_BLOCK_LEFT.mp4",
+  "tuned_BLOCK_MIDDLE.mp4",
+  "tuned_BLOCK_RIGHT.mp4",
+  "tuned_FEINT_HIGH.mp4",
+  "tuned_FEINT_LEFT.mp4",
+  "tuned_FEINT_RIGHT.mp4",
+  "tuned_REST.mp4"
+ ],
+ "reel": "videos/reel_moves.mp4"
+}

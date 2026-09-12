@@ -1,0 +1,362 @@
+{
+ "hip_smile": {
+  "file": "hip_smile.png",
+  "w": 159,
+  "h": 304,
+  "row": 0,
+  "col": 0,
+  "src": [
+   54,
+   7,
+   213,
+   311
+  ],
+  "index": 0,
+  "anchor": [
+   83.0,
+   304
+  ]
+ },
+ "hands_folded": {
+  "file": "hands_folded.png",
+  "w": 142,
+  "h": 302,
+  "row": 0,
+  "col": 1,
+  "src": [
+   289,
+   9,
+   431,
+   311
+  ],
+  "index": 1,
+  "anchor": [
+   76.5,
+   302
+  ]
+ },
+ "arms_wide": {
+  "file": "arms_wide.png",
+  "w": 276,
+  "h": 302,
+  "row": 0,
+  "col": 2,
+  "src": [
+   479,
+   9,
+   755,
+   311
+  ],
+  "index": 2,
+  "anchor": [
+   136.0,
+   302
+  ]
+ },
+ "point_right": {
+  "file": "point_right.png",
+  "w": 202,
+  "h": 303,
+  "row": 0,
+  "col": 3,
+  "src": [
+   792,
+   9,
+   994,
+   312
+  ],
+  "index": 3,
+  "anchor": [
+   74.0,
+   303
+  ]
+ },
+ "mug_hip": {
+  "file": "mug_hip.png",
+  "w": 171,
+  "h": 305,
+  "row": 0,
+  "col": 4,
+  "src": [
+   1031,
+   7,
+   1202,
+   312
+  ],
+  "index": 4,
+  "anchor": [
+   77.0,
+   305
+  ]
+ },
+ "two_mugs": {
+  "file": "two_mugs.png",
+  "w": 194,
+  "h": 308,
+  "row": 1,
+  "col": 0,
+  "src": [
+   50,
+   316,
+   244,
+   624
+  ],
+  "index": 5,
+  "anchor": [
+   88.5,
+   308
+  ]
+ },
+ "belly_laugh": {
+  "file": "belly_laugh.png",
+  "w": 161,
+  "h": 308,
+  "row": 1,
+  "col": 1,
+  "src": [
+   290,
+   316,
+   451,
+   624
+  ],
+  "index": 6,
+  "anchor": [
+   79.0,
+   308
+  ]
+ },
+ "hands_hips": {
+  "file": "hands_hips.png",
+  "w": 195,
+  "h": 309,
+  "row": 1,
+  "col": 2,
+  "src": [
+   520,
+   316,
+   715,
+   625
+  ],
+  "index": 7,
+  "anchor": [
+   94.5,
+   309
+  ]
+ },
+ "arms_crossed": {
+  "file": "arms_crossed.png",
+  "w": 159,
+  "h": 309,
+  "row": 1,
+  "col": 3,
+  "src": [
+   797,
+   316,
+   956,
+   625
+  ],
+  "index": 8,
+  "anchor": [
+   79.0,
+   309
+  ]
+ },
+ "worried": {
+  "file": "worried.png",
+  "w": 147,
+  "h": 309,
+  "row": 1,
+  "col": 4,
+  "src": [
+   1041,
+   316,
+   1188,
+   625
+  ],
+  "index": 9,
+  "anchor": [
+   74.0,
+   309
+  ]
+ },
+ "point_left": {
+  "file": "point_left.png",
+  "w": 187,
+  "h": 301,
+  "row": 2,
+  "col": 0,
+  "src": [
+   31,
+   631,
+   218,
+   932
+  ],
+  "index": 10,
+  "anchor": [
+   101.5,
+   301
+  ]
+ },
+ "wave": {
+  "file": "wave.png",
+  "w": 158,
+  "h": 305,
+  "row": 2,
+  "col": 1,
+  "src": [
+   299,
+   627,
+   457,
+   932
+  ],
+  "index": 11,
+  "anchor": [
+   78.0,
+   305
+  ]
+ },
+ "lean_in": {
+  "file": "lean_in.png",
+  "w": 221,
+  "h": 286,
+  "row": 2,
+  "col": 2,
+  "src": [
+   520,
+   647,
+   741,
+   933
+  ],
+  "index": 12,
+  "anchor": [
+   94.5,
+   286
+  ]
+ },
+ "finger_up": {
+  "file": "finger_up.png",
+  "w": 182,
+  "h": 301,
+  "row": 2,
+  "col": 3,
+  "src": [
+   774,
+   631,
+   956,
+   932
+  ],
+  "index": 13,
+  "anchor": [
+   98.5,
+   301
+  ]
+ },
+ "cheer_mug": {
+  "file": "cheer_mug.png",
+  "w": 176,
+  "h": 318,
+  "row": 2,
+  "col": 4,
+  "src": [
+   1040,
+   625,
+   1216,
+   943
+  ],
+  "index": 14,
+  "anchor": [
+   76.0,
+   318
+  ]
+ },
+ "thinking": {
+  "file": "thinking.png",
+  "w": 150,
+  "h": 297,
+  "row": 3,
+  "col": 0,
+  "src": [
+   60,
+   941,
+   210,
+   1238
+  ],
+  "index": 15,
+  "anchor": [
+   74.5,
+   297
+  ]
+ },
+ "hand_heart": {
+  "file": "hand_heart.png",
+  "w": 157,
+  "h": 299,
+  "row": 3,
+  "col": 1,
+  "src": [
+   286,
+   939,
+   443,
+   1238
+  ],
+  "index": 16,
+  "anchor": [
+   78.0,
+   299
+  ]
+ },
+ "sword_ready": {
+  "file": "sword_ready.png",
+  "w": 247,
+  "h": 276,
+  "row": 3,
+  "col": 2,
+  "src": [
+   500,
+   962,
+   747,
+   1238
+  ],
+  "index": 17,
+  "anchor": [
+   112.5,
+   276
+  ]
+ },
+ "sword_raised": {
+  "file": "sword_raised.png",
+  "w": 228,
+  "h": 308,
+  "row": 3,
+  "col": 3,
+  "src": [
+   774,
+   932,
+   1002,
+   1240
+  ],
+  "index": 18,
+  "anchor": [
+   113.5,
+   308
+  ]
+ },
+ "stop_hand": {
+  "file": "stop_hand.png",
+  "w": 154,
+  "h": 291,
+  "row": 3,
+  "col": 4,
+  "src": [
+   1050,
+   944,
+   1204,
+   1235
+  ],
+  "index": 19,
+  "anchor": [
+   75.0,
+   291
+  ]
+ }
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Everything relative (styles.css, the card art that cardEl builds) resolves against the game root, not
+     /play/, so the phone can reuse the big screen's card faces unchanged. -->
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b120c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>The Tilt of Tiltford</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;600;800&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="play/play.css">
+</head>
+<body class="p-body">
+<div id="p-app">
+  <header id="p-opp" class="p-fighter"></header>
+  <div id="p-banner">Connecting…</div>
+  <main id="p-main"></main>
+  <footer id="p-me" class="p-fighter"></footer>
+</div>
+<div id="p-modal" hidden></div>
+<script type="module" src="play/play.js"></script>
+</body>
+</html>

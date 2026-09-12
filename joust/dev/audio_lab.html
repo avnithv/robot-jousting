@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knight foley lab</title>
+<style>
+  body { margin: 0; padding: 14px 18px 30px; background: #15161a; color: #d8d6cc; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  h1 { font-size: 15px; margin: 0 0 10px; } h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8d8a7d; margin: 16px 0 6px; }
+  small { color: #8d8a7d; font-weight: normal; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  button { background: #26282f; color: #e6e3d6; border: 1px solid #3a3d47; border-radius: 4px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button:hover { background: #31343d; } button.on { background: #5b2f2a; border-color: #b8262b; } button.syn { border-style: dashed; color: #b3b0a3; }
+  label { display: inline-flex; gap: 6px; align-items: center; } input[type=range] { width: 130px; }
+  select { font: inherit; background: #26282f; color: inherit; border: 1px solid #3a3d47; border-radius: 4px; padding: 3px; }
+  canvas { display: block; background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; max-width: 100%; cursor: crosshair; }
+  #meter { height: 8px; width: 220px; background: #0f1013; border: 1px solid #2c2e36; border-radius: 4px; overflow: hidden; } #meter i { display: block; height: 100%; width: 0; background: #d9a441; }
+  #meter i.hot { background: #e6544a; }
+  #log { white-space: pre-wrap; color: #f2a1a1; background: #1c1416; border: 1px solid #4a2a2c; border-radius: 4px; padding: 6px; min-height: 1.2em; margin-top: 12px; }
+  #log:empty::before { content: 'no errors'; color: #5f8a5f; }
+</style>
+</head>
+<body>
+<h1>Knight foley lab <small>src/audio/foley.js &middot; assets/motions/moves.json &middot; click anything to start audio</small></h1>
+<div class="row" id="controls">
+  <label>beat <input id="beat" type="range" min="1000" max="2000" step="20" value="1400"><span id="beatv">1400 ms</span></label>
+  <label>gain <input id="gain" type="range" min="0" max="1.5" step="0.05" value="1"><span id="gainv">1.00</span></label>
+  <label>arm <select id="arm"><option value="a">a (left, red)</option><option value="b">b (right, blue)</option></select></label>
+  <label>timing <select id="align"><option value="fit">fit clip to beat</option><option value="pin">pin impact at 0.7 / guard at 0.4</option><option value="raw">raw 1x (real arm speed)</option></select></label>
+  <label>impact <select id="impact"><option value="auto">auto (by move)</option><option value="hit">hit</option><option value="block">block</option><option value="clash">clash</option><option value="settle">settle</option><option value="none">none</option></select></label>
+  <label><input id="layer" type="checkbox"> layer game sfx (hit / block / clash at 0.7)</label>
+  <button id="stop">stop all</button>
+</div>
+<h2>Moves <small>solid = library, dashed = synthetic fallback</small></h2>
+<div class="row" id="moves"></div>
+<h2>One-shots</h2>
+<div class="row" id="shots"></div>
+<h2>Pairs <small>a on the left, b on the right, same clock</small></h2>
+<div class="row" id="pairs"></div>
+<h2>Joint velocities <small id="plotinfo">deg/s (jaw: %/s) in clip time; red = impact, dashed = key poses; markers: &#9651; reversal, &#9661; abrupt stop, &#9671; jaw snap; click to play from there</small></h2>
+<canvas id="plot" width="1000" height="280"></canvas>
+<div class="row" style="margin-top:6px"><span>servo layer peak</span><div id="meter"><i></i></div><span id="peakv">0.00</span></div>
+<div id="log"></div>
+<script type="module" src="audio_lab.js"></script>
+</body>
+</html>
