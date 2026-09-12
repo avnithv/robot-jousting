@@ -9,12 +9,14 @@ from move_params import PARAMS
 JOINTS = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll", "gripper"]
 SERVO_CAP_DPS = 300.0
 WRIST_Z_MIN = 0.092   # legacy alias (wrist roll); see FLOORS
-FLOORS = {"A_wrist_flex": 0.120, "A_wrist_roll": 0.092}   # HARD RULE (user, 2026-09-12, measured on the arm): joint anchor heights above the base plane; lower = hits the board
+FLOORS = {}            # (joint-height floors, unused: the earlier wrist floors came from the wrong joint)
+LIFT_MIN = -89.0        # HARD RULE (user, 2026-09-12, measured on the arm): shoulder_lift never below -89 deg (leaning further back puts the upper arm on the board)
 
 def wrist_z(q):
     """Smallest margin above the floors (negative = violating), in metres."""
     arena.set_pose(ik._m, ik._d, q, np.zeros(6))
-    return float(min(ik._d.jnt(j).xanchor[2] - z for j, z in FLOORS.items()))
+    m = [ik._d.jnt(j).xanchor[2] - z for j, z in FLOORS.items()] + [np.radians(q[1] - LIFT_MIN)]   # metres, and lift margin scaled to ~metres
+    return float(min(m))
 
 def enforce_floor(q, label=""):
     """If a key pose puts a wrist joint below WRIST_Z_MIN, move to the nearest joint config (lift/elbow/wrist) that clears it,
@@ -23,6 +25,7 @@ def enforce_floor(q, label=""):
     if z0 >= 0: return q
     h0, t0, p0 = ik.fk(q); best = None
     for dl in np.arange(-30, 31, 3):
+        if q[1] + dl < LIFT_MIN - 1e-6: continue
         for de in np.arange(-30, 31, 3):
             for dw in np.arange(-30, 31, 3):
                 qq = q.copy(); qq[1:4] += (dl, de, dw); qq = np.clip(qq, ik.LO + 1, ik.HI - 1)

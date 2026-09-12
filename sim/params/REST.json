@@ -1,8 +1,8 @@
 {
- "_doc": "Rest position between turns and at the start of every move, in REAL arm degrees as the arm reports them (wrist_roll 76 = sword on top). Apply regenerates every move.",
+ "_doc": "Rest position between turns and at the start of every move, in REAL arm degrees as the arm reports them (wrist_roll 76 = sword on top). Shoulder lift -89 = the hard limit (further back rests on the board). Apply regenerates every move.",
  "joints": {
   "pan": -3.6,
-  "lift": -102.1,
+  "lift": -89.0,
   "elbow": 47.2,
   "wrist": 2.9,
   "roll": 76.3,

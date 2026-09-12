@@ -1,0 +1,21 @@
+{
+ "samples": 1242,
+ "seconds": 72.6,
+ "range_deg": {
+  "shoulder_pan": 10.2,
+  "shoulder_lift": 183.1,
+  "elbow_flex": 58.9,
+  "wrist_flex": 9.2,
+  "wrist_roll": 1.0,
+  "gripper": 0.7
+ },
+ "moved_most": "shoulder_lift",
+ "final_pose": [
+  -3.7,
+  -89.1,
+  -90.0,
+  14.3,
+  76.0,
+  8.0
+ ]
+}
