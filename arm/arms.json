@@ -9,14 +9,14 @@
   "model": "SO-101",
   "roll_offset": -89.8,
   "rest": [
-   -2.6,
-   -90.5,
-   44.2,
-   -2.5,
-   -89.8,
-   1.9
+   -2.3,
+   -90.0,
+   37.5,
+   9.8,
+   -89.7,
+   0.0
   ],
-  "lift_limit": -90.5
+  "lift_limit": -90.0
  },
  "gantry": {
   "port": "/dev/cu.usbserial-AL00JZ0H",
