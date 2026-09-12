@@ -10,9 +10,7 @@
   "roll": "wrist roll: -90 = jaw swings sideways on this side (keep -90)",
   "jaw_open": "how wide the sword cocks before the sweep (0..100): smaller = comes from less wide",
   "t_windup": "seconds: rest -> cocked low on the start side (0.85 = the old mirror timing)",
-  "t_slash": "seconds: the sweep (base pan speed)",
-  "captured.start": "windup pose (real degrees): the mirrored windup from ATTACK_LOW_LR, kept so only the end changes. Delete to recompute from start.*",
-  "captured.end": "end pose (real degrees): the mirrored end with wrist_flex +12 deg (blade tip lowered ~12 deg, pitch -3 -> -15). Delete to recompute from end.*"
+  "t_slash": "seconds: the sweep (base pan speed)"
  },
  "end": {
   "x": 0.27,
@@ -27,58 +25,5 @@
  "roll": -90,
  "jaw_open": 55,
  "t_windup": 0.85,
- "t_slash": 0.4,
- "captured": {
-  "start": [
-   20.0,
-   -31.5,
-   92.3,
-   -53.5,
-   -14.0,
-   55.0
-  ],
-  "end": [
-   -20.0,
-   16.7,
-   64.9,
-   -80.3,
-   -14.0,
-   0.0
-  ]
- },
- "retired_2026-09-12": {
-  "note": "standalone version with captured poses, replaced by mirroring ATTACK_LOW_LR's arm shape",
-  "captured": {
-   "start": [
-    20,
-    -4,
-    88.3,
-    -91.5,
-    -14,
-    55
-   ],
-   "end": [
-    -22.3,
-    1.7,
-    77.8,
-    -61.8,
-    -17.6,
-    7.9
-   ]
-  },
-  "end": {
-   "x": 0.27,
-   "z": 0.08,
-   "pan": -20
-  },
-  "start": {
-   "dx": -0.05,
-   "dz": 0.01,
-   "pan": 20
-  },
-  "roll": -90,
-  "jaw_open": 55,
-  "t_windup": 0.85,
-  "t_slash": 0.4
- }
+ "t_slash": 0.4
 }
