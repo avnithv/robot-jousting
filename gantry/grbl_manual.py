@@ -22,7 +22,7 @@ DEFAULT_HOME_FEED = 150
 DEFAULT_MAX_FEED = 24000
 TRAVEL_MM = 200
 PULL_OFF_MM = 1
-SEARCH_MM = TRAVEL_MM + PULL_OFF_MM
+SEARCH_MM = TRAVEL_MM + 15   # margin: from the apart stop, 195 mm out, 201 mm did not always reach the Y switch (the carriage stalls harmlessly at 150 mm/min if it never trips)
 
 
 class ControllerError(RuntimeError):
