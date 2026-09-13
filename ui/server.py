@@ -11,7 +11,7 @@ CLAUDE = shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
 jobs = {}; jobs_lock = threading.Lock(); arm_lock = threading.Lock(); gen_lock = threading.Lock()
 
 import urllib.request
-ARM_PY = os.path.expanduser("~/so-arm/.venv/bin/python"); daemon_proc = None
+ARM_PY = os.environ.get("SO_ARM_PY") or os.path.expanduser("~/so-arm/.venv/bin/python"); daemon_proc = None   # the LeRobot env (setup.sh)
 def strike_segment(arm, move):
     """That arm's real-coordinate trajectory for `move` and its strike segment (START key -> last key), as (t, Q, t0, t1)."""
     import numpy as np

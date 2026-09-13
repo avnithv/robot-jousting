@@ -24,6 +24,9 @@ for a in "$@"; do
   esac
 done
 ARM_PORT_URL="http://127.0.0.1:${ARM_DAEMON_PORT:-8766}"
+# The game server's python: the repo's sim env when it exists (it has `qrcode` for the phone QR codes), else python3.
+[ -z "${PYTHON:-}" ] && [ -x "$REPO/.venv/bin/python" ] && PYTHON="$REPO/.venv/bin/python"
+export PYTHON="${PYTHON:-python3}"
 
 if [ -z "$REPO" ] || [ ! -d "$REPO/arm" ]; then
   echo "cannot find the robot-jousting checkout (set JOUST_REPO)" >&2; exit 1

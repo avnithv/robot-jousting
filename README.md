@@ -36,12 +36,22 @@ small web UI ("move studio") to tweak parameters, preview, and run moves.
 - `docs/transitions_and_flourishes.md` - end-pose to next-move transition table, hub poses, flourishes, worked example turns.
 - `docs/emotes_brainstorm.md` - the arms' emotional vocabulary (what each joint can say), two-arm principles, scene families for the emote framework.
 
-## Setup
-1. Arm models: clone https://github.com/TheRobotStudio/SO-ARM100 to `~/so-arm/SO-ARM100` (or set `SO_ARM_DIR`).
-2. Sim env: `uv venv .venv --python 3.12 && uv pip install --python .venv/bin/python mujoco numpy imageio imageio-ffmpeg pillow matplotlib`
-3. Real arm (optional): a LeRobot install with the SO follower calibrated, in `~/so-arm/.venv` (or set `SO_ARM_PY`). Port/id via `ARM_PORT`, `ARM_ID`
-   (see `arm/common.py`). The studio's "Send to agent" feature needs the `claude` CLI.
-4. `cd sim && ../.venv/bin/python tune.py ALL` to build every move and clip, then `./studio.sh`.
+## Setup (fresh laptop)
+```bash
+brew install uv            # or: curl -LsSf https://astral.sh/uv/install.sh | sh
+git clone https://github.com/avnithv/robot-jousting.git && cd robot-jousting
+./setup.sh                 # sim env (.venv), arm env (~/so-arm/.venv: LeRobot + Feetech), SO-ARM100 models, calibration files
+```
+`./setup.sh --no-arm` skips the LeRobot env (sim, studio and the game in sim mode). Everything the runtime needs is in the
+repo: the tuned motion library (`arm/motions_tuned.json`), the transition library, the 24 contact calibrations
+(`sim/contact_stops.json`), the turn profile, the servo calibration files (`calib/`), the game and its soundtrack.
+The only things generated locally are the studio's preview clips (`sim/out/`, optional: `cd sim && ../.venv/bin/python tune.py ALL`).
+
+Then: `./studio.sh` (http://localhost:8765), `cd joust && ./start_live.sh` (http://localhost:8770/?hw=live&mode=simple;
+`--mock` for no hardware), `python3 arm/duel_sequence.py sim/safe_show.json` for the scripted show.
+Hardware names live in `arm/common.py` (arm ports/ids, env `ARM_PORT` `ARM_B_PORT` `ARM_ID` `ARM_B_ID`) and `arm/arms.json`
+(gantry port and stops); `ls /dev/cu.usb*` shows what is plugged in. The LeRobot env can live elsewhere: `SO_ARM_ENV=/path`
+for setup.sh, `SO_ARM_PY=/path/bin/python` for the studio and `arm/run_daemon.sh`. The studio's "Send to agent" needs the `claude` CLI.
 
 ## Conventions
 Joint vector `[pan, lift, elbow, wrist_flex, wrist_roll, jaw]` in degrees. Sim convention: pan + = the arm's own right,

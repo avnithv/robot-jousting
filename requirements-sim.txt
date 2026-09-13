@@ -1,0 +1,8 @@
+# The sim / studio / chain-compiler environment (.venv, Python 3.12). Pinned to what the calibrated library was built with.
+mujoco==3.13.0
+numpy==2.5.3
+imageio==2.37.4
+imageio-ffmpeg==0.6.0
+pillow==12.3.0
+glfw==2.10.2
+qrcode==8.2
